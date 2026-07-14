@@ -4,9 +4,11 @@ import type { PlantNode } from '../schema/plant'
 import { getGuidesFor, getLineage } from '../app/plants'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
+import { seasonalInterest } from '../lib/calendar'
 import AtAGlance from '../components/AtAGlance'
 import CalendarBar from '../components/CalendarBar'
 import ColourInterest from '../components/ColourInterest'
+import SeasonStrip from '../components/SeasonStrip'
 import Chip from '../components/Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -42,6 +44,11 @@ export default function CheatsheetPage() {
     const from = inheritedFrom[field]
     return from ? `from ${displayLabel(from)}` : undefined
   }
+
+  // Seasonal interest strip (foliage/flower/fruit colour by season), derived from the
+  // calendar's state phases + the flat colour fallback.
+  const interest = seasonalInterest(resolved.calendar, resolved.colour)
+  const hasInterest = interest.some((s) => s.parts.length > 0)
 
   // The at-a-glance panel spans two fields (conditions + size); note where they came from,
   // combining when both were inherited from the same ancestor.
@@ -126,12 +133,17 @@ export default function CheatsheetPage() {
         />
       </Section>
 
-      {/* colour — ornamental interest by plant part */}
-      {resolved.colour && Object.values(resolved.colour).some((v) => v?.length) && (
+      {/* seasonal interest — foliage/flower/fruit colour by season (from the calendar's state
+          phases); falls back to the flat colour-by-part when there are no state phases. */}
+      {hasInterest ? (
+        <Section title="Seasonal interest" note={inheritedNote('calendar')}>
+          <SeasonStrip interest={interest} />
+        </Section>
+      ) : resolved.colour && Object.values(resolved.colour).some((v) => v?.length) ? (
         <Section title="Colour" note={inheritedNote('colour')}>
           <ColourInterest colour={resolved.colour} />
         </Section>
-      )}
+      ) : null}
 
       {/* more facts — the free seed-packet chips (spacing, germination, depth, use…) */}
       {resolved.facts && Object.keys(resolved.facts).length > 0 && (

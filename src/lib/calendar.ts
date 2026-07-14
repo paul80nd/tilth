@@ -75,3 +75,46 @@ export function hasActionInMonth(calendar: PhaseSpan[] | undefined, month: numbe
   if (!calendar) return false
   return phasesInMonth(calendar, month).some(isActionable)
 }
+
+/** Northern-hemisphere seasons as month groups, for the seasonal-interest strip. */
+export const SEASONS: Array<{ name: string; months: number[] }> = [
+  { name: 'Spring', months: [3, 4, 5] },
+  { name: 'Summer', months: [6, 7, 8] },
+  { name: 'Autumn', months: [9, 10, 11] },
+  { name: 'Winter', months: [12, 1, 2] },
+]
+
+/** The state (display) phases the seasonal-interest strip visualises, in render order. */
+export const INTEREST_CODES: PhaseCode[] = ['foliage', 'flower', 'fruit']
+
+export interface SeasonInterest {
+  season: string
+  /** The interests present that season, each with its resolved colour (if known). */
+  parts: Array<{ code: PhaseCode; colour?: string }>
+}
+
+/**
+ * Reduce a calendar (+ optional flat colour fallback) to per-season interest: which of
+ * foliage/flower/fruit show in each season and in what colour. Colour comes from the covering
+ * `PhaseSpan.colour` (so it can vary by season — green foliage → yellow in autumn), falling
+ * back to the flat `colour[part]` when a span carries no colour of its own.
+ */
+export function seasonalInterest(
+  calendar: PhaseSpan[] | undefined,
+  colour?: { flower?: string[]; foliage?: string[]; fruit?: string[]; stem?: string[] },
+): SeasonInterest[] {
+  if (!calendar) return SEASONS.map((s) => ({ season: s.name, parts: [] }))
+  return SEASONS.map((season) => {
+    const parts: SeasonInterest['parts'] = []
+    for (const code of INTEREST_CODES) {
+      const spans = calendar.filter(
+        (s) => s.code === code && s.months.some((m) => season.months.includes(m)),
+      )
+      if (spans.length === 0) continue
+      const fallback = colour?.[code as 'flower' | 'foliage' | 'fruit']?.[0]
+      const colours = new Set<string | undefined>(spans.map((s) => s.colour ?? fallback))
+      for (const c of colours) parts.push({ code, colour: c })
+    }
+    return { season: season.name, parts }
+  })
+}

@@ -24,7 +24,10 @@
         { "code": "pot-on", "months": [5] },
         { "code": "plant-out", "months": [6] },
         { "code": "feed", "months": [6, 7, 8], "note": "weekly once flowering" },
-        { "code": "harvest", "months": [8, 9] }
+        { "code": "harvest", "months": [8, 9] },
+        { "code": "foliage", "months": [5, 6, 7, 8, 9], "colour": "green" },
+        { "code": "flower", "months": [6, 7], "colour": "yellow" },
+        { "code": "fruit", "months": [8, 9], "colour": "red" }
       ],
       "conditions": {
         "soil": ["loam"],
@@ -68,7 +71,8 @@
       "calendar": [
         { "code": "sow-indoors", "months": [3, 4] },
         { "code": "plant-out", "months": [5] },
-        { "code": "flower", "months": [7, 8, 9] },
+        { "code": "foliage", "months": [5, 6, 7, 8, 9], "colour": "green" },
+        { "code": "flower", "months": [7, 8, 9], "colour": "yellow" },
         { "code": "harvest", "months": [9, 10], "note": "seed heads" }
       ],
       "conditions": {
@@ -99,7 +103,9 @@
       "uses": ["containers", "windowsill", "kitchen garden"],
       "calendar": [
         { "code": "sow-indoors", "months": [3, 4, 5] },
-        { "code": "harvest", "months": [6, 7, 8, 9], "note": "pinch tips" }
+        { "code": "harvest", "months": [6, 7, 8, 9], "note": "pinch tips" },
+        { "code": "foliage", "months": [5, 6, 7, 8, 9], "colour": "green" },
+        { "code": "flower", "months": [8], "colour": "white", "note": "pinch out to keep leafy" }
       ],
       "conditions": {
         "soil": ["loam"],
@@ -128,10 +134,11 @@
       "uses": ["containers", "edging", "ground cover"],
       "calendar": [
         { "code": "plant-out", "months": [3, 9] },
-        { "code": "flower", "months": [5] },
-        { "code": "fruit", "months": [6, 7] },
-        { "code": "harvest", "months": [6, 7] },
-        { "code": "feed", "months": [4], "note": "high-potash" }
+        { "code": "feed", "months": [4], "note": "high-potash" },
+        { "code": "foliage", "months": [3, 4, 5, 6, 7, 8, 9], "colour": "green" },
+        { "code": "flower", "months": [5], "colour": "white" },
+        { "code": "fruit", "months": [6, 7], "colour": "red" },
+        { "code": "harvest", "months": [6, 7] }
       ],
       "conditions": {
         "soil": ["loam", "sand"],
@@ -164,9 +171,12 @@
       "uses": ["orchard", "trained forms", "wildlife garden"],
       "calendar": [
         { "code": "prune", "months": [1, 2], "note": "winter, when dormant" },
-        { "code": "flower", "months": [4, 5] },
         { "code": "thin", "months": [6], "note": "after natural drop" },
-        { "code": "harvest", "months": [9, 10] }
+        { "code": "harvest", "months": [9, 10] },
+        { "code": "foliage", "months": [4, 5, 6, 7, 8, 9, 10], "colour": "green" },
+        { "code": "flower", "months": [4, 5], "colour": "pink" },
+        { "code": "fruit", "months": [7, 8], "colour": "green" },
+        { "code": "fruit", "months": [9, 10], "colour": "red" }
       ],
       "conditions": {
         "soil": ["loam", "clay"],

@@ -59,6 +59,11 @@ export interface PhaseSpan {
   months: number[]
   /** Optional free note shown on the phase (e.g. "under glass", "every 2–3 weeks"). */
   note?: string
+  /** For STATE codes (flower/foliage/fruit): the real ornamental colour in *these* months —
+   *  e.g. foliage "green" in summer but "yellow" in autumn (two spans). This is genuine
+   *  botanical data, distinct from the fixed legend colour of action codes; the UI maps known
+   *  colour words to a swatch (lib/colour). Lets colour vary through the year. */
+  colour?: string
 }
 
 /** Soil / position facets, kept as small closed vocabularies so the cheatsheet can render

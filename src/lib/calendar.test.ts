@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { hasActionInMonth, isActionable, phasesInMonth, phasesPresent } from './calendar'
+import {
+  hasActionInMonth,
+  isActionable,
+  phasesInMonth,
+  phasesPresent,
+  seasonalInterest,
+} from './calendar'
 import type { PhaseSpan } from '../schema/plant'
 
 const calendar: PhaseSpan[] = [
@@ -27,5 +33,29 @@ describe('calendar', () => {
 
   it('returns present phases in the canonical order', () => {
     expect(phasesPresent(calendar)).toEqual(['sow-indoors', 'flower', 'harvest'])
+  })
+})
+
+describe('seasonalInterest', () => {
+  const cal: PhaseSpan[] = [
+    { code: 'foliage', months: [6, 7, 8], colour: 'green' },
+    { code: 'foliage', months: [9, 10], colour: 'yellow' }, // colour changes by season
+    { code: 'fruit', months: [9, 10], colour: 'red' },
+    { code: 'flower', months: [7] }, // no span colour → fall back to the flat colour field
+  ]
+
+  it('summarises each season, letting colour vary through the year', () => {
+    const res = seasonalInterest(cal, { flower: ['blue'] })
+    const summer = res.find((s) => s.season === 'Summer')!
+    const autumn = res.find((s) => s.season === 'Autumn')!
+    expect(summer.parts).toContainEqual({ code: 'foliage', colour: 'green' })
+    expect(summer.parts).toContainEqual({ code: 'flower', colour: 'blue' }) // fallback used
+    expect(autumn.parts).toContainEqual({ code: 'foliage', colour: 'yellow' })
+    expect(autumn.parts).toContainEqual({ code: 'fruit', colour: 'red' })
+  })
+
+  it('reports an empty season when nothing is on show', () => {
+    const winter = seasonalInterest(cal).find((s) => s.season === 'Winter')!
+    expect(winter.parts).toEqual([])
   })
 })

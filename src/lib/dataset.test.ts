@@ -21,7 +21,10 @@ describe('parsePlantDataset', () => {
   })
 
   it('passes arrays and nested objects through as whole fields', () => {
-    const calendar = [{ code: 'sow-indoors', months: [3, 4] }]
+    const calendar = [
+      { code: 'sow-indoors', months: [3, 4] },
+      { code: 'foliage', months: [6, 7], colour: 'green' },
+    ]
     const conditions = { soil: ['loam'], sun: ['full-sun'], aspect: ['south', 'west'] }
     const { nodes } = parsePlantDataset({ nodes: [{ id: 'x', calendar, conditions, awards: ['A', 'B'] }] })
     expect(nodes[0].calendar).toEqual(calendar)

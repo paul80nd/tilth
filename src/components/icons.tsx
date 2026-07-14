@@ -16,6 +16,9 @@ export type IconName =
   | 'hardiness'
   | 'edible'
   | 'toxicity'
+  | 'foliage'
+  | 'flower'
+  | 'fruit'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // sun — light / position
@@ -75,16 +78,45 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M12 10v4M12 17.5v.5" />
     </>
   ),
+  // foliage — a leaf (closed shape: fills when tinted, outlines when pale)
+  foliage: <path d="M12 3C7.5 7 6.5 14 9 21c2.6-1 6-5.5 6-11 0-3-1.1-5.5-3-7z" />,
+  // flower — six petals + centre
+  flower: (
+    <>
+      <circle cx="12" cy="6.4" r="3" />
+      <circle cx="17" cy="9.8" r="3" />
+      <circle cx="15.2" cy="15.6" r="3" />
+      <circle cx="8.8" cy="15.6" r="3" />
+      <circle cx="7" cy="9.8" r="3" />
+      <circle cx="12" cy="12" r="2.6" />
+    </>
+  ),
+  // fruit — a pair of berries
+  fruit: (
+    <>
+      <circle cx="9.5" cy="15" r="4" />
+      <circle cx="16" cy="13.5" r="3.5" />
+    </>
+  ),
 }
 
-export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGElement>) {
+// Icons that read as a filled silhouette (foliage/flower/fruit) when tinted.
+const FILLABLE = new Set<IconName>(['foliage', 'flower', 'fruit'])
+
+export function Icon({
+  name,
+  filled = false,
+  ...props
+}: { name: IconName; filled?: boolean } & SVGProps<SVGSVGElement>) {
+  // Fillable icons render as a solid silhouette when `filled`; everything else is a line icon.
+  const solid = filled && FILLABLE.has(name)
   return (
     <svg
       width="16"
       height="16"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
+      fill={solid ? 'currentColor' : 'none'}
+      stroke={solid ? 'none' : 'currentColor'}
       strokeWidth="1.7"
       strokeLinecap="round"
       strokeLinejoin="round"
