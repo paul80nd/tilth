@@ -1,0 +1,23 @@
+{
+  "//": "Generic example config for a plant-lookup source. Copy to data/private/<source>.private.json (gitignored) and fill in. Names no real source.",
+  "name": "<source>",
+  "sourceKey": "example",
+  "lookup": {
+    "pageUrl": "https://api.<source>.example/plant/{slug}",
+    "rawDir": "data/private/raw",
+    "imageDir": "data/private/images",
+    "fragmentsDir": "data/private/fragments",
+    "image": { "path": "data.media.images", "urlField": "url", "widthField": "width", "preferWidth": 600 },
+    "rateLimitMs": 1500,
+    "userAgent": "Mozilla/5.0 (personal garden lookup; non-commercial)"
+  },
+  "//fields": "Where each Tilth PlantNode field is read from on this source's payload. Provider-neutral once mapped.",
+  "fields": {
+    "botanicalName": "data.name.botanical",
+    "commonName": "data.name.common",
+    "family": "data.taxonomy.family",
+    "genus": "data.taxonomy.genus",
+    "conditions.hardiness": "data.growing.hardiness",
+    "calendar": "data.chart.months"
+  }
+}
