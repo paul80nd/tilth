@@ -70,6 +70,9 @@ export interface Conditions {
   moisture?: Array<'well-drained' | 'moist' | 'poorly-drained'>
   ph?: Array<'acid' | 'neutral' | 'alkaline'>
   sun?: Array<'full-sun' | 'partial-shade' | 'full-shade'>
+  /** Compass aspect the position faces — distinct from `sun` (how much light) and `exposure`
+   *  (shelter). Rendered as e.g. "S / W facing". */
+  aspect?: Array<'north' | 'east' | 'south' | 'west'>
   exposure?: Array<'sheltered' | 'exposed'>
   /** Hardiness rating, e.g. "H5". Kept as a string to preserve the source's scale. */
   hardiness?: string
@@ -118,6 +121,11 @@ export interface PlantNode {
   /** Free display facts too varied to model — small key/value chips on the cheatsheet
    *  (e.g. "spacing" → "20cm", "germination" → "14–28 days", "sowing depth" → "0.5cm"). */
   facts?: Record<string, string>
+
+  /** Accolades this plant (usually a cultivar) has earned — e.g. a trial/merit award. Free
+   *  strings so any scheme fits; NEVER hard-code a specific awarding body's scheme name in
+   *  committed data — the private layer supplies real ones. Own-only: not inherited down. */
+  awards?: string[]
 
   /** Short scannable description (the seed-packet blurb / database summary). */
   summary?: string

@@ -17,3 +17,11 @@ Feature: Cheatsheet inheritance
   Scenario: Guidance attached to the species shows on the cultivar
     When I open the cheatsheet for "t-sb"
     Then it shows guide "guide-sow"
+
+  Scenario: A plant shows its own award
+    When I open the cheatsheet for "tomato"
+    Then it shows award "Trial Award"
+
+  Scenario: A cultivar does not inherit its species' award
+    When I open the cheatsheet for "t-sb"
+    Then it has no awards

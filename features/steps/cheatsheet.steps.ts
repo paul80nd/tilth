@@ -16,8 +16,9 @@ const FIXTURE = {
       category: 'veg',
       commonName: 'Tomato',
       calendar: [{ code: 'sow-indoors', months: [3, 4] }],
-      conditions: { sun: ['full-sun'] },
+      conditions: { sun: ['full-sun'], aspect: ['south', 'west'] },
       facts: { spacing: '45cm' },
+      awards: ['Trial Award'],
     },
     { id: 't-sb', rank: 'cultivar', parentId: 'tomato', commonName: 'Tomato', variety: 'Sunny Bench', facts: { fruit: 'cherry' } },
   ],
@@ -73,6 +74,24 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     Then('it shows guide {string}', (_, guideId: string) => {
       expect(guides.map((g) => g.id)).toContain(guideId)
+    })
+  })
+
+  Scenario('A plant shows its own award', ({ When, Then }) => {
+    When('I open the cheatsheet for {string}', async (_, id: string) => {
+      await open(id)
+    })
+    Then('it shows award {string}', (_, award: string) => {
+      expect(node.awards).toContain(award)
+    })
+  })
+
+  Scenario("A cultivar does not inherit its species' award", ({ When, Then }) => {
+    When('I open the cheatsheet for {string}', async (_, id: string) => {
+      await open(id)
+    })
+    Then('it has no awards', () => {
+      expect(node.awards ?? []).toHaveLength(0)
     })
   })
 })

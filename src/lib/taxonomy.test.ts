@@ -53,4 +53,11 @@ describe('resolveInherited', () => {
     const { node } = resolveInherited(cultivar, [species])
     expect(node.size).toBeUndefined()
   })
+
+  it('does not inherit awards — they are an own-only accolade', () => {
+    const decorated: PlantNode = { ...species, awards: ['Species Award'] }
+    const { node, inheritedFrom } = resolveInherited(cultivar, [decorated])
+    expect(node.awards).toBeUndefined()
+    expect(inheritedFrom.awards).toBeUndefined()
+  })
 })

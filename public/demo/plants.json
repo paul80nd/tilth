@@ -25,6 +25,7 @@
         "moisture": ["moist"],
         "ph": ["neutral"],
         "sun": ["full-sun"],
+        "aspect": ["south", "west"],
         "exposure": ["sheltered"],
         "hardiness": "H2"
       },
@@ -39,6 +40,7 @@
       "commonName": "Tomato",
       "variety": "Sunny Bench",
       "summary": "Fictional demo cultivar. A compact cordon type for pots and grow-bags, sweet cherry fruit.",
+      "awards": ["Kitchen Garden Pick (demo)"],
       "facts": { "fruit": "cherry, sweet", "habit note": "cordon — pinch side-shoots" }
     },
     {
@@ -62,6 +64,7 @@
         "moisture": ["well-drained"],
         "ph": ["neutral", "alkaline"],
         "sun": ["full-sun"],
+        "aspect": ["south"],
         "exposure": ["sheltered"],
         "hardiness": "H3"
       },
@@ -115,6 +118,7 @@
         "moisture": ["well-drained", "moist"],
         "ph": ["acid", "neutral"],
         "sun": ["full-sun"],
+        "aspect": ["south"],
         "exposure": ["sheltered"],
         "hardiness": "H6"
       },
@@ -144,6 +148,7 @@
         "moisture": ["moist", "well-drained"],
         "ph": ["neutral"],
         "sun": ["full-sun"],
+        "aspect": ["south", "west"],
         "exposure": ["sheltered", "exposed"],
         "hardiness": "H6"
       },
@@ -158,6 +163,7 @@
       "commonName": "Apple",
       "variety": "Orchard Gold",
       "summary": "Fictional demo cultivar. A dessert apple on dwarfing rootstock for smaller gardens.",
+      "awards": ["Merit Award (demo)"],
       "facts": { "use": "dessert", "picking": "early October", "storage": "keeps 4-6 weeks" }
     }
   ],

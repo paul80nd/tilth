@@ -1,22 +1,14 @@
 import { Link, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import type { Conditions, PlantNode } from '../schema/plant'
+import type { PlantNode } from '../schema/plant'
 import { getGuidesFor, getLineage } from '../app/plants'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
+import AtAGlance from '../components/AtAGlance'
 import CalendarBar from '../components/CalendarBar'
 import Chip from '../components/Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
-
-// Which Conditions keys to render, in order, with a heading.
-const CONDITION_ROWS: Array<{ key: keyof Conditions; label: string }> = [
-  { key: 'sun', label: 'Sun' },
-  { key: 'soil', label: 'Soil' },
-  { key: 'moisture', label: 'Moisture' },
-  { key: 'ph', label: 'pH' },
-  { key: 'exposure', label: 'Exposure' },
-]
 
 export default function CheatsheetPage() {
   const { id = '' } = useParams()
@@ -50,6 +42,17 @@ export default function CheatsheetPage() {
     return from ? `from ${displayLabel(from)}` : undefined
   }
 
+  // The at-a-glance panel spans two fields (conditions + size); note where they came from,
+  // combining when both were inherited from the same ancestor.
+  const glanceNote = ((): string | undefined => {
+    const c = inheritedFrom.conditions ? displayLabel(inheritedFrom.conditions) : undefined
+    const s = inheritedFrom.size ? displayLabel(inheritedFrom.size) : undefined
+    if (c && s) return c === s ? `from ${c}` : `conditions from ${c} · size from ${s}`
+    if (c) return `conditions from ${c}`
+    if (s) return `size from ${s}`
+    return undefined
+  })()
+
   // Distinct sources contributing to this cheatsheet (own fields + inherited fields).
   const sources = new Set<string>()
   for (const fs of Object.values(node.provenance ?? {})) sources.add(fs.source)
@@ -78,6 +81,19 @@ export default function CheatsheetPage() {
           {variety && <span className="text-brand-ink"> · {variety}</span>}
         </h1>
         {botanical && <p className="text-sm italic text-muted">{botanical}</p>}
+        {node.awards && node.awards.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {node.awards.map((a) => (
+              <span
+                key={a}
+                className="inline-flex items-center gap-1 rounded-md bg-accent-tint px-2 py-0.5 text-xs font-semibold text-accent-ink"
+              >
+                <span aria-hidden="true">★</span>
+                {a}
+              </span>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* calendar */}
@@ -89,56 +105,14 @@ export default function CheatsheetPage() {
         )}
       </Section>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        {/* conditions */}
-        <Section title="Conditions" note={inheritedNote('conditions')}>
-          {resolved.conditions ? (
-            <dl className="flex flex-col gap-2">
-              {CONDITION_ROWS.map(({ key, label }) => {
-                const values = resolved.conditions?.[key] as string[] | undefined
-                if (!values?.length) return null
-                return (
-                  <div key={key} className="flex items-baseline gap-2">
-                    <dt className="w-20 flex-none text-xs uppercase tracking-wide text-subtle">{label}</dt>
-                    <dd className="flex flex-wrap gap-1">
-                      {values.map((v) => (
-                        <Chip key={v}>{v}</Chip>
-                      ))}
-                    </dd>
-                  </div>
-                )
-              })}
-              {resolved.conditions.hardiness && (
-                <div className="flex items-baseline gap-2">
-                  <dt className="w-20 flex-none text-xs uppercase tracking-wide text-subtle">Hardiness</dt>
-                  <dd>
-                    <Chip tone="brand">{resolved.conditions.hardiness}</Chip>
-                  </dd>
-                </div>
-              )}
-            </dl>
-          ) : (
-            <Muted>Not recorded yet.</Muted>
-          )}
-        </Section>
+      {/* at a glance — the key-facts scan (conditions + ultimate size) */}
+      <Section title="At a glance" note={glanceNote}>
+        <AtAGlance conditions={resolved.conditions} size={resolved.size} />
+      </Section>
 
-        {/* size */}
-        <Section title="Ultimate size" note={inheritedNote('size')}>
-          {resolved.size ? (
-            <dl className="flex flex-col gap-2">
-              <SizeRow label="Height" value={resolved.size.height} />
-              <SizeRow label="Spread" value={resolved.size.spread} />
-              <SizeRow label="Time" value={resolved.size.timeToSize} />
-            </dl>
-          ) : (
-            <Muted>Not recorded yet.</Muted>
-          )}
-        </Section>
-      </div>
-
-      {/* facts */}
+      {/* more facts — the free seed-packet chips (spacing, germination, depth, use…) */}
       {resolved.facts && Object.keys(resolved.facts).length > 0 && (
-        <Section title="At a glance" note={inheritedNote('facts')}>
+        <Section title="More facts" note={inheritedNote('facts')}>
           <div className="flex flex-wrap gap-2">
             {Object.entries(resolved.facts).map(([key, value]) => (
               <span
@@ -217,16 +191,6 @@ function Section({
       </div>
       {children}
     </section>
-  )
-}
-
-function SizeRow({ label, value }: { label: string; value?: string }) {
-  if (!value) return null
-  return (
-    <div className="flex items-baseline gap-2">
-      <dt className="w-20 flex-none text-xs uppercase tracking-wide text-subtle">{label}</dt>
-      <dd className="text-sm font-medium">{value}</dd>
-    </div>
   )
 }
 
