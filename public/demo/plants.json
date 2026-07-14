@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "source": "demo",
+  "generatedAt": "2026-07-14",
+  "nodes": [
+    {
+      "id": "tomato",
+      "rank": "species",
+      "category": "veg",
+      "commonName": "Tomato",
+      "botanicalName": "Solanum lycopersicum",
+      "family": "Solanaceae",
+      "genus": "Solanum",
+      "lifecycle": "annual",
+      "summary": "Fictional demo plant. Tender fruiting vegetable grown under cover or outdoors in a warm, sheltered spot.",
+      "calendar": [
+        { "code": "sow-indoors", "months": [3, 4], "note": "under glass" },
+        { "code": "pot-on", "months": [5] },
+        { "code": "plant-out", "months": [6] },
+        { "code": "feed", "months": [6, 7, 8], "note": "weekly once flowering" },
+        { "code": "harvest", "months": [8, 9] }
+      ],
+      "conditions": {
+        "soil": ["loam"],
+        "moisture": ["moist"],
+        "ph": ["neutral"],
+        "sun": ["full-sun"],
+        "exposure": ["sheltered"],
+        "hardiness": "H2"
+      },
+      "size": { "height": "1.5-2m", "spread": "0.4-0.6m", "timeToSize": "1 season" },
+      "facts": { "spacing": "45cm", "germination": "7-14 days at 18-21C", "sowing depth": "1cm" }
+    },
+    {
+      "id": "tomato-sunny-bench",
+      "rank": "cultivar",
+      "parentId": "tomato",
+      "category": "veg",
+      "commonName": "Tomato",
+      "variety": "Sunny Bench",
+      "summary": "Fictional demo cultivar. A compact cordon type for pots and grow-bags, sweet cherry fruit.",
+      "facts": { "fruit": "cherry, sweet", "habit note": "cordon — pinch side-shoots" }
+    },
+    {
+      "id": "sunflower",
+      "rank": "species",
+      "category": "flower",
+      "commonName": "Sunflower",
+      "botanicalName": "Helianthus annuus",
+      "family": "Asteraceae",
+      "genus": "Helianthus",
+      "lifecycle": "annual",
+      "summary": "Fictional demo plant. Fast, tall annual for a sunny border; seed heads feed birds in autumn.",
+      "calendar": [
+        { "code": "sow-indoors", "months": [3, 4] },
+        { "code": "plant-out", "months": [5] },
+        { "code": "flower", "months": [7, 8, 9] },
+        { "code": "harvest", "months": [9, 10], "note": "seed heads" }
+      ],
+      "conditions": {
+        "soil": ["loam", "sand"],
+        "moisture": ["well-drained"],
+        "ph": ["neutral", "alkaline"],
+        "sun": ["full-sun"],
+        "exposure": ["sheltered"],
+        "hardiness": "H3"
+      },
+      "size": { "height": "1.5-3m", "spread": "0.5m", "timeToSize": "1 season" },
+      "facts": { "spacing": "30-45cm", "germination": "7-14 days", "sowing depth": "1.5cm" }
+    },
+    {
+      "id": "basil",
+      "rank": "species",
+      "category": "herb",
+      "commonName": "Basil",
+      "botanicalName": "Ocimum basilicum",
+      "family": "Lamiaceae",
+      "genus": "Ocimum",
+      "lifecycle": "annual",
+      "summary": "Fictional demo plant. Tender culinary herb; best on a warm windowsill and pinched often.",
+      "calendar": [
+        { "code": "sow-indoors", "months": [3, 4, 5] },
+        { "code": "harvest", "months": [6, 7, 8, 9], "note": "pinch tips" }
+      ],
+      "conditions": {
+        "soil": ["loam"],
+        "moisture": ["moist"],
+        "ph": ["neutral"],
+        "sun": ["full-sun", "partial-shade"],
+        "exposure": ["sheltered"],
+        "hardiness": "H1c"
+      },
+      "size": { "height": "30-45cm", "spread": "30cm" },
+      "facts": { "spacing": "20cm", "germination": "5-10 days at 18C" }
+    },
+    {
+      "id": "strawberry",
+      "rank": "species",
+      "category": "fruit",
+      "commonName": "Strawberry",
+      "botanicalName": "Fragaria x ananassa",
+      "family": "Rosaceae",
+      "genus": "Fragaria",
+      "lifecycle": "perennial",
+      "summary": "Fictional demo plant. Low, spreading perennial fruit; crops best in its first few years.",
+      "calendar": [
+        { "code": "plant-out", "months": [3, 9] },
+        { "code": "flower", "months": [5] },
+        { "code": "fruit", "months": [6, 7] },
+        { "code": "harvest", "months": [6, 7] },
+        { "code": "feed", "months": [4], "note": "high-potash" }
+      ],
+      "conditions": {
+        "soil": ["loam", "sand"],
+        "moisture": ["well-drained", "moist"],
+        "ph": ["acid", "neutral"],
+        "sun": ["full-sun"],
+        "exposure": ["sheltered"],
+        "hardiness": "H6"
+      },
+      "size": { "height": "20-30cm", "spread": "30-45cm", "timeToSize": "1-2 years" },
+      "facts": { "spacing": "35cm", "spacing note": "runners root freely" }
+    },
+    {
+      "id": "apple",
+      "rank": "species",
+      "category": "fruit",
+      "commonName": "Apple",
+      "botanicalName": "Malus domestica",
+      "family": "Rosaceae",
+      "genus": "Malus",
+      "lifecycle": "perennial",
+      "foliage": "deciduous",
+      "habit": "tree",
+      "summary": "Fictional demo plant. Deciduous fruit tree; winter-pruned and thinned for a good crop.",
+      "calendar": [
+        { "code": "prune", "months": [1, 2], "note": "winter, when dormant" },
+        { "code": "flower", "months": [4, 5] },
+        { "code": "thin", "months": [6], "note": "after natural drop" },
+        { "code": "harvest", "months": [9, 10] }
+      ],
+      "conditions": {
+        "soil": ["loam", "clay"],
+        "moisture": ["moist", "well-drained"],
+        "ph": ["neutral"],
+        "sun": ["full-sun"],
+        "exposure": ["sheltered", "exposed"],
+        "hardiness": "H6"
+      },
+      "size": { "height": "2-4m", "spread": "2-4m", "timeToSize": "5-10 years" },
+      "facts": { "spacing": "3m", "pollination": "needs a compatible pollinator nearby" }
+    },
+    {
+      "id": "apple-orchard-gold",
+      "rank": "cultivar",
+      "parentId": "apple",
+      "category": "fruit",
+      "commonName": "Apple",
+      "variety": "Orchard Gold",
+      "summary": "Fictional demo cultivar. A dessert apple on dwarfing rootstock for smaller gardens.",
+      "facts": { "use": "dessert", "picking": "early October", "storage": "keeps 4-6 weeks" }
+    }
+  ],
+  "guides": [
+    {
+      "id": "guide-fruit-tree-pruning",
+      "title": "Winter-pruning fruit trees",
+      "kind": "technique",
+      "scopeCategory": "fruit",
+      "url": "https://example.invalid/demo/guides/winter-pruning"
+    },
+    {
+      "id": "guide-sowing-under-cover",
+      "title": "Sowing tender crops under cover",
+      "kind": "grow-guide",
+      "scopeNodeId": "tomato",
+      "url": "https://example.invalid/demo/guides/sowing-under-cover"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-apple-winter-prune",
+      "action": "Winter-prune to an open goblet",
+      "months": [1, 2],
+      "scopeNodeId": "apple",
+      "note": "Demo task — aggregates down to every apple cultivar you grow."
+    }
+  ]
+}
