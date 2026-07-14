@@ -36,20 +36,29 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colour?: string } }) {
 }
 
 export default function SeasonStrip({ interest }: { interest: SeasonInterest[] }) {
+  // One card split into four quadrants by internal dividers (Spring TL, Summer TR, Autumn BL,
+  // Winter BR) — borders on the left column / top row draw the cross.
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {interest.map((s) => (
-        <div key={s.season} className="flex flex-col rounded-lg border border-line bg-card p-2">
-          <div className="mb-1 text-center text-[0.65rem] font-medium uppercase tracking-wide text-subtle">
-            {s.season}
+    <div className="overflow-hidden rounded-lg border border-line bg-card">
+      <div className="grid grid-cols-2">
+        {interest.map((s, i) => (
+          <div
+            key={s.season}
+            className={`flex flex-col p-3 ${i % 2 === 0 ? 'border-r border-line' : ''} ${
+              i < 2 ? 'border-b border-line' : ''
+            }`}
+          >
+            <div className="mb-1.5 text-center text-[0.65rem] font-medium uppercase tracking-wide text-subtle">
+              {s.season}
+            </div>
+            <div className="grid flex-1 grid-cols-3 place-items-center">
+              {SLOTS.map((code) => (
+                <Slot key={code} code={code} part={s.parts.find((p) => p.code === code)} />
+              ))}
+            </div>
           </div>
-          <div className="grid flex-1 grid-cols-3 place-items-center">
-            {SLOTS.map((code) => (
-              <Slot key={code} code={code} part={s.parts.find((p) => p.code === code)} />
-            ))}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }
