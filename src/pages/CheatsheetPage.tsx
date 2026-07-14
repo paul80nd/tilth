@@ -114,14 +114,32 @@ export default function CheatsheetPage() {
         )}
       </header>
 
-      {/* calendar */}
-      <Section title="Calendar" note={inheritedNote('calendar')}>
-        {resolved.calendar ? (
-          <CalendarBar calendar={resolved.calendar} month={CURRENT_MONTH} />
-        ) : (
-          <Muted>No calendar recorded yet.</Muted>
-        )}
-      </Section>
+      {/* calendar + seasonal interest, side by side (≈60/40) when there's seasonal colour */}
+      {hasInterest ? (
+        <div className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-start">
+          <Section title="Calendar" note={inheritedNote('calendar')}>
+            <CalendarBar calendar={resolved.calendar!} month={CURRENT_MONTH} />
+          </Section>
+          <Section title="Seasonal interest" note={inheritedNote('calendar')}>
+            <SeasonStrip interest={interest} />
+          </Section>
+        </div>
+      ) : (
+        <>
+          <Section title="Calendar" note={inheritedNote('calendar')}>
+            {resolved.calendar ? (
+              <CalendarBar calendar={resolved.calendar} month={CURRENT_MONTH} />
+            ) : (
+              <Muted>No calendar recorded yet.</Muted>
+            )}
+          </Section>
+          {resolved.colour && Object.values(resolved.colour).some((v) => v?.length) && (
+            <Section title="Colour" note={inheritedNote('colour')}>
+              <ColourInterest colour={resolved.colour} />
+            </Section>
+          )}
+        </>
+      )}
 
       {/* at a glance — the key-facts scan (conditions + ultimate size + edibility) */}
       <Section title="At a glance" note={glanceNote}>
@@ -132,18 +150,6 @@ export default function CheatsheetPage() {
           toxicity={resolved.toxicity}
         />
       </Section>
-
-      {/* seasonal interest — foliage/flower/fruit colour by season (from the calendar's state
-          phases); falls back to the flat colour-by-part when there are no state phases. */}
-      {hasInterest ? (
-        <Section title="Seasonal interest" note={inheritedNote('calendar')}>
-          <SeasonStrip interest={interest} />
-        </Section>
-      ) : resolved.colour && Object.values(resolved.colour).some((v) => v?.length) ? (
-        <Section title="Colour" note={inheritedNote('colour')}>
-          <ColourInterest colour={resolved.colour} />
-        </Section>
-      ) : null}
 
       {/* more facts — the free seed-packet chips (spacing, germination, depth, use…) */}
       {resolved.facts && Object.keys(resolved.facts).length > 0 && (
