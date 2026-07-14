@@ -1,0 +1,24 @@
+/* ==========================================================================
+   Tilth — Typography tokens (PLACEHOLDER seam)
+   System font stacks for now — no web-font dependency (keeps the app offline
+   and browser-neutral). The brand pass may introduce display/body faces; until
+   then components reference --tl-font-* / --tl-text-* so that swap is painless.
+   ========================================================================== */
+
+:root {
+  --tl-font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  /* A slightly more characterful stack for titles/wordmark, still system. */
+  --tl-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+    ui-serif, serif;
+  --tl-font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas,
+    monospace;
+
+  --tl-text-display: 2rem;
+  --tl-text-h1: 1.5rem;
+  --tl-text-h2: 1.25rem;
+  --tl-text-h3: 1.0625rem;
+  --tl-text-body: 0.9375rem;
+
+  --tl-tracking-display: -0.01em;
+}

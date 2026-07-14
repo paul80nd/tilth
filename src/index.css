@@ -1,2 +1,25 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+/* Class-based dark mode: toggled by adding `.dark` to <html> (see main.tsx + ThemeToggle). */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Tilth design system — the semantic bridge (PLACEHOLDER seam). Exposes utilities like
+ * bg-brand, text-muted, bg-card, bg-phase-harvest, font-display, mapped (via @theme inline)
+ * to live --tl-* tokens, so the .dark alias swap in theme/tokens/colors.css re-themes
+ * everything with no dark: variants. The single colour/type/radius/shadow source of truth
+ * until the Tilth brand is designed — then it's a values swap, not a rewrite.
+ */
+@import "./theme/tailwind-theme.css";
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--tl-surface-page);
+    color: var(--tl-text);
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: var(--tl-tracking-display, -0.01em);
+  }
+}

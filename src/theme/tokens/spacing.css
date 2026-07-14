@@ -1,0 +1,19 @@
+/* ==========================================================================
+   Tilth — Radius / shadow / motion tokens (PLACEHOLDER seam)
+   Soft corners and light shadows; refined in the brand pass.
+   ========================================================================== */
+
+:root {
+  --tl-radius-sm: 0.375rem;
+  --tl-radius-md: 0.5rem;
+  --tl-radius-lg: 0.75rem;
+  --tl-radius-xl: 1rem;
+  --tl-radius-2xl: 1.5rem;
+
+  --tl-shadow-xs: 0 1px 2px oklch(0% 0 0 / 0.05);
+  --tl-shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.08), 0 1px 2px oklch(0% 0 0 / 0.04);
+  --tl-shadow-md: 0 4px 12px oklch(0% 0 0 / 0.08);
+  --tl-shadow-lg: 0 10px 30px oklch(0% 0 0 / 0.12);
+
+  --tl-ease: cubic-bezier(0.2, 0, 0, 1);
+}

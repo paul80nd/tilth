@@ -1,0 +1,54 @@
+// Application layer: reference-data reads for Browse and the Cheatsheet. Pages drive these
+// reactively (via dexie-react-hooks useLiveQuery) and compose the results with the pure libs
+// (naming / browse / calendar / taxonomy). All Dexie access lives here, never in components.
+
+import { db } from '../db/db'
+import type { Guide, PlantNode } from '../schema/plant'
+
+/** Every reference node (all ranks). Browse filters this to the browsable ranks. */
+export async function listNodes(): Promise<PlantNode[]> {
+  return db.nodes.toArray()
+}
+
+export async function getNode(id: string): Promise<PlantNode | undefined> {
+  return db.nodes.get(id)
+}
+
+/**
+ * A node's ancestors, nearest-first: [parent, grandparent, …] up the `parentId` chain.
+ * Guards against a cycle/among broken data by tracking visited ids.
+ */
+export async function getAncestors(id: string): Promise<PlantNode[]> {
+  const chain: PlantNode[] = []
+  const seen = new Set<string>([id])
+  let node = await db.nodes.get(id)
+  while (node?.parentId && !seen.has(node.parentId)) {
+    const parent = await db.nodes.get(node.parentId)
+    if (!parent) break
+    chain.push(parent)
+    seen.add(parent.id)
+    node = parent
+  }
+  return chain
+}
+
+/** The full lineage a cheatsheet needs: the node plus its ancestor chain. */
+export async function getLineage(id: string): Promise<{ node?: PlantNode; ancestors: PlantNode[] }> {
+  const node = await getNode(id)
+  const ancestors = node ? await getAncestors(id) : []
+  return { node, ancestors }
+}
+
+/**
+ * Guides relevant to a node: those scoped to the node itself or any ancestor (guidance
+ * aggregates down to descendants), plus category-scoped guides for the node's category.
+ */
+export async function getGuidesFor(node: PlantNode, ancestors: PlantNode[]): Promise<Guide[]> {
+  const nodeIds = new Set<string>([node.id, ...ancestors.map((a) => a.id)])
+  const all = await db.guides.toArray()
+  return all.filter(
+    (g) =>
+      (g.scopeNodeId && nodeIds.has(g.scopeNodeId)) ||
+      (g.scopeCategory && g.scopeCategory === node.category),
+  )
+}

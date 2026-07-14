@@ -1,0 +1,83 @@
+/* ==========================================================================
+   Tilth — Tailwind v4 theme bridge (PLACEHOLDER seam)
+   --------------------------------------------------------------------------
+   Wires the design tokens into Tailwind v4 utilities via @theme inline, so
+   every semantic utility points at a live --tl-* variable and the class-based
+   .dark swap in tokens/colors.css re-themes everything with no dark: variants.
+   Semantic utilities: bg-brand / text-onbrand (buttons); bg-card / border-line
+   / rounded-lg / shadow-sm (cards); text-ink / text-muted / text-subtle (text);
+   bg-brand-tint / text-brand-ink (chips); bg-accent-tint / text-accent-ink
+   (in-season); plus the phase legend: bg-phase-harvest, text-phase-sow-indoors…
+   ========================================================================== */
+
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+
+@theme inline {
+  /* --- Semantic colours (the primary API) ----------------------------- */
+  --color-brand:       var(--tl-brand);
+  --color-brand-hover: var(--tl-brand-hover);
+  --color-brand-ink:   var(--tl-brand-ink);
+  --color-brand-tint:  var(--tl-brand-tint);
+  --color-brand-wash:  var(--tl-brand-wash);
+  --color-onbrand:     var(--tl-text-onbrand);
+
+  --color-accent:      var(--tl-accent);
+  --color-accent-ink:  var(--tl-accent-ink);
+  --color-accent-tint: var(--tl-accent-tint);
+
+  --color-surface:     var(--tl-surface-page);
+  --color-card:        var(--tl-surface-card);
+  --color-sunken:      var(--tl-surface-sunken);
+  --color-inset:       var(--tl-surface-inset);
+
+  --color-ink:         var(--tl-text);
+  --color-muted:       var(--tl-text-muted);
+  --color-subtle:      var(--tl-text-subtle);
+
+  --color-line:        var(--tl-border);
+  --color-line-strong: var(--tl-border-strong);
+  --color-divider:     var(--tl-divider);
+
+  --color-ring:        var(--tl-ring);
+
+  /* --- Calendar phase legend (categorical) ---------------------------- */
+  --color-phase-sow-indoors:  var(--tl-phase-sow-indoors);
+  --color-phase-sow-outdoors: var(--tl-phase-sow-outdoors);
+  --color-phase-pot-on:       var(--tl-phase-pot-on);
+  --color-phase-plant-out:    var(--tl-phase-plant-out);
+  --color-phase-prune:        var(--tl-phase-prune);
+  --color-phase-thin:         var(--tl-phase-thin);
+  --color-phase-divide:       var(--tl-phase-divide);
+  --color-phase-feed:         var(--tl-phase-feed);
+  --color-phase-harvest:      var(--tl-phase-harvest);
+  --color-phase-flower:       var(--tl-phase-flower);
+  --color-phase-foliage:      var(--tl-phase-foliage);
+  --color-phase-fruit:        var(--tl-phase-fruit);
+
+  /* --- Typography ----------------------------------------------------- */
+  --font-sans:    var(--tl-font-body);
+  --font-display: var(--tl-font-display);
+  --font-mono:    var(--tl-font-mono);
+
+  --text-display: var(--tl-text-display);
+  --text-h1:      var(--tl-text-h1);
+  --text-h2:      var(--tl-text-h2);
+  --text-h3:      var(--tl-text-h3);
+  --text-body:    var(--tl-text-body);
+
+  /* --- Radius / shadow / motion --------------------------------------- */
+  --radius-sm:  var(--tl-radius-sm);
+  --radius-md:  var(--tl-radius-md);
+  --radius-lg:  var(--tl-radius-lg);
+  --radius-xl:  var(--tl-radius-xl);
+  --radius-2xl: var(--tl-radius-2xl);
+
+  --shadow-xs: var(--tl-shadow-xs);
+  --shadow-sm: var(--tl-shadow-sm);
+  --shadow-md: var(--tl-shadow-md);
+  --shadow-lg: var(--tl-shadow-lg);
+
+  --ease-soft: var(--tl-ease);
+}

@@ -1,0 +1,140 @@
+/* ==========================================================================
+   Tilth — Colour tokens (PLACEHOLDER seam)
+   --------------------------------------------------------------------------
+   A thin, deliberately-provisional palette: warm-paper neutrals + a garden
+   green brand, plus the CALENDAR PHASE LEGEND — a categorical colour per
+   PhaseCode (the cheatsheet's month chart maps code → colour here, never in
+   stored data). Style components against the SEMANTIC ALIASES (--tl-brand,
+   --tl-surface-card, --tl-text-muted, --tl-phase-*), never the raw ramps, so
+   the eventual Tilth brand pass is a values swap, not a rewrite.
+
+   NB: these values are placeholders. The phase legend in particular is a prime
+   candidate for the dataviz-skill treatment (validated categorical palette,
+   light+dark contrast) when the design system is formalised.
+   All ramps are oklch so hues stay true when lightened/darkened.
+   ========================================================================== */
+
+:root {
+  /* --- Neutral: warm paper → ink -------------------------------------- */
+  --tl-neutral-50:  oklch(98.4% 0.004 95);
+  --tl-neutral-100: oklch(96.6% 0.005 95);
+  --tl-neutral-150: oklch(94.6% 0.006 95);
+  --tl-neutral-200: oklch(92.4% 0.006 95);
+  --tl-neutral-300: oklch(86.5% 0.008 95);
+  --tl-neutral-400: oklch(71.5% 0.009 95);
+  --tl-neutral-500: oklch(58.5% 0.009 95);
+  --tl-neutral-600: oklch(49.5% 0.009 100);
+  --tl-neutral-700: oklch(40.5% 0.010 110);
+  --tl-neutral-800: oklch(30.5% 0.010 120);
+  --tl-neutral-900: oklch(23.5% 0.011 130);
+  --tl-neutral-950: oklch(17.0% 0.010 135);
+
+  /* --- Green: the brand (leaf/garden green, hue ~150) ------------------ */
+  --tl-green-50:  oklch(97.2% 0.020 152);
+  --tl-green-100: oklch(94.0% 0.043 152);
+  --tl-green-200: oklch(88.5% 0.072 152);
+  --tl-green-300: oklch(80.0% 0.105 152);
+  --tl-green-400: oklch(70.5% 0.128 151);
+  --tl-green-500: oklch(60.5% 0.118 150);
+  --tl-green-600: oklch(52.0% 0.104 150);
+  --tl-green-700: oklch(44.0% 0.088 150);
+  --tl-green-800: oklch(36.0% 0.070 150);
+  --tl-green-900: oklch(29.5% 0.055 150);
+
+  /* --- Honey: accents / "in season" (hue ~78) ------------------------- */
+  --tl-honey-100: oklch(93.5% 0.058 82);
+  --tl-honey-500: oklch(71.5% 0.130 74);
+  --tl-honey-700: oklch(52.5% 0.108 66);
+
+  /* ======================================================================
+     Semantic aliases — always style against these.
+     ====================================================================== */
+
+  /* Surfaces */
+  --tl-surface-page:   var(--tl-neutral-50);
+  --tl-surface-card:   #ffffff;
+  --tl-surface-sunken: var(--tl-neutral-100);
+  --tl-surface-inset:  var(--tl-neutral-150);
+
+  /* Text */
+  --tl-text:        var(--tl-neutral-900);
+  --tl-text-muted:  var(--tl-neutral-600);
+  --tl-text-subtle: var(--tl-neutral-400);
+  --tl-text-onbrand: #ffffff;
+
+  /* Lines */
+  --tl-border:        var(--tl-neutral-200);
+  --tl-border-strong: var(--tl-neutral-300);
+  --tl-divider:       var(--tl-neutral-150);
+
+  /* Brand (green) */
+  --tl-brand:       var(--tl-green-600);
+  --tl-brand-hover: var(--tl-green-700);
+  --tl-brand-ink:   var(--tl-green-700);   /* brand text on light surfaces */
+  --tl-brand-tint:  var(--tl-green-100);   /* filled chip / soft button bg */
+  --tl-brand-wash:  var(--tl-green-50);    /* faint panel bg               */
+
+  /* Accent (in-season marker) */
+  --tl-accent:      var(--tl-honey-500);
+  --tl-accent-ink:  var(--tl-honey-700);
+  --tl-accent-tint: var(--tl-honey-100);
+
+  /* Focus ring */
+  --tl-ring: var(--tl-green-300);
+
+  /* ======================================================================
+     Calendar phase legend — one colour per PhaseCode. Actionable codes are
+     saturated (they're the jobs); STATE codes (flower/foliage/fruit) are
+     quieter (lower chroma) so they read as a background band, not a task.
+     Mid-lightness so a filled cell reads on both light and dark cards.
+     ====================================================================== */
+  --tl-phase-sow-indoors:  oklch(72% 0.130 85);   /* amber        */
+  --tl-phase-sow-outdoors: oklch(70% 0.140 128);  /* yellow-green */
+  --tl-phase-pot-on:       oklch(70% 0.100 190);  /* teal         */
+  --tl-phase-plant-out:    oklch(66% 0.130 152);  /* green        */
+  --tl-phase-prune:        oklch(66% 0.130 312);  /* magenta      */
+  --tl-phase-thin:         oklch(66% 0.120 288);  /* purple       */
+  --tl-phase-divide:       oklch(64% 0.120 266);  /* indigo       */
+  --tl-phase-feed:         oklch(66% 0.120 242);  /* blue         */
+  --tl-phase-harvest:      oklch(68% 0.150 45);   /* orange       */
+  --tl-phase-flower:       oklch(80% 0.060 350);  /* pink (state) */
+  --tl-phase-foliage:      oklch(82% 0.050 150);  /* green (state)*/
+  --tl-phase-fruit:        oklch(78% 0.070 25);   /* red (state)  */
+}
+
+/* ==========================================================================
+   Dark mode — toggled by `.dark` on <html>. Only the aliases move.
+   ========================================================================== */
+.dark {
+  color-scheme: dark;
+
+  --tl-surface-page:   oklch(17.0% 0.010 135);
+  --tl-surface-card:   oklch(22.0% 0.011 132);
+  --tl-surface-sunken: oklch(25.5% 0.011 130);
+  --tl-surface-inset:  oklch(28.5% 0.011 128);
+
+  --tl-text:        oklch(96.0% 0.006 100);
+  --tl-text-muted:  oklch(72.0% 0.010 105);
+  --tl-text-subtle: oklch(58.0% 0.010 110);
+
+  --tl-border:        oklch(31.0% 0.011 128);
+  --tl-border-strong: oklch(40.0% 0.011 124);
+  --tl-divider:       oklch(27.5% 0.011 130);
+
+  --tl-brand:       oklch(70.0% 0.128 151);
+  --tl-brand-hover: oklch(76.0% 0.132 151);
+  --tl-brand-ink:   oklch(80.0% 0.110 152);
+  --tl-brand-tint:  oklch(38.0% 0.075 150);
+  --tl-brand-wash:  oklch(30.0% 0.055 150);
+
+  --tl-accent:      oklch(78.0% 0.128 76);
+  --tl-accent-ink:  oklch(85.0% 0.115 78);
+  --tl-accent-tint: oklch(40.0% 0.090 72);
+
+  --tl-ring: oklch(52.0% 0.104 150);
+
+  /* State phases a touch dimmer on dark so they stay "quiet". */
+  --tl-phase-flower:  oklch(60% 0.070 350);
+  --tl-phase-foliage: oklch(60% 0.055 150);
+  --tl-phase-fruit:   oklch(58% 0.080 25);
+}
