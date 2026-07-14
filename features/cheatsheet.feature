@@ -25,3 +25,7 @@ Feature: Cheatsheet inheritance
   Scenario: A cultivar does not inherit its species' award
     When I open the cheatsheet for "t-sb"
     Then it has no awards
+
+  Scenario: A cultivar inherits its species' edibility
+    When I open the cheatsheet for "t-sb"
+    Then its edible parts are inherited from "tomato"

@@ -17,6 +17,8 @@ const FIXTURE = {
       commonName: 'Tomato',
       calendar: [{ code: 'sow-indoors', months: [3, 4] }],
       conditions: { sun: ['full-sun'], aspect: ['south', 'west'] },
+      colour: { flower: ['yellow'], fruit: ['red'] },
+      edible: ['fruit'],
       facts: { spacing: '45cm' },
       awards: ['Trial Award'],
     },
@@ -92,6 +94,16 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     Then('it has no awards', () => {
       expect(node.awards ?? []).toHaveLength(0)
+    })
+  })
+
+  Scenario("A cultivar inherits its species' edibility", ({ When, Then }) => {
+    When('I open the cheatsheet for {string}', async (_, id: string) => {
+      await open(id)
+    })
+    Then('its edible parts are inherited from {string}', (_, ancestorId: string) => {
+      expect(node.edible).toEqual(['fruit'])
+      expect(inheritedFrom.edible?.id).toBe(ancestorId)
     })
   })
 })

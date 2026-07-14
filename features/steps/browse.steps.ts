@@ -12,7 +12,7 @@ const feature = await loadFeature('features/browse.feature')
 const FIXTURE = {
   nodes: [
     { id: 'solanaceae', rank: 'family', family: 'Solanaceae' },
-    { id: 'tomato', rank: 'species', category: 'veg', commonName: 'Tomato', botanicalName: 'Solanum lycopersicum', genus: 'Solanum', family: 'Solanaceae' },
+    { id: 'tomato', rank: 'species', category: 'veg', commonName: 'Tomato', botanicalName: 'Solanum lycopersicum', synonyms: ['Lycopersicon esculentum'], genus: 'Solanum', family: 'Solanaceae' },
     { id: 't-sb', rank: 'cultivar', parentId: 'tomato', category: 'veg', commonName: 'Tomato', variety: 'Sunny Bench', botanicalName: 'Solanum lycopersicum', genus: 'Solanum' },
     { id: 'basil', rank: 'species', category: 'herb', commonName: 'Basil', genus: 'Ocimum' },
   ],
@@ -67,6 +67,16 @@ describeFeature(feature, ({ Background, Scenario }) => {
   })
 
   Scenario('Search by botanical name', ({ When, Then }) => {
+    let result: string[] = []
+    When('I search browse for {string}', async (_, query: string) => {
+      result = await browse({ query })
+    })
+    Then('I see plants {string}', (_, list: string) => {
+      expect(result).toEqual(ids(list))
+    })
+  })
+
+  Scenario('Search by an old botanical synonym', ({ When, Then }) => {
     let result: string[] = []
     When('I search browse for {string}', async (_, query: string) => {
       result = await browse({ query })

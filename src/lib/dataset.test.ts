@@ -29,6 +29,32 @@ describe('parsePlantDataset', () => {
     expect(nodes[0].awards).toEqual(['A', 'B'])
   })
 
+  it('passes the descriptive fields through (colour, edible, wildlife, uses, names, synonyms)', () => {
+    const colour = { flower: ['yellow'], fruit: ['red'] }
+    const { nodes } = parsePlantDataset({
+      nodes: [
+        {
+          id: 'x',
+          colour,
+          edible: ['fruit'],
+          toxicity: 'Harmful if eaten',
+          wildlife: ['attracts pollinators'],
+          uses: ['containers'],
+          otherNames: ['Love apple'],
+          synonyms: ['Lycopersicon esculentum'],
+        },
+      ],
+    })
+    const n = nodes[0]
+    expect(n.colour).toEqual(colour)
+    expect(n.edible).toEqual(['fruit'])
+    expect(n.toxicity).toBe('Harmful if eaten')
+    expect(n.wildlife).toEqual(['attracts pollinators'])
+    expect(n.uses).toEqual(['containers'])
+    expect(n.otherNames).toEqual(['Love apple'])
+    expect(n.synonyms).toEqual(['Lycopersicon esculentum'])
+  })
+
   it('never stamps provenance from the fragment (the merge owns it)', () => {
     const { nodes } = parsePlantDataset({
       nodes: [{ id: 'x', provenance: { commonName: { source: 'forged' } } }],

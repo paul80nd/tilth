@@ -100,10 +100,16 @@ export interface PlantNode {
   category?: Category
   /** Common name, e.g. "Cornflower". */
   commonName?: string
+  /** Additional common names beyond the primary, e.g. ["Bachelor's button"]. Shown as
+   *  "also known as …" and folded into search. */
+  otherNames?: string[]
   /** Cultivar / variety name, e.g. "Double Blue". Absent above cultivar rank. */
   variety?: string
   /** Botanical name at this node's rank, e.g. "Centaurea cyanus" or "Asteraceae". */
   botanicalName?: string
+  /** Alternate / superseded botanical names (e.g. an old genus). Shown as "syn. …" and used
+   *  to match sources (or a seed packet) that still use the old name. */
+  synonyms?: string[]
   family?: string
   genus?: string
 
@@ -117,6 +123,24 @@ export interface PlantNode {
   calendar?: PhaseSpan[]
   conditions?: Conditions
   size?: Size
+
+  /** Ornamental colour by plant part — the spreadsheet's "seasonal colour". Pairs with the
+   *  calendar's state phases (which say WHEN foliage/flower/fruit show); this says WHICH
+   *  colour. Free colour words; the UI maps known ones to a swatch. Whole field (replace). */
+  colour?: {
+    flower?: string[]
+    foliage?: string[]
+    fruit?: string[]
+    stem?: string[]
+  }
+  /** Edible parts, e.g. ["fruit"], ["leaves"]. Absent = not recorded (not "inedible"). */
+  edible?: string[]
+  /** Toxicity / harm note, free text (e.g. "Harmful if eaten", "Toxic to cats and dogs"). */
+  toxicity?: string
+  /** Wildlife value tags, e.g. ["attracts pollinators", "bird food"]. */
+  wildlife?: string[]
+  /** Suggested uses / garden styles, e.g. ["containers", "cottage garden", "cut flowers"]. */
+  uses?: string[]
 
   /** Free display facts too varied to model — small key/value chips on the cheatsheet
    *  (e.g. "spacing" → "20cm", "germination" → "14–28 days", "sowing depth" → "0.5cm"). */

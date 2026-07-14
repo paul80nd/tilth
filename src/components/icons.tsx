@@ -14,6 +14,8 @@ export type IconName =
   | 'spread'
   | 'time'
   | 'hardiness'
+  | 'edible'
+  | 'toxicity'
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // sun — light / position
@@ -63,6 +65,15 @@ const PATHS: Record<IconName, React.ReactNode> = {
   // hardiness — snowflake
   hardiness: (
     <path d="M12 2v20M4 7l16 10M20 7L4 17M12 5l-2.5 2M12 5l2.5 2M12 19l-2.5-2M12 19l2.5-2M4.5 9.5l.5 3M19.5 9.5l-.5 3M4.5 14.5l.5-3M19.5 14.5l-.5-3" />
+  ),
+  // edible — fork & knife
+  edible: <path d="M7 3v7a2 2 0 0 0 2 2v9M7 3v4M9.5 3v4M17 3c-1.5 1-2 3-2 5s.5 3 2 3v10" />,
+  // toxicity — warning triangle
+  toxicity: (
+    <>
+      <path d="M12 4L2.5 20h19z" />
+      <path d="M12 10v4M12 17.5v.5" />
+    </>
   ),
 }
 

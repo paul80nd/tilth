@@ -44,6 +44,8 @@ export function matchesQuery(node: PlantNode, query: string): boolean {
     node.botanicalName,
     node.genus,
     node.family,
+    ...(node.otherNames ?? []),
+    ...(node.synonyms ?? []),
   ]
   return hay.some((s) => s?.toLowerCase().includes(q))
 }

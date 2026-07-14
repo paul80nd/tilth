@@ -30,4 +30,14 @@ describe('naming', () => {
     expect(matchesQuery(tomato, 'basil')).toBe(false)
     expect(matchesQuery(tomato, '')).toBe(true)
   })
+
+  it('also matches other common names and botanical synonyms', () => {
+    const node: PlantNode = {
+      ...tomato,
+      otherNames: ['Love apple'],
+      synonyms: ['Lycopersicon esculentum'],
+    }
+    expect(matchesQuery(node, 'love apple')).toBe(true)
+    expect(matchesQuery(node, 'lycopersicon')).toBe(true)
+  })
 })

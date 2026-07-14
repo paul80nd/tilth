@@ -13,6 +13,12 @@
       "genus": "Solanum",
       "lifecycle": "annual",
       "summary": "Fictional demo plant. Tender fruiting vegetable grown under cover or outdoors in a warm, sheltered spot.",
+      "otherNames": ["Love apple"],
+      "synonyms": ["Lycopersicon esculentum"],
+      "colour": { "flower": ["yellow"], "fruit": ["red"] },
+      "edible": ["fruit"],
+      "wildlife": ["attracts pollinators"],
+      "uses": ["containers", "greenhouse", "grow-bags"],
       "calendar": [
         { "code": "sow-indoors", "months": [3, 4], "note": "under glass" },
         { "code": "pot-on", "months": [5] },
@@ -41,6 +47,7 @@
       "variety": "Sunny Bench",
       "summary": "Fictional demo cultivar. A compact cordon type for pots and grow-bags, sweet cherry fruit.",
       "awards": ["Kitchen Garden Pick (demo)"],
+      "colour": { "fruit": ["red"] },
       "facts": { "fruit": "cherry, sweet", "habit note": "cordon — pinch side-shoots" }
     },
     {
@@ -53,6 +60,11 @@
       "genus": "Helianthus",
       "lifecycle": "annual",
       "summary": "Fictional demo plant. Fast, tall annual for a sunny border; seed heads feed birds in autumn.",
+      "otherNames": ["Common sunflower"],
+      "colour": { "flower": ["yellow", "golden"] },
+      "edible": ["seeds"],
+      "wildlife": ["attracts pollinators", "bird food (seed heads)"],
+      "uses": ["cut flowers", "back of border", "children's gardening"],
       "calendar": [
         { "code": "sow-indoors", "months": [3, 4] },
         { "code": "plant-out", "months": [5] },
@@ -81,6 +93,10 @@
       "genus": "Ocimum",
       "lifecycle": "annual",
       "summary": "Fictional demo plant. Tender culinary herb; best on a warm windowsill and pinched often.",
+      "colour": { "foliage": ["green"] },
+      "edible": ["leaves"],
+      "wildlife": ["attracts pollinators"],
+      "uses": ["containers", "windowsill", "kitchen garden"],
       "calendar": [
         { "code": "sow-indoors", "months": [3, 4, 5] },
         { "code": "harvest", "months": [6, 7, 8, 9], "note": "pinch tips" }
@@ -106,6 +122,10 @@
       "genus": "Fragaria",
       "lifecycle": "perennial",
       "summary": "Fictional demo plant. Low, spreading perennial fruit; crops best in its first few years.",
+      "colour": { "flower": ["white"], "fruit": ["red"] },
+      "edible": ["fruit"],
+      "wildlife": ["attracts pollinators"],
+      "uses": ["containers", "edging", "ground cover"],
       "calendar": [
         { "code": "plant-out", "months": [3, 9] },
         { "code": "flower", "months": [5] },
@@ -137,6 +157,11 @@
       "foliage": "deciduous",
       "habit": "tree",
       "summary": "Fictional demo plant. Deciduous fruit tree; winter-pruned and thinned for a good crop.",
+      "colour": { "flower": ["white", "pink"], "fruit": ["red", "green"] },
+      "edible": ["fruit"],
+      "toxicity": "Pips are harmful if eaten in quantity",
+      "wildlife": ["attracts pollinators", "blossom for early bees"],
+      "uses": ["orchard", "trained forms", "wildlife garden"],
       "calendar": [
         { "code": "prune", "months": [1, 2], "note": "winter, when dormant" },
         { "code": "flower", "months": [4, 5] },
@@ -164,6 +189,7 @@
       "variety": "Orchard Gold",
       "summary": "Fictional demo cultivar. A dessert apple on dwarfing rootstock for smaller gardens.",
       "awards": ["Merit Award (demo)"],
+      "colour": { "fruit": ["golden", "red-flushed"] },
       "facts": { "use": "dessert", "picking": "early October", "storage": "keeps 4-6 weeks" }
     }
   ],

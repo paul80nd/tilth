@@ -36,15 +36,17 @@ function HardinessBadge({ rating }: { rating: string }) {
 function Fact({
   icon,
   label,
+  tone = 'brand',
   children,
 }: {
   icon: IconName
   label: string
+  tone?: 'brand' | 'accent'
   children: React.ReactNode
 }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="mt-0.5 flex-none text-brand-ink">
+      <span className={`mt-0.5 flex-none ${tone === 'accent' ? 'text-accent-ink' : 'text-brand-ink'}`}>
         <Icon name={icon} />
       </span>
       <div className="min-w-0">
@@ -58,16 +60,26 @@ function Fact({
 export default function AtAGlance({
   conditions,
   size,
+  edible,
+  toxicity,
 }: {
   conditions?: Conditions
   size?: Size
+  edible?: string[]
+  toxicity?: string
 }) {
   const c = conditions ?? {}
   const s = size ?? {}
 
   const facts: React.ReactNode[] = []
-  const push = (key: string, icon: IconName, label: string, value?: React.ReactNode) => {
-    if (value) facts.push(<Fact key={key} icon={icon} label={label}>{value}</Fact>)
+  const push = (
+    key: string,
+    icon: IconName,
+    label: string,
+    value?: React.ReactNode,
+    tone: 'brand' | 'accent' = 'brand',
+  ) => {
+    if (value) facts.push(<Fact key={key} icon={icon} label={label} tone={tone}>{value}</Fact>)
   }
 
   push('sun', 'sun', 'Position', list(c.sun))
@@ -80,6 +92,8 @@ export default function AtAGlance({
   push('height', 'height', 'Height', s.height)
   push('spread', 'spread', 'Spread', s.spread)
   push('time', 'time', 'Time to size', s.timeToSize)
+  push('edible', 'edible', 'Edible', list(edible))
+  push('toxicity', 'toxicity', 'Caution', toxicity, 'accent')
 
   if (facts.length === 0) return <p className="text-sm text-muted">Not recorded yet.</p>
 

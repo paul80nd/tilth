@@ -6,6 +6,7 @@ import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
 import AtAGlance from '../components/AtAGlance'
 import CalendarBar from '../components/CalendarBar'
+import ColourInterest from '../components/ColourInterest'
 import Chip from '../components/Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -80,7 +81,17 @@ export default function CheatsheetPage() {
           {plant}
           {variety && <span className="text-brand-ink"> · {variety}</span>}
         </h1>
-        {botanical && <p className="text-sm italic text-muted">{botanical}</p>}
+        {botanical && (
+          <p className="text-sm italic text-muted">
+            {botanical}
+            {resolved.synonyms && resolved.synonyms.length > 0 && (
+              <span className="not-italic text-subtle"> · syn. {resolved.synonyms.join(', ')}</span>
+            )}
+          </p>
+        )}
+        {resolved.otherNames && resolved.otherNames.length > 0 && (
+          <p className="text-xs text-subtle">also known as {resolved.otherNames.join(', ')}</p>
+        )}
         {node.awards && node.awards.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-1.5">
             {node.awards.map((a) => (
@@ -105,10 +116,22 @@ export default function CheatsheetPage() {
         )}
       </Section>
 
-      {/* at a glance — the key-facts scan (conditions + ultimate size) */}
+      {/* at a glance — the key-facts scan (conditions + ultimate size + edibility) */}
       <Section title="At a glance" note={glanceNote}>
-        <AtAGlance conditions={resolved.conditions} size={resolved.size} />
+        <AtAGlance
+          conditions={resolved.conditions}
+          size={resolved.size}
+          edible={resolved.edible}
+          toxicity={resolved.toxicity}
+        />
       </Section>
+
+      {/* colour — ornamental interest by plant part */}
+      {resolved.colour && Object.values(resolved.colour).some((v) => v?.length) && (
+        <Section title="Colour" note={inheritedNote('colour')}>
+          <ColourInterest colour={resolved.colour} />
+        </Section>
+      )}
 
       {/* more facts — the free seed-packet chips (spacing, germination, depth, use…) */}
       {resolved.facts && Object.keys(resolved.facts).length > 0 && (
@@ -123,6 +146,28 @@ export default function CheatsheetPage() {
                 <span className="font-medium">{value}</span>
               </span>
             ))}
+          </div>
+        </Section>
+      )}
+
+      {/* wildlife & suggested uses */}
+      {((resolved.wildlife?.length ?? 0) > 0 || (resolved.uses?.length ?? 0) > 0) && (
+        <Section title="Wildlife & uses" note={inheritedNote('wildlife') ?? inheritedNote('uses')}>
+          <div className="flex flex-col gap-2">
+            {resolved.wildlife && resolved.wildlife.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {resolved.wildlife.map((w) => (
+                  <Chip key={w} tone="brand">{w}</Chip>
+                ))}
+              </div>
+            )}
+            {resolved.uses && resolved.uses.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {resolved.uses.map((u) => (
+                  <Chip key={u}>{u}</Chip>
+                ))}
+              </div>
+            )}
           </div>
         </Section>
       )}

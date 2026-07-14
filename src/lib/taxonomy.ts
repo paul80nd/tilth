@@ -10,7 +10,9 @@ import type { PlantNode } from '../schema/plant'
  *  (id, rank, parentId, commonName, variety) and provenance are never inherited. */
 const INHERITABLE: Array<keyof PlantNode> = [
   'category',
+  'otherNames',
   'botanicalName',
+  'synonyms',
   'family',
   'genus',
   'lifecycle',
@@ -19,6 +21,11 @@ const INHERITABLE: Array<keyof PlantNode> = [
   'calendar',
   'conditions',
   'size',
+  'colour',
+  'edible',
+  'toxicity',
+  'wildlife',
+  'uses',
   'facts',
   'summary',
   'image',

@@ -21,3 +21,7 @@ Feature: Browse the plant knowledge base
   Scenario: Search by botanical name
     When I search browse for "solanum"
     Then I see plants "tomato, t-sb"
+
+  Scenario: Search by an old botanical synonym
+    When I search browse for "lycopersicon"
+    Then I see plants "tomato"
