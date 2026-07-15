@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest'
-import { soilSet, phSet, moistureSet, conditionLabel } from './conditions'
+import {
+  soilSet,
+  phSet,
+  moistureSet,
+  conditionLabel,
+  lightSet,
+  lightLevel,
+  aspectSet,
+  exposureSet,
+  exposureLevel,
+  hardiness,
+} from './conditions'
 
 describe('soilSet', () => {
   it('matches the canonical tokens', () => {
@@ -44,5 +55,51 @@ describe('conditionLabel', () => {
   it('prettifies a token', () => {
     expect(conditionLabel('well-drained')).toBe('Well drained')
     expect(conditionLabel('clay')).toBe('Clay')
+  })
+})
+
+describe('lightSet / lightLevel', () => {
+  it('reads "partial shade" as partial, not sun or shade', () => {
+    expect(lightSet(['Partial shade'])).toEqual(new Set(['partial-shade']))
+    expect(lightSet(['Full sun'])).toEqual(new Set(['full-sun']))
+    expect(lightSet(['Full shade'])).toEqual(new Set(['full-shade']))
+  })
+
+  it('collapses a tolerated range to a glyph state', () => {
+    expect(lightLevel(lightSet(['Full sun']))).toBe('full')
+    expect(lightLevel(lightSet(['Full sun', 'Partial shade']))).toBe('partial')
+    expect(lightLevel(lightSet(['Partial shade']))).toBe('partial')
+    expect(lightLevel(lightSet(['Full shade']))).toBe('shade')
+    expect(lightLevel(lightSet(undefined))).toBeUndefined()
+  })
+})
+
+describe('aspectSet', () => {
+  it('matches cardinals tolerantly', () => {
+    expect(aspectSet(['south', 'west'])).toEqual(new Set(['south', 'west']))
+    expect(aspectSet(['South-facing', 'West'])).toEqual(new Set(['south', 'west']))
+    expect(aspectSet(undefined)).toEqual(new Set())
+  })
+})
+
+describe('exposureSet / exposureLevel', () => {
+  it('treats tolerating "exposed" (incl. "any") as the windy end', () => {
+    expect(exposureLevel(exposureSet(['sheltered']))).toBe('sheltered')
+    expect(exposureLevel(exposureSet(['sheltered', 'exposed']))).toBe('exposed')
+    expect(exposureLevel(exposureSet(['Exposed']))).toBe('exposed')
+    expect(exposureLevel(exposureSet(undefined))).toBeUndefined()
+  })
+})
+
+describe('hardiness', () => {
+  it('reads the leading number, keeping the exact label', () => {
+    expect(hardiness('H5')).toEqual({ label: 'H5', rank: 5 })
+    expect(hardiness('h1a')).toEqual({ label: 'H1A', rank: 1 })
+    expect(hardiness('H7')).toEqual({ label: 'H7', rank: 7 })
+  })
+
+  it('is undefined for missing or unparseable ratings', () => {
+    expect(hardiness(undefined)).toBeUndefined()
+    expect(hardiness('tender')).toBeUndefined()
   })
 })

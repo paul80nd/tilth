@@ -52,6 +52,81 @@ export function moistureSet(values?: string[]): Set<MoistureLevel> {
   return out
 }
 
+// ── Position vocabularies (light / aspect / exposure / hardiness) ────────────────────────────────
+
+export const LIGHT_LEVELS = ['full-sun', 'partial-shade', 'full-shade'] as const
+export type LightLevel = (typeof LIGHT_LEVELS)[number]
+
+/** Tolerant light matcher — "partial" wins over "sun"/"shade" so "partial shade" reads as partial. */
+export function lightSet(values?: string[]): Set<LightLevel> {
+  const out = new Set<LightLevel>()
+  for (const v of values ?? []) {
+    const s = v.toLowerCase()
+    if (s.includes('part') || s.includes('semi')) out.add('partial-shade')
+    else if (s.includes('sun')) out.add('full-sun')
+    else if (s.includes('shade')) out.add('full-shade')
+  }
+  return out
+}
+
+/** Collapse the tolerated light range to one glyph state: needs sun, tolerates a range, or shade. */
+export function lightLevel(set: Set<LightLevel>): 'full' | 'partial' | 'shade' | undefined {
+  const full = set.has('full-sun')
+  const part = set.has('partial-shade')
+  const shade = set.has('full-shade')
+  if (full && (part || shade)) return 'partial' // full sun *to* some shade → a tolerant range
+  if (full) return 'full'
+  if (part) return 'partial'
+  if (shade) return 'shade'
+  return undefined
+}
+
+export const CARDINALS = ['north', 'east', 'south', 'west'] as const
+export type Cardinal = (typeof CARDINALS)[number]
+
+export function aspectSet(values?: string[]): Set<Cardinal> {
+  const out = new Set<Cardinal>()
+  for (const v of values ?? []) {
+    const s = v.toLowerCase()
+    if (s.includes('north')) out.add('north')
+    if (s.includes('east')) out.add('east')
+    if (s.includes('south')) out.add('south')
+    if (s.includes('west')) out.add('west')
+  }
+  return out
+}
+
+export const EXPOSURE_LEVELS = ['sheltered', 'exposed'] as const
+export type Exposure = (typeof EXPOSURE_LEVELS)[number]
+
+export function exposureSet(values?: string[]): Set<Exposure> {
+  const out = new Set<Exposure>()
+  for (const v of values ?? []) {
+    const s = v.toLowerCase()
+    if (s.includes('shelter')) out.add('sheltered')
+    if (s.includes('expos')) out.add('exposed')
+  }
+  return out
+}
+
+/** Windiness the plant will take: tolerating "exposed" (incl. "any") is the windy end. */
+export function exposureLevel(set: Set<Exposure>): 'sheltered' | 'exposed' | undefined {
+  if (set.has('exposed')) return 'exposed'
+  if (set.has('sheltered')) return 'sheltered'
+  return undefined
+}
+
+// The generic hardiness scale (H1 tender → H7 very hardy). H1 is sometimes subdivided (H1a/b/c);
+// we key the graphic off the leading number and keep the source's exact label for display.
+export const HARDINESS_MAX = 7
+
+export function hardiness(rating?: string): { label: string; rank: number } | undefined {
+  if (!rating) return undefined
+  const m = rating.match(/H\s*([1-7])/i)
+  if (!m) return undefined
+  return { label: rating.trim().toUpperCase(), rank: Number(m[1]) }
+}
+
 /** Human label for a condition token: "well-drained" → "Well drained". */
 export function conditionLabel(token: string): string {
   const s = token.replace(/-/g, ' ')

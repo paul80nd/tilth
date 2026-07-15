@@ -1,4 +1,3 @@
-import type { Conditions } from '../schema/plant'
 import { Icon, type IconName } from './icons'
 
 // The cheatsheet's key facts, grouped into small cards — Position, Size, Conditions (a row beneath
@@ -16,23 +15,6 @@ function pretty(v: string): string {
 
 function list(values?: string[]): string | undefined {
   return values?.length ? values.map(pretty).join(', ') : undefined
-}
-
-/** ["south","west"] → "S / W facing". */
-function aspectLabel(values?: string[]): string | undefined {
-  if (!values?.length) return undefined
-  return values.map((v) => v.charAt(0).toUpperCase()).join(' / ') + ' facing'
-}
-
-function HardinessBadge({ rating }: { rating: string }) {
-  return (
-    <span
-      className="inline-flex items-center rounded-md bg-brand-tint px-2 py-0.5 text-sm font-semibold text-brand-ink"
-      title="Hardiness rating: lower numbers are more tender, higher numbers withstand colder winters (roughly H1 tender → H7 very hardy)."
-    >
-      {rating}
-    </span>
-  )
 }
 
 function Fact({
@@ -79,25 +61,6 @@ function FactList({ facts }: { facts: FactSpec[] }) {
         </Fact>
       ))}
     </div>
-  )
-}
-
-export function PositionFacts({ conditions }: { conditions?: Conditions }) {
-  const c = conditions ?? {}
-  return (
-    <FactList
-      facts={[
-        { key: 'sun', icon: 'sun', label: 'Light', value: list(c.sun) },
-        { key: 'aspect', icon: 'aspect', label: 'Aspect', value: aspectLabel(c.aspect) },
-        { key: 'exposure', icon: 'exposure', label: 'Exposure', value: list(c.exposure) },
-        {
-          key: 'hardiness',
-          icon: 'hardiness',
-          label: 'Hardiness',
-          value: c.hardiness ? <HardinessBadge rating={c.hardiness} /> : undefined,
-        },
-      ]}
-    />
   )
 }
 

@@ -5,7 +5,8 @@ import { getGuidesFor, getLineage } from '../app/plants'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
 import { seasonalInterest } from '../lib/calendar'
-import { PositionFacts, EdibilityFacts } from '../components/KeyFacts'
+import { EdibilityFacts } from '../components/KeyFacts'
+import PositionCard from '../components/PositionCard'
 import SizeCard from '../components/SizeCard'
 import ConditionsCard from '../components/ConditionsCard'
 import CalendarBar from '../components/CalendarBar'
@@ -145,8 +146,8 @@ export default function CheatsheetPage() {
       {/* Key facts as a row of three equal-width cards beneath the calendar: Position, Size,
           Conditions. They answer the same questions in the same place for every plant. */}
       <div className="grid gap-6 sm:grid-cols-[4fr_3fr_3fr] sm:items-start">
-        <Tile title="Position" note={inheritedNote('conditions')}>
-          <PositionFacts conditions={resolved.conditions} />
+        <Tile title="Position" note={inheritedNote('conditions')} bleed>
+          <PositionCard conditions={resolved.conditions} />
         </Tile>
         <Tile title="Size" note={inheritedNote('size')} bleed>
           <SizeCard size={resolved.size} />
