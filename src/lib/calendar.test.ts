@@ -58,4 +58,10 @@ describe('seasonalInterest', () => {
     const winter = seasonalInterest(cal).find((s) => s.season === 'Winter')!
     expect(winter.parts).toEqual([])
   })
+
+  it('includes coloured stems as an interest (e.g. winter canes)', () => {
+    const stems: PhaseSpan[] = [{ code: 'stem', months: [12, 1, 2], colour: 'red' }]
+    const winter = seasonalInterest(stems).find((s) => s.season === 'Winter')!
+    expect(winter.parts).toContainEqual({ code: 'stem', colour: 'red' })
+  })
 })

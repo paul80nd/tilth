@@ -37,7 +37,7 @@ export interface FieldSource {
 /** A phase in the 12-month calendar. Stored as a source-neutral shortcode; the UI maps
  *  the code to a colour + label + legend (seed brands colour these differently, so colour
  *  is never stored). "Actionable" codes (sow*, plant-out, pot-on, prune, thin, harvest,
- *  feed, divide) also feed the jobs engine; "state" codes (flower, foliage, fruit) are
+ *  feed, divide) also feed the jobs engine; "state" codes (flower, foliage, fruit, stem) are
  *  display-only. See docs/spec.md § Calendar. */
 export type PhaseCode =
   | 'sow-indoors'
@@ -52,6 +52,7 @@ export type PhaseCode =
   | 'flower'
   | 'foliage'
   | 'fruit'
+  | 'stem'
 
 /** One phase over a set of months (1 = Jan … 12 = Dec). Contiguous or not. */
 export interface PhaseSpan {

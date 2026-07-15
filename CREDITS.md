@@ -6,9 +6,10 @@ Third-party assets bundled in Tilth, with their licences. Tilth's own code is MI
 ## Icons
 
 The seasonal-interest strip uses three icons from open sets (discovered via
-[opensvg.dev](https://opensvg.dev/icons)). Each is embedded as an inline SVG path in
-`src/components/icons.tsx`, **recoloured** (via `currentColor`) and **resized** from the
-original. All three are under permissive licences.
+[opensvg.dev](https://opensvg.dev/icons)); its fourth part (stem) is drawn by hand for Tilth.
+Each third-party icon is embedded as an inline SVG path in `src/components/icons.tsx`,
+**recoloured** (via `currentColor`) and **resized** from the original, and all are under
+permissive licences.
 
 | Icon | Set | Author | Licence |
 |------|-----|--------|---------|

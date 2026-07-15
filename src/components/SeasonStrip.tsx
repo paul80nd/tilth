@@ -4,21 +4,23 @@ import { PHASE_META } from '../lib/calendar'
 import { colourSwatch } from '../lib/colour'
 import { SeasonalIcon } from './icons'
 
-// The spreadsheet's "Colour" tab as a 2×2 year block: Spring (top-left), Summer (top-right),
-// Autumn (bottom-left), Winter (bottom-right). Each season has three fixed slots — foliage,
-// flower, fruit — so the eye lands in the same place every time: a tinted icon when it's on
+// The spreadsheet's "Colour" tab as a compact horizontal strip: four season columns left→right
+// (Spring · Summer · Autumn · Winter), each with a 2×2 block of fixed interest slots — foliage,
+// flower, fruit, stem — so the eye lands in the same place every time: a tinted icon when it's on
 // show (colour from the calendar's state phases), a grey dot when it isn't. Pale colours
-// (white/cream) render as an outline, like the source sheet.
+// (white/cream) render as an outline, like the source sheet. Shaped to share a row with Position +
+// Conditions; the 2×2 (vs a stack) keeps it short enough to match their height.
 
 const PALE = /white|cream|silver|pale/i
 
-/** The three interest slots, always rendered in this order. */
-const SLOTS: PhaseCode[] = ['foliage', 'flower', 'fruit']
+// The four interest slots as a 2×2, reading TL→TR→BL→BR: foliage · flower / stem · fruit — i.e.
+// clockwise from top-left, leaf → flower → fruit → stem.
+const SLOTS: PhaseCode[] = ['foliage', 'flower', 'stem', 'fruit']
 
 function Slot({ code, part }: { code: PhaseCode; part?: { colour?: string } }) {
   if (!part) {
     return (
-      <span className="grid h-12 w-12 place-items-center" title={`No ${PHASE_META[code].label.toLowerCase()}`}>
+      <span className="grid h-7 w-7 place-items-center" title={`No ${PHASE_META[code].label.toLowerCase()}`}>
         <span className="h-1.5 w-1.5 rounded-full bg-subtle/50" aria-hidden="true" />
       </span>
     )
@@ -30,28 +32,26 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colour?: string } }) {
   const color = pale ? 'var(--tl-border-strong)' : hex ?? 'var(--tl-text-subtle)'
   const label = PHASE_META[code].label + (part.colour ? ` — ${part.colour}` : '')
   return (
-    <span className="grid h-12 w-12 place-items-center" style={{ color }} title={label}>
-      <SeasonalIcon part={code as 'foliage' | 'flower' | 'fruit'} size={38} />
+    <span className="grid h-7 w-7 place-items-center" style={{ color }} title={label}>
+      <SeasonalIcon part={code as 'foliage' | 'flower' | 'fruit' | 'stem'} size={22} />
     </span>
   )
 }
 
 export default function SeasonStrip({ interest }: { interest: SeasonInterest[] }) {
-  // Four quadrants split by internal dividers (Spring TL, Summer TR, Autumn BL, Winter BR) —
-  // borders on the left column / top row draw the cross. The enclosing tile frames it.
+  // Four season columns split by hairline dividers; each holds a 2×2 of interest slots. The
+  // enclosing tile frames it.
   return (
-    <div className="grid h-full grid-cols-2">
+    <div className="grid h-full grid-cols-4">
       {interest.map((s, i) => (
         <div
           key={s.season}
-          className={`flex flex-col p-3 ${i % 2 === 0 ? 'border-r border-line' : ''} ${
-            i < 2 ? 'border-b border-line' : ''
-          }`}
+          className={`flex flex-col items-center gap-1 p-2 ${i > 0 ? 'border-l border-line' : ''}`}
         >
-          <div className="mb-1.5 text-center text-[0.65rem] font-medium uppercase tracking-wide text-subtle">
+          <div className="text-[0.6rem] font-medium uppercase tracking-wide text-subtle">
             {s.season}
           </div>
-          <div className="grid flex-1 grid-cols-3 place-items-center">
+          <div className="grid flex-1 grid-cols-2 place-content-center">
             {SLOTS.map((code) => (
               <Slot key={code} code={code} part={s.parts.find((p) => p.code === code)} />
             ))}

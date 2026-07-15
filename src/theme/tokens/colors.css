@@ -100,6 +100,7 @@
   --tl-phase-flower:       oklch(80% 0.060 350);  /* pink (state) */
   --tl-phase-foliage:      oklch(82% 0.050 150);  /* green (state)*/
   --tl-phase-fruit:        oklch(78% 0.070 25);   /* red (state)  */
+  --tl-phase-stem:         oklch(62% 0.090 10);   /* plum (state) */
 }
 
 /* ==========================================================================
@@ -137,4 +138,5 @@
   --tl-phase-flower:  oklch(60% 0.070 350);
   --tl-phase-foliage: oklch(60% 0.055 150);
   --tl-phase-fruit:   oklch(58% 0.080 25);
+  --tl-phase-stem:    oklch(56% 0.090 10);
 }

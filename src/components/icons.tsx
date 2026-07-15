@@ -96,14 +96,15 @@ export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGEle
   )
 }
 
-// Bolder, filled glyphs for the seasonal-interest strip's three parts (foliage / flower /
-// fruit). Each keeps its source's native viewBox and paint — they read as strong silhouettes
-// rather than the fine line icons above. Tinted via currentColor by the caller. Third-party
-// icons (permissive licences; recoloured + resized here) — see CREDITS.md:
+// Bolder, filled glyphs for the seasonal-interest strip's parts (foliage / flower / fruit / stem).
+// Each keeps its source's native viewBox and paint — they read as strong silhouettes rather than
+// the fine line icons above. Tinted via currentColor by the caller. Third-party icons (permissive
+// licences; recoloured + resized here) — see CREDITS.md:
 //   foliage — Material Design Icons (Pictogrammers), Apache-2.0
 //   flower  — Ionicons (Ben Sperry / Ionic), MIT
 //   fruit   — IconPark (ByteDance), Apache-2.0
-type SeasonalPart = 'foliage' | 'flower' | 'fruit'
+//   stem    — drawn by hand for Tilth (a bundle of coloured canes; no good permissive SVG found)
+type SeasonalPart = 'foliage' | 'flower' | 'fruit' | 'stem'
 
 // `scale` visually balances the three: their source artworks fill their viewBoxes by different
 // amounts, so at one nominal size the flower/fruit read larger than the leaf. These factors bring
@@ -140,6 +141,18 @@ const SEASONAL: Record<SeasonalPart, { viewBox: string; scale: number; body: Rea
         <circle cx="14" cy="34" r="8" fill="currentColor" strokeLinejoin="round" />
         <circle cx="35" cy="37" r="7" fill="currentColor" strokeLinejoin="round" />
         <path d="M37 10c-2.651.812-8.372 3.015-11.72 6.26C20.255 21.13 19 24.5 18 27m19-17c-1.117 1.318-3.285 4.596-3.956 8.39C32.036 24.078 33 27.5 34 30M30 4l14 12" />
+      </g>
+    ),
+  },
+  // A bundle of three bold coloured canes/stalks fanning up from a shared base (rhubarb / dogwood).
+  stem: {
+    viewBox: '0 0 24 24',
+    scale: 0.94,
+    body: (
+      <g fill="none" stroke="currentColor" strokeWidth={4} strokeLinecap="round">
+        <path d="M8.5 20.5L6.5 4.5" />
+        <path d="M12 21V4" />
+        <path d="M15.5 20.5l2-16" />
       </g>
     ),
   },

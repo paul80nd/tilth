@@ -27,6 +27,7 @@ export const PHASE_ORDER: PhaseCode[] = [
   'flower',
   'foliage',
   'fruit',
+  'stem',
   'harvest',
 ]
 
@@ -43,6 +44,7 @@ export const PHASE_META: Record<PhaseCode, PhaseMeta> = {
   flower: { label: 'In flower', kind: 'state', token: 'flower' },
   foliage: { label: 'In leaf', kind: 'state', token: 'foliage' },
   fruit: { label: 'In fruit', kind: 'state', token: 'fruit' },
+  stem: { label: 'Coloured stems', kind: 'state', token: 'stem' },
 }
 
 export const MONTH_INITIALS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
@@ -85,7 +87,7 @@ export const SEASONS: Array<{ name: string; months: number[] }> = [
 ]
 
 /** The state (display) phases the seasonal-interest strip visualises, in render order. */
-export const INTEREST_CODES: PhaseCode[] = ['foliage', 'flower', 'fruit']
+export const INTEREST_CODES: PhaseCode[] = ['foliage', 'flower', 'fruit', 'stem']
 
 export interface SeasonInterest {
   season: string
@@ -111,7 +113,7 @@ export function seasonalInterest(
         (s) => s.code === code && s.months.some((m) => season.months.includes(m)),
       )
       if (spans.length === 0) continue
-      const fallback = colour?.[code as 'flower' | 'foliage' | 'fruit']?.[0]
+      const fallback = colour?.[code as 'flower' | 'foliage' | 'fruit' | 'stem']?.[0]
       const colours = new Set<string | undefined>(spans.map((s) => s.colour ?? fallback))
       for (const c of colours) parts.push({ code, colour: c })
     }
