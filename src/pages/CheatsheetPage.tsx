@@ -5,7 +5,7 @@ import { getGuidesFor, getLineage } from '../app/plants'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
 import { seasonalInterest } from '../lib/calendar'
-import AtAGlance from '../components/AtAGlance'
+import { PositionFacts, SizeFacts, ConditionsFacts, EdibilityFacts } from '../components/KeyFacts'
 import CalendarBar from '../components/CalendarBar'
 import ColourInterest from '../components/ColourInterest'
 import SeasonStrip from '../components/SeasonStrip'
@@ -53,17 +53,6 @@ export default function CheatsheetPage() {
   const hasFacts = !!resolved.facts && Object.keys(resolved.facts).length > 0
   const hasWildlife = (resolved.wildlife?.length ?? 0) > 0
   const hasUses = (resolved.uses?.length ?? 0) > 0
-
-  // The at-a-glance panel spans two fields (conditions + size); note where they came from,
-  // combining when both were inherited from the same ancestor.
-  const glanceNote = ((): string | undefined => {
-    const c = inheritedFrom.conditions ? displayLabel(inheritedFrom.conditions) : undefined
-    const s = inheritedFrom.size ? displayLabel(inheritedFrom.size) : undefined
-    if (c && s) return c === s ? `from ${c}` : `conditions from ${c} · size from ${s}`
-    if (c) return `conditions from ${c}`
-    if (s) return `size from ${s}`
-    return undefined
-  })()
 
   // Distinct sources contributing to this cheatsheet (own fields + inherited fields).
   const sources = new Set<string>()
@@ -151,17 +140,30 @@ export default function CheatsheetPage() {
         )}
       </div>
 
+      {/* Key facts as a row of three equal-width cards beneath the calendar: Position, Size,
+          Conditions. They answer the same questions in the same place for every plant. */}
+      <div className="grid gap-6 sm:grid-cols-3 sm:items-stretch">
+        <Tile title="Position" note={inheritedNote('conditions')} fill>
+          <PositionFacts conditions={resolved.conditions} />
+        </Tile>
+        <Tile title="Size" note={inheritedNote('size')} fill>
+          <SizeFacts size={resolved.size} />
+        </Tile>
+        <Tile title="Conditions" note={inheritedNote('conditions')} fill>
+          <ConditionsFacts conditions={resolved.conditions} />
+        </Tile>
+      </div>
+
       {/* The rest of the cheatsheet as a CSS-columns masonry. Every tile always renders
           (placeholder when its data is absent) so positions stay familiar across plants. */}
       <div className="columns-1 gap-6 lg:columns-2">
-        {/* At a glance — the key-facts scan (conditions + ultimate size + edibility) */}
-        <Tile title="At a glance" note={glanceNote} masonry>
-          <AtAGlance
-            conditions={resolved.conditions}
-            size={resolved.size}
-            edible={resolved.edible}
-            toxicity={resolved.toxicity}
-          />
+        {/* Edibility — what's edible + any toxicity caution */}
+        <Tile
+          title="Edibility"
+          note={inheritedNote('edible') ?? inheritedNote('toxicity')}
+          masonry
+        >
+          <EdibilityFacts edible={resolved.edible} toxicity={resolved.toxicity} />
         </Tile>
 
         {/* More facts — the free seed-packet chips (spacing, germination, depth, use…) */}
