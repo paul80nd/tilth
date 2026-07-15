@@ -1,4 +1,4 @@
-import type { Conditions, Size } from '../schema/plant'
+import type { Conditions } from '../schema/plant'
 import { Icon, type IconName } from './icons'
 
 // The cheatsheet's key facts, grouped into small cards — Position, Size, Conditions (a row beneath
@@ -96,19 +96,6 @@ export function PositionFacts({ conditions }: { conditions?: Conditions }) {
           label: 'Hardiness',
           value: c.hardiness ? <HardinessBadge rating={c.hardiness} /> : undefined,
         },
-      ]}
-    />
-  )
-}
-
-export function SizeFacts({ size }: { size?: Size }) {
-  const s = size ?? {}
-  return (
-    <FactList
-      facts={[
-        { key: 'time', icon: 'time', label: 'Time to maturity', value: s.timeToSize },
-        { key: 'spread', icon: 'spread', label: 'Max spread', value: s.spread },
-        { key: 'height', icon: 'height', label: 'Max height', value: s.height },
       ]}
     />
   )
