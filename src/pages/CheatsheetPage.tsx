@@ -144,14 +144,14 @@ export default function CheatsheetPage() {
 
       {/* Key facts as a row of three equal-width cards beneath the calendar: Position, Size,
           Conditions. They answer the same questions in the same place for every plant. */}
-      <div className="grid gap-6 sm:grid-cols-[4fr_3fr_3fr] sm:items-stretch">
-        <Tile title="Position" note={inheritedNote('conditions')} fill>
+      <div className="grid gap-6 sm:grid-cols-[4fr_3fr_3fr] sm:items-start">
+        <Tile title="Position" note={inheritedNote('conditions')}>
           <PositionFacts conditions={resolved.conditions} />
         </Tile>
-        <Tile title="Size" note={inheritedNote('size')} fill bleed>
+        <Tile title="Size" note={inheritedNote('size')} bleed>
           <SizeCard size={resolved.size} />
         </Tile>
-        <Tile title="Conditions" note={inheritedNote('conditions')} fill bleed>
+        <Tile title="Conditions" note={inheritedNote('conditions')} bleed>
           <ConditionsCard conditions={resolved.conditions} />
         </Tile>
       </div>

@@ -3,39 +3,47 @@ import { parseLength, type MetreRange } from '../lib/size'
 import { Icon } from './icons'
 
 // The Size card as a to-scale scene: the plant drawn at its ultimate height × spread beside a
-// faint human silhouette (1.8m) for instant sense of scale, with subtle metre gridlines. The view
-// scales so the taller of plant/human fills the frame (capped at 12m — taller plants show a "+"),
-// so a 20cm herb and an 8m tree both read correctly. Height/spread/time are labelled beneath.
-// Illustrative placeholder palette (leaf green / bark) — a brand pass can retune it.
+// human figure (1.8m) for instant sense of scale, over subtle metre gridlines. The view scales so
+// the taller of plant/human fills the frame (capped at 12m — taller plants show "↑"), so a 20cm
+// herb and an 8m tree both read true; the silhouette grows a trunk as height increases. A compact
+// fixed-height scene keeps it from dominating. Illustrative palette — a brand pass can retune it.
 
 const CANOPY = '#6aa564'
 const BARK = '#7c5a3b'
 
-// viewBox geometry (the SVG scales to the card; ground stays at the bottom).
+// viewBox geometry (the SVG scales to the card; ground stays at the bottom). Kept short so the
+// scene is compact.
 const W = 240
-const H = 170
-const GROUND_Y = 146
-const TOP_PAD = 12
+const H = 128
+const GROUND_Y = 110
+const TOP_PAD = 8
 const DRAWABLE = GROUND_Y - TOP_PAD
 const HUMAN_M = 1.8
 const CAP_M = 12
-const HUMAN_X = 46
+const HUMAN_X = 40
 const PLANT_X = 158
 const MAX_CANOPY = 150
 
-/** A minimal pawn-like human silhouette, feet on the ground, `hPx` tall. */
-function Human({ hPx }: { hPx: number }) {
-  const footW = hPx * 0.22
-  const neckW = hPx * 0.1
-  const neckY = GROUND_Y - hPx * 0.82
-  const headR = hPx * 0.12
-  const headCy = neckY - headR * 0.6
+/** A simple human figure (head, torso, arms, legs), feet on the ground, `h` px tall. */
+function Human({ h }: { h: number }) {
+  const cx = HUMAN_X
+  const base = GROUND_Y
+  const r = h * 0.085
+  const headCy = base - h + r
+  const shoulderY = headCy + r + h * 0.03
+  const hipY = base - h * 0.46
+  const stroke = 'var(--tl-text-subtle)'
   return (
-    <g fill="var(--tl-text-subtle)" opacity={0.75}>
-      <path
-        d={`M${HUMAN_X - footW} ${GROUND_Y} L${HUMAN_X - neckW} ${neckY} Q${HUMAN_X} ${neckY - hPx * 0.05} ${HUMAN_X + neckW} ${neckY} L${HUMAN_X + footW} ${GROUND_Y} Z`}
-      />
-      <circle cx={HUMAN_X} cy={headCy} r={headR} />
+    <g stroke={stroke} fill={stroke} opacity={0.75} strokeLinecap="round">
+      <circle cx={cx} cy={headCy} r={r} stroke="none" />
+      {/* torso */}
+      <line x1={cx} y1={shoulderY} x2={cx} y2={hipY} strokeWidth={h * 0.12} />
+      {/* arms */}
+      <line x1={cx} y1={shoulderY + h * 0.02} x2={cx - h * 0.14} y2={hipY - h * 0.02} strokeWidth={h * 0.07} />
+      <line x1={cx} y1={shoulderY + h * 0.02} x2={cx + h * 0.14} y2={hipY - h * 0.02} strokeWidth={h * 0.07} />
+      {/* legs */}
+      <line x1={cx} y1={hipY} x2={cx - h * 0.08} y2={base} strokeWidth={h * 0.08} />
+      <line x1={cx} y1={hipY} x2={cx + h * 0.08} y2={base} strokeWidth={h * 0.08} />
     </g>
   )
 }
@@ -95,15 +103,15 @@ export default function SizeCard({ size }: { size?: Size }) {
   for (let m = step; m <= viewM; m += step) ticks.push(m)
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1">
+    <div className="flex flex-col">
+      <div className="h-32">
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax meet" className="h-full w-full">
           {/* metre gridlines + labels */}
           {ticks.map((m) => {
             const y = GROUND_Y - m * scale
             return (
               <g key={m}>
-                <line x1={14} y1={y} x2={W - 8} y2={y} stroke="var(--tl-border)" strokeWidth={1} strokeDasharray="2 3" />
+                <line x1={13} y1={y} x2={W - 8} y2={y} stroke="var(--tl-border)" strokeWidth={1} strokeDasharray="2 3" />
                 <text x={4} y={y + 3} fontSize={9} fill="var(--tl-text-subtle)">
                   {m}
                 </text>
@@ -114,7 +122,7 @@ export default function SizeCard({ size }: { size?: Size }) {
           {/* ground */}
           <line x1={8} y1={GROUND_Y} x2={W - 8} y2={GROUND_Y} stroke="var(--tl-border-strong)" strokeWidth={1.5} />
 
-          <Human hPx={humanPx} />
+          <Human h={humanPx} />
           <Plant hPx={plantPx} canopyW={canopyW} heightM={drawH} />
 
           {/* "taller than the frame" marker for trees beyond the cap */}
@@ -123,10 +131,6 @@ export default function SizeCard({ size }: { size?: Size }) {
               ↑
             </text>
           )}
-          {/* human height label */}
-          <text x={HUMAN_X} y={GROUND_Y - humanPx - 4} fontSize={8} fill="var(--tl-text-subtle)" textAnchor="middle">
-            1.8m
-          </text>
         </svg>
       </div>
 
