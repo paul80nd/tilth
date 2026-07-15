@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Category, PhaseSpan, PlantNode } from '../schema/plant'
 import { listNodes } from '../app/plants'
@@ -48,9 +49,17 @@ export default function BrowsePage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="font-display text-display font-semibold tracking-tight">Browse</h1>
-        <p className="text-sm text-muted">Everything in your plant record.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-display font-semibold tracking-tight">Browse</h1>
+          <p className="text-sm text-muted">Everything in your plant record.</p>
+        </div>
+        <Link
+          to="/add"
+          className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onbrand hover:opacity-90"
+        >
+          + Add plant
+        </Link>
       </div>
 
       {/* toolbar */}

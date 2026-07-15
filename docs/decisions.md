@@ -75,3 +75,24 @@ adapter looks *those specific ones* up, emitting partial fragments to merge. *Wh
 is small and personal (what's in the garden), the sources are page-per-plant, and the merge model
 wants small fragments anyway. There is no sitemap enumeration / bulk cull step; `scripts/ACQUIRE.md`
 is rewritten around targeted lookup.
+
+## 2026-07-15 — Hand-entered plants are just another merge source; edits overlay only changed fields
+
+Adding or editing a plant by hand routes through the same property-level merge as an import,
+stamped with the opaque source key `"manual"` (`src/app/editNode.ts`). *Why one path not two:*
+manual entry and acquire enrichment must interleave on the same node without special-casing —
+so a later `"plant-db"` import overlays cleanly and the diff shows a hand-typed value vs the incoming
+one. **Edit overlays only the fields that actually changed** (`src/lib/editNode.ts` `nodeDiff`),
+so a field a source set keeps its provenance rather than being re-stamped `"manual"` on every
+save. *Deletion is the exception* — it has no provenance, so it's a direct store delete that also
+marks the store user-owned (a demo re-seed must not resurrect it). Clearing a *scalar* field to
+empty is not yet supported (the merge treats absent ⇒ leave-alone); arrays clear via an empty array.
+
+## 2026-07-15 — `sourceLinks` on a node is the acquire worklist
+
+A `PlantNode` carries `sourceLinks: {source,url,label?}[]` — the pages a gardener pastes when
+adding/linking a plant, and the list an acquire reads to know what to fetch. *Why a first-class
+field, distinct from `provenance[field].url`:* provenance records where a value *came from* after
+the fact; `sourceLinks` is the *intent to enrich*, entered before any value exists. It rides in
+the exported backup, so the backup doubles as the acquire worklist (no separate lookup file). A
+URL here is user data (IndexedDB/backup, never committed); committed demo uses `example.invalid`.

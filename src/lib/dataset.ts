@@ -74,6 +74,7 @@ const NODE_FIELDS: Array<keyof PlantNode> = [
   'uses',
   'facts',
   'awards',
+  'sourceLinks',
   'summary',
   'image',
 ]

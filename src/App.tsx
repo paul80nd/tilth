@@ -2,6 +2,7 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import ThemeToggle from './components/ThemeToggle'
 import BrowsePage from './pages/BrowsePage'
 import CheatsheetPage from './pages/CheatsheetPage'
+import PlantFormPage from './pages/PlantFormPage'
 import GardenPage from './pages/GardenPage'
 
 // App shell: a slim header (wordmark + primary tabs + theme toggle) over the routed pages.
@@ -45,7 +46,9 @@ export default function App() {
       <main className="mx-auto max-w-5xl px-4 py-6">
         <Routes>
           <Route path="/" element={<BrowsePage />} />
+          <Route path="/add" element={<PlantFormPage />} />
           <Route path="/plant/:id" element={<CheatsheetPage />} />
+          <Route path="/plant/:id/edit" element={<PlantFormPage />} />
           <Route path="/garden" element={<GardenPage />} />
         </Routes>
       </main>

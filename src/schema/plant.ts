@@ -34,6 +34,19 @@ export interface FieldSource {
   importedAt?: string
 }
 
+/** A user-declared page to enrich a plant from — pasted when adding/editing a plant, and
+ *  read back by the acquire step (out of the exported backup) as its lookup list. `source`
+ *  is the opaque provenance key the acquire will stamp on the fields it fills (e.g. "plant-db");
+ *  `url` is the page; `label` is an optional human note. Distinct from `FieldSource.url`,
+ *  which records where a *value* came from after an acquire. User data — a real URL here is
+ *  fine (it lives in IndexedDB / the exported backup, never committed); committed demo data
+ *  uses `example.invalid`. */
+export interface SourceLink {
+  source: string
+  url: string
+  label?: string
+}
+
 /** A phase in the 12-month calendar. Stored as a source-neutral shortcode; the UI maps
  *  the code to a colour + label + legend (seed brands colour these differently, so colour
  *  is never stored). "Actionable" codes (sow*, plant-out, pot-on, prune, thin, harvest,
@@ -156,6 +169,10 @@ export interface PlantNode {
    *  strings so any scheme fits; NEVER hard-code a specific awarding body's scheme name in
    *  committed data — the private layer supplies real ones. Own-only: not inherited down. */
   awards?: string[]
+
+  /** Pages to enrich this plant from (the acquire step's worklist). Hand-entered when you add
+   *  or edit a plant and link its source page(s). Whole field (replace, not union). */
+  sourceLinks?: SourceLink[]
 
   /** Short scannable description (the seed-packet blurb / database summary). */
   summary?: string

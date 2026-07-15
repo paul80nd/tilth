@@ -1,4 +1,4 @@
-// Pure parsing of the free-form ultimate-size strings (RHS bands + seed-packet values) into
+// Pure parsing of the free-form ultimate-size strings (database bands + seed-packet values) into
 // numeric metre ranges, so the Size card can draw a plant to scale. Tolerant of "10-50cm", "60cm",
 // "0.1-0.5m", "1.5m", "12m+", "0-0.1". Presentation keeps the original strings as labels — this is
 // only the geometry. Pure, unit-tested, no I/O.

@@ -1,7 +1,8 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { PlantNode } from '../schema/plant'
 import { getGuidesFor, getLineage } from '../app/plants'
+import { childrenOf, deleteNode } from '../app/editNode'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
 import { seasonalInterest } from '../lib/calendar'
@@ -18,6 +19,7 @@ const CURRENT_MONTH = new Date().getMonth() + 1
 
 export default function CheatsheetPage() {
   const { id = '' } = useParams()
+  const navigate = useNavigate()
   const data = useLiveQuery(async () => {
     const { node, ancestors } = await getLineage(id)
     if (!node) return { node: undefined, ancestors: [], guides: [] }
@@ -65,11 +67,38 @@ export default function CheatsheetPage() {
     if (fs) sources.add(fs.source)
   }
 
+  async function onDelete() {
+    const kids = await childrenOf(node.id)
+    const msg = kids.length
+      ? `Delete "${displayLabel(node)}"? ${kids.length} plant(s) below it will be left without a parent.`
+      : `Delete "${displayLabel(node)}"?`
+    if (!window.confirm(msg)) return
+    await deleteNode(node.id)
+    navigate('/')
+  }
+
   return (
     <article className="flex flex-col gap-6">
-      <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
-        ← Browse
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link to="/" className="text-sm font-medium text-muted hover:text-ink">
+          ← Browse
+        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/plant/${node.id}/edit`}
+            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
+          >
+            Edit
+          </Link>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
 
       {/* Masthead: identity (left) beside the Calendar hero (right), with Seasonal interest tucked
           under the identity so the two "time" tiles stay together and the header's right-hand space
@@ -113,6 +142,22 @@ export default function CheatsheetPage() {
             {resolved.foliage && <Chip>{resolved.foliage}</Chip>}
             {resolved.habit && <Chip>{resolved.habit}</Chip>}
           </div>
+          {node.sourceLinks && node.sourceLinks.length > 0 && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              <span className="uppercase tracking-wide text-subtle">Enrich from</span>
+              {node.sourceLinks.map((l) => (
+                <a
+                  key={l.url}
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="font-medium text-brand-ink hover:underline"
+                >
+                  {l.label ?? l.source} ↗
+                </a>
+              ))}
+            </div>
+          )}
         </header>
 
         {/* Calendar — the hero, beside the name; spans the right four columns so its left edge

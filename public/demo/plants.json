@@ -39,7 +39,10 @@
         "hardiness": "H2"
       },
       "size": { "height": "1.5-2m", "spread": "0.4-0.6m", "timeToSize": "1 season" },
-      "facts": { "spacing": "45cm", "germination": "7-14 days at 18-21C", "sowing depth": "1cm" }
+      "facts": { "spacing": "45cm", "germination": "7-14 days at 18-21C", "sowing depth": "1cm" },
+      "sourceLinks": [
+        { "source": "plant-db", "url": "https://example.invalid/demo/plants/tomato", "label": "Species page" }
+      ]
     },
     {
       "id": "tomato-sunny-bench",
@@ -200,7 +203,10 @@
       "summary": "Fictional demo cultivar. A dessert apple on dwarfing rootstock for smaller gardens.",
       "awards": ["Merit Award (demo)"],
       "colour": { "fruit": ["golden", "red-flushed"] },
-      "facts": { "use": "dessert", "picking": "early October", "storage": "keeps 4-6 weeks" }
+      "facts": { "use": "dessert", "picking": "early October", "storage": "keeps 4-6 weeks" },
+      "sourceLinks": [
+        { "source": "plant-db", "url": "https://example.invalid/demo/plants/apple-orchard-gold", "label": "Cultivar page" }
+      ]
     }
   ],
   "guides": [
