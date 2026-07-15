@@ -57,6 +57,13 @@ export function slugify(input: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+/** A node needs at least a common or botanical name — otherwise it's unfindable and `suggestId`
+ *  falls back to the generic "plant" id. The add form gates on this so a nameless node (only a
+ *  family/category typed, say) can't be created. */
+export function hasIdentity(node: Partial<PlantNode>): boolean {
+  return !!(node.commonName?.trim() || node.botanicalName?.trim())
+}
+
 /** A suggested stable id for a new node from its identity — botanical name (preferred) or
  *  common name, plus any variety. Falls back to "plant" so the id is never empty. */
 export function suggestId(node: Partial<PlantNode>): string {

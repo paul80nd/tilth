@@ -5,7 +5,7 @@ import type { Category, PlantNode, Rank, SourceLink } from '../schema/plant'
 import type { NodeFragment } from '../lib/dataset'
 import { listNodes } from '../app/plants'
 import { createNode, updateNode } from '../app/editNode'
-import { suggestId } from '../lib/editNode'
+import { suggestId, hasIdentity } from '../lib/editNode'
 import { displayLabel } from '../lib/naming'
 
 const RANKS: Rank[] = ['family', 'genus', 'species', 'cultivar', 'group']
@@ -134,7 +134,9 @@ export default function PlantFormPage() {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm({ ...state, [key]: value })
 
-  const previewId = isEdit ? id! : suggestId(toPatch(state))
+  const patch = toPatch(state)
+  const previewId = isEdit ? id! : suggestId(patch)
+  const named = hasIdentity(patch)
 
   // Parent options: any node except the one being edited (a node can't be its own ancestor).
   const parentOptions = (nodes ?? [])
@@ -144,6 +146,10 @@ export default function PlantFormPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!state) return
+    if (!hasIdentity(toPatch(state))) {
+      setError('Add a common name or botanical name before saving.')
+      return
+    }
     setError(null)
     setSaving(true)
     try {
@@ -362,7 +368,7 @@ export default function PlantFormPage() {
       <div className="flex items-center gap-3">
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || !named}
           className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-onbrand hover:opacity-90 disabled:opacity-50"
         >
           {isEdit ? 'Save changes' : 'Add plant'}
@@ -373,6 +379,9 @@ export default function PlantFormPage() {
         >
           Cancel
         </Link>
+        {!named && (
+          <span className="text-xs text-subtle">Add a common or botanical name to continue.</span>
+        )}
       </div>
     </form>
   )

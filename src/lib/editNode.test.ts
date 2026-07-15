@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { deepEqual, nodeDiff, isEmptyDiff, slugify, suggestId } from './editNode'
+import { deepEqual, nodeDiff, isEmptyDiff, slugify, suggestId, hasIdentity } from './editNode'
 import type { PlantNode } from '../schema/plant'
 
 const base: PlantNode = {
@@ -47,6 +47,16 @@ describe('nodeDiff', () => {
   it('ignores undefined patch fields (not edited) and never diffs provenance', () => {
     const frag = nodeDiff(base, { variety: undefined, provenance: {} as PlantNode['provenance'] })
     expect(isEmptyDiff(frag)).toBe(true)
+  })
+})
+
+describe('hasIdentity', () => {
+  it('is true with a common or botanical name, false without', () => {
+    expect(hasIdentity({ commonName: 'Cornflower' })).toBe(true)
+    expect(hasIdentity({ botanicalName: 'Centaurea cyanus' })).toBe(true)
+    expect(hasIdentity({ family: 'Asteraceae' })).toBe(false)
+    expect(hasIdentity({ commonName: '   ' })).toBe(false)
+    expect(hasIdentity({})).toBe(false)
   })
 })
 
