@@ -11,39 +11,37 @@ import { Icon } from './icons'
 const CANOPY = '#6aa564'
 const BARK = '#7c5a3b'
 
-// viewBox geometry (the SVG scales to the card; ground stays at the bottom). Kept short so the
-// scene is compact.
+// viewBox geometry. The SVG sizes intrinsically to the card's full width (height follows the
+// viewBox ratio) so the scene bleeds edge-to-edge with no letterboxing. Feet/trunk sit on
+// GROUND_Y = the bottom edge, which meets the labels row's top border — so that divider reads as
+// the ground line. Kept short so the scene stays compact.
 const W = 240
-const H = 128
-const GROUND_Y = 110
-const TOP_PAD = 8
+const H = 116
+const GROUND_Y = H
+const TOP_PAD = 14
 const DRAWABLE = GROUND_Y - TOP_PAD
 const HUMAN_M = 1.8
 const CAP_M = 12
-const HUMAN_X = 40
+const HUMAN_X = 46
 const PLANT_X = 158
 const MAX_CANOPY = 150
 
-/** A simple human figure (head, torso, arms, legs), feet on the ground, `h` px tall. */
+// Human figure — Fontisto "male" glyph (Team Redux, OFL/MIT; see CREDITS.md), recoloured via the
+// subtle text token. Authored in a 1200×1200 box: horizontally centred (x=600) and filling the full
+// height (head top y=0, feet y=1200), so we seat it by scaling that box to `h` px, feet on the ground.
+const HUMAN_PATH =
+  'M719.57 272.035q27.69 0 50.975 10.698c46.078 23.193 73.285 67.272 73.631 116.424V737.73c-8.643 53.824-70.25 39.188-71.742 0V418.037c-5.49-18.231-40.693-10.672-41.535 0v733.785c-8.951 74.928-105.773 52.934-108.242-1.258V701.23c-6.191-28.982-46.936-15.813-47.829 1.259c1.728 149.353 1.259 298.715 1.259 448.075c-9.656 74.543-106.007 55.47-108.243 1.258l-1.258-733.785c-5.643-17.838-38.263-10.996-39.019 0V737.73c-8.644 53.824-70.25 39.188-71.742 0V399.157c.871-47.056 18.117-94.197 59.156-116.424q20.139-10.7 49.087-10.699zm-1.269-153.758c0 65.323-52.955 118.278-118.278 118.278c-65.322 0-118.277-52.955-118.277-118.278C481.745 52.955 534.7 0 600.021 0c65.325 0 118.28 52.955 118.28 118.277'
+
+/** The human figure, feet on the ground at HUMAN_X, `h` px tall. */
 function Human({ h }: { h: number }) {
-  const cx = HUMAN_X
-  const base = GROUND_Y
-  const r = h * 0.085
-  const headCy = base - h + r
-  const shoulderY = headCy + r + h * 0.03
-  const hipY = base - h * 0.46
-  const stroke = 'var(--tl-text-subtle)'
+  const scale = h / 1200
   return (
-    <g stroke={stroke} fill={stroke} opacity={0.75} strokeLinecap="round">
-      <circle cx={cx} cy={headCy} r={r} stroke="none" />
-      {/* torso */}
-      <line x1={cx} y1={shoulderY} x2={cx} y2={hipY} strokeWidth={h * 0.12} />
-      {/* arms */}
-      <line x1={cx} y1={shoulderY + h * 0.02} x2={cx - h * 0.14} y2={hipY - h * 0.02} strokeWidth={h * 0.07} />
-      <line x1={cx} y1={shoulderY + h * 0.02} x2={cx + h * 0.14} y2={hipY - h * 0.02} strokeWidth={h * 0.07} />
-      {/* legs */}
-      <line x1={cx} y1={hipY} x2={cx - h * 0.08} y2={base} strokeWidth={h * 0.08} />
-      <line x1={cx} y1={hipY} x2={cx + h * 0.08} y2={base} strokeWidth={h * 0.08} />
+    <g
+      transform={`translate(${HUMAN_X - 600 * scale} ${GROUND_Y - 1200 * scale}) scale(${scale})`}
+      fill="var(--tl-text-subtle)"
+      opacity={0.75}
+    >
+      <path d={HUMAN_PATH} />
     </g>
   )
 }
@@ -104,38 +102,34 @@ export default function SizeCard({ size }: { size?: Size }) {
 
   return (
     <div className="flex flex-col">
-      <div className="h-32">
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMax meet" className="h-full w-full">
-          {/* metre gridlines + labels */}
-          {ticks.map((m) => {
-            const y = GROUND_Y - m * scale
-            return (
-              <g key={m}>
-                <line x1={13} y1={y} x2={W - 8} y2={y} stroke="var(--tl-border)" strokeWidth={1} strokeDasharray="2 3" />
-                <text x={4} y={y + 3} fontSize={9} fill="var(--tl-text-subtle)">
-                  {m}
-                </text>
-              </g>
-            )
-          })}
+      <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full">
+        {/* metre gridlines, full-bleed; labels indented from the left edge */}
+        {ticks.map((m) => {
+          const y = GROUND_Y - m * scale
+          return (
+            <g key={m}>
+              <line x1={0} y1={y} x2={W} y2={y} stroke="var(--tl-border)" strokeWidth={1} strokeDasharray="2 3" />
+              <text x={7} y={y - 3} fontSize={9} fill="var(--tl-text-subtle)">
+                {m}
+              </text>
+            </g>
+          )
+        })}
 
-          {/* ground */}
-          <line x1={8} y1={GROUND_Y} x2={W - 8} y2={GROUND_Y} stroke="var(--tl-border-strong)" strokeWidth={1.5} />
+        {/* No drawn ground line — the labels row's top border (at the SVG's bottom edge) is the ground. */}
+        <Human h={humanPx} />
+        <Plant hPx={plantPx} canopyW={canopyW} heightM={drawH} />
 
-          <Human h={humanPx} />
-          <Plant hPx={plantPx} canopyW={canopyW} heightM={drawH} />
+        {/* "taller than the frame" marker for trees beyond the cap */}
+        {overCap && (
+          <text x={PLANT_X} y={TOP_PAD} fontSize={12} fontWeight={700} fill={CANOPY} textAnchor="middle">
+            ↑
+          </text>
+        )}
+      </svg>
 
-          {/* "taller than the frame" marker for trees beyond the cap */}
-          {overCap && (
-            <text x={PLANT_X} y={TOP_PAD} fontSize={12} fontWeight={700} fill={CANOPY} textAnchor="middle">
-              ↑
-            </text>
-          )}
-        </svg>
-      </div>
-
-      {/* labels */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-3 py-2 text-xs">
+      {/* labels — this row's top border doubles as the ground line */}
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-line px-3 py-2 text-xs">
         <Fact icon="height">{size?.height}</Fact>
         {size?.spread && <Fact icon="spread">{size.spread}</Fact>}
         {size?.timeToSize && <Fact icon="time">{size.timeToSize}</Fact>}
