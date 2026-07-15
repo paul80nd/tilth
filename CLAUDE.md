@@ -123,3 +123,7 @@ Two tiers, one runner (Vitest 4):
 - Commit messages end with: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 - **Comments** explain what the code does now (+ why if non-obvious); never narrate history.
 - Honour the **privacy firewall** on every change.
+- **Third-party SVGs/icons:** whenever the developer hands over an icon/SVG to use, check its
+  **source + licence** first, prefer permissive (MIT/Apache/CC0 — avoid copyleft like CC BY-SA
+  in this MIT repo), and record attribution in [`CREDITS.md`](CREDITS.md) (set, author, licence,
+  note any recolour/resize). Flag anything copyleft before adopting it.
