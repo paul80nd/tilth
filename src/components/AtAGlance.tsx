@@ -98,7 +98,7 @@ export default function AtAGlance({
   if (facts.length === 0) return <p className="text-sm text-muted">Not recorded yet.</p>
 
   return (
-    <div className="grid grid-cols-2 gap-x-5 gap-y-3 rounded-lg border border-line bg-card p-4 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-5 gap-y-3">
       {facts}
     </div>
   )

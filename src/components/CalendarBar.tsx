@@ -51,12 +51,11 @@ export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-line bg-card">
-      <div className="overflow-x-auto">
-        <div
-          className="grid min-w-[30rem] text-xs"
-          style={{ gridTemplateColumns: 'minmax(5.5rem, max-content) repeat(12, minmax(0, 1fr))' }}
-        >
+    <div className="overflow-x-auto">
+      <div
+        className="grid min-w-[30rem] text-xs"
+        style={{ gridTemplateColumns: 'minmax(5.5rem, max-content) repeat(12, minmax(0, 1fr))' }}
+      >
           {/* header row: month initials, current month marked */}
           <div className="py-2" />
           {MONTH_INITIALS.map((initial, i) => (
@@ -112,7 +111,6 @@ export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]
               </Fragment>
             )
           })}
-        </div>
       </div>
     </div>
   )

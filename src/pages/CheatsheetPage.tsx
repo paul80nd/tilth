@@ -49,6 +49,10 @@ export default function CheatsheetPage() {
   // calendar's state phases + the flat colour fallback.
   const interest = seasonalInterest(resolved.calendar, resolved.colour)
   const hasInterest = interest.some((s) => s.parts.length > 0)
+  const hasColour = !!resolved.colour && Object.values(resolved.colour).some((v) => v?.length)
+  const hasFacts = !!resolved.facts && Object.keys(resolved.facts).length > 0
+  const hasWildlife = (resolved.wildlife?.length ?? 0) > 0
+  const hasUses = (resolved.uses?.length ?? 0) > 0
 
   // The at-a-glance panel spans two fields (conditions + size); note where they came from,
   // combining when both were inherited from the same ancestor.
@@ -114,113 +118,135 @@ export default function CheatsheetPage() {
         )}
       </header>
 
-      {/* calendar + seasonal interest, side by side (≈60/40) when there's seasonal colour */}
-      {hasInterest ? (
-        <div className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-stretch">
-          <Section title="Calendar" note={inheritedNote('calendar')} fill>
-            <CalendarBar calendar={resolved.calendar!} month={CURRENT_MONTH} />
-          </Section>
-          <Section title="Seasonal interest" note={inheritedNote('calendar')} fill>
-            <SeasonStrip interest={interest} />
-          </Section>
-        </div>
-      ) : (
-        <>
-          <Section title="Calendar" note={inheritedNote('calendar')}>
-            {resolved.calendar ? (
-              <CalendarBar calendar={resolved.calendar} month={CURRENT_MONTH} />
-            ) : (
-              <Muted>No calendar recorded yet.</Muted>
-            )}
-          </Section>
-          {resolved.colour && Object.values(resolved.colour).some((v) => v?.length) && (
-            <Section title="Colour" note={inheritedNote('colour')}>
-              <ColourInterest colour={resolved.colour} />
-            </Section>
+      {/* The hero pairing: Calendar + Seasonal interest, side by side (70/30), evened to the
+          same height. Titles sit outside each card; the card content bleeds to the border. */}
+      <div className="grid gap-6 lg:grid-cols-[7fr_3fr] lg:items-stretch">
+        <Tile
+          title="Calendar"
+          note={resolved.calendar ? inheritedNote('calendar') : undefined}
+          fill
+          bleed={!!resolved.calendar}
+        >
+          {resolved.calendar ? (
+            <CalendarBar calendar={resolved.calendar} month={CURRENT_MONTH} />
+          ) : (
+            <Muted>No calendar recorded yet.</Muted>
           )}
-        </>
-      )}
+        </Tile>
 
-      {/* at a glance — the key-facts scan (conditions + ultimate size + edibility) */}
-      <Section title="At a glance" note={glanceNote}>
-        <AtAGlance
-          conditions={resolved.conditions}
-          size={resolved.size}
-          edible={resolved.edible}
-          toxicity={resolved.toxicity}
-        />
-      </Section>
+        {/* Seasonal colour: the season strip when the calendar carries state phases, the flat
+            colour list when it only has colour, else a placeholder — one stable slot. */}
+        {hasInterest ? (
+          <Tile title="Seasonal interest" note={inheritedNote('calendar')} fill bleed>
+            <SeasonStrip interest={interest} />
+          </Tile>
+        ) : hasColour ? (
+          <Tile title="Colour" note={inheritedNote('colour')} fill>
+            <ColourInterest colour={resolved.colour!} />
+          </Tile>
+        ) : (
+          <Tile title="Seasonal interest" fill>
+            <Muted>No seasonal colour recorded yet.</Muted>
+          </Tile>
+        )}
+      </div>
 
-      {/* more facts — the free seed-packet chips (spacing, germination, depth, use…) */}
-      {resolved.facts && Object.keys(resolved.facts).length > 0 && (
-        <Section title="More facts" note={inheritedNote('facts')}>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(resolved.facts).map(([key, value]) => (
-              <span
-                key={key}
-                className="inline-flex items-baseline gap-1.5 rounded-md bg-sunken px-2.5 py-1 text-sm"
-              >
-                <span className="text-xs uppercase tracking-wide text-subtle">{key}</span>
-                <span className="font-medium">{value}</span>
-              </span>
-            ))}
-          </div>
-        </Section>
-      )}
+      {/* The rest of the cheatsheet as a CSS-columns masonry. Every tile always renders
+          (placeholder when its data is absent) so positions stay familiar across plants. */}
+      <div className="columns-1 gap-6 lg:columns-2">
+        {/* At a glance — the key-facts scan (conditions + ultimate size + edibility) */}
+        <Tile title="At a glance" note={glanceNote} masonry>
+          <AtAGlance
+            conditions={resolved.conditions}
+            size={resolved.size}
+            edible={resolved.edible}
+            toxicity={resolved.toxicity}
+          />
+        </Tile>
 
-      {/* wildlife & suggested uses */}
-      {((resolved.wildlife?.length ?? 0) > 0 || (resolved.uses?.length ?? 0) > 0) && (
-        <Section title="Wildlife & uses" note={inheritedNote('wildlife') ?? inheritedNote('uses')}>
-          <div className="flex flex-col gap-2">
-            {resolved.wildlife && resolved.wildlife.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {resolved.wildlife.map((w) => (
-                  <Chip key={w} tone="brand">{w}</Chip>
-                ))}
-              </div>
-            )}
-            {resolved.uses && resolved.uses.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {resolved.uses.map((u) => (
-                  <Chip key={u}>{u}</Chip>
-                ))}
-              </div>
-            )}
-          </div>
-        </Section>
-      )}
+        {/* More facts — the free seed-packet chips (spacing, germination, depth, use…) */}
+        <Tile title="More facts" note={hasFacts ? inheritedNote('facts') : undefined} masonry>
+          {hasFacts ? (
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(resolved.facts!).map(([key, value]) => (
+                <span
+                  key={key}
+                  className="inline-flex items-baseline gap-1.5 rounded-md bg-sunken px-2.5 py-1 text-sm"
+                >
+                  <span className="text-xs uppercase tracking-wide text-subtle">{key}</span>
+                  <span className="font-medium">{value}</span>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <Muted>None recorded yet.</Muted>
+          )}
+        </Tile>
 
-      {/* summary */}
-      {resolved.summary && (
-        <Section title="Notes" note={inheritedNote('summary')}>
-          <p className="text-sm leading-relaxed text-muted">{resolved.summary}</p>
-        </Section>
-      )}
+        {/* Wildlife & suggested uses */}
+        <Tile
+          title="Wildlife & uses"
+          note={hasWildlife || hasUses ? inheritedNote('wildlife') ?? inheritedNote('uses') : undefined}
+          masonry
+        >
+          {hasWildlife || hasUses ? (
+            <div className="flex flex-col gap-2">
+              {hasWildlife && (
+                <div className="flex flex-wrap gap-1.5">
+                  {resolved.wildlife!.map((w) => (
+                    <Chip key={w} tone="brand">{w}</Chip>
+                  ))}
+                </div>
+              )}
+              {hasUses && (
+                <div className="flex flex-wrap gap-1.5">
+                  {resolved.uses!.map((u) => (
+                    <Chip key={u}>{u}</Chip>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Muted>None recorded yet.</Muted>
+          )}
+        </Tile>
 
-      {/* guides */}
-      {guides.length > 0 && (
-        <Section title="Guides">
-          <ul className="flex flex-col gap-2">
-            {guides.map((g) => (
-              <li key={g.id} className="flex items-center gap-2">
-                <Chip>{g.kind}</Chip>
-                {g.url ? (
-                  <a
-                    href={g.url}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="text-sm font-medium text-brand-ink hover:underline"
-                  >
-                    {g.title} ↗
-                  </a>
-                ) : (
-                  <span className="text-sm">{g.title}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
+        {/* Notes */}
+        <Tile title="Notes" note={resolved.summary ? inheritedNote('summary') : undefined} masonry>
+          {resolved.summary ? (
+            <p className="text-sm leading-relaxed text-muted">{resolved.summary}</p>
+          ) : (
+            <Muted>No notes yet.</Muted>
+          )}
+        </Tile>
+
+        {/* Guides */}
+        <Tile title="Guides" masonry>
+          {guides.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {guides.map((g) => (
+                <li key={g.id} className="flex items-center gap-2">
+                  <Chip>{g.kind}</Chip>
+                  {g.url ? (
+                    <a
+                      href={g.url}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-sm font-medium text-brand-ink hover:underline"
+                    >
+                      {g.title} ↗
+                    </a>
+                  ) : (
+                    <span className="text-sm">{g.title}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Muted>No linked guides.</Muted>
+          )}
+        </Tile>
+      </div>
 
       {/* provenance */}
       {sources.size > 0 && (
@@ -237,24 +263,43 @@ export default function CheatsheetPage() {
   )
 }
 
-function Section({
+// A dashboard tile: a quiet title *outside* a bordered card (the content draws the eye). The
+// card carries no padding by default so visual content (calendar, season strip) bleeds to the
+// border; `bleed={false}` re-adds a p-4 inset for text/chip content. `fill` stretches the card
+// to its row height (the evened hero pairing); `masonry` adds the column-flow rhythm and stops a
+// tile splitting across a column break.
+function Tile({
   title,
   note,
+  bleed = false,
   fill,
+  masonry,
   children,
 }: {
   title: string
   note?: string
+  bleed?: boolean
   fill?: boolean
+  masonry?: boolean
   children: React.ReactNode
 }) {
   return (
-    <section className={`flex flex-col gap-3 ${fill ? 'h-full' : ''}`}>
+    <section
+      className={`flex flex-col gap-2 ${fill ? 'h-full' : ''} ${
+        masonry ? 'mb-6 break-inside-avoid' : ''
+      }`}
+    >
       <div className="flex items-baseline gap-2">
-        <h2 className="font-display text-h2 font-semibold">{title}</h2>
+        <h2 className="font-display text-h3 font-semibold text-muted">{title}</h2>
         {note && <span className="text-xs italic text-subtle">{note}</span>}
       </div>
-      {fill ? <div className="flex-1">{children}</div> : children}
+      <div
+        className={`overflow-hidden rounded-lg border border-line bg-card ${fill ? 'flex-1' : ''} ${
+          bleed ? '' : 'p-4'
+        }`}
+      >
+        {children}
+      </div>
     </section>
   )
 }
