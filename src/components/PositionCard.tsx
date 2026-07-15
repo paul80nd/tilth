@@ -240,10 +240,10 @@ export default function PositionCard({ conditions }: { conditions?: Conditions }
       {slots.map((s, i) => (
         <div
           key={s.title}
-          className={`flex flex-col items-center gap-2 p-3 ${i > 0 ? 'border-l border-line' : ''}`}
+          className={`flex flex-col items-center gap-2 p-2 ${i > 0 ? 'border-l border-line' : ''}`}
           title={s.detail}
         >
-          <div className="text-[0.65rem] font-medium uppercase tracking-wide text-subtle">{s.title}</div>
+          <div className="text-[0.6rem] font-medium uppercase tracking-wide text-subtle">{s.title}</div>
           <div className="grid flex-1 place-items-center">{s.glyph}</div>
         </div>
       ))}

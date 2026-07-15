@@ -44,7 +44,16 @@ function noteFor(calendar: PhaseSpan[], code: PhaseCode, month: number): string 
   return calendar.find((s) => s.code === code && s.months.includes(month) && s.note)?.note
 }
 
-export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]; month: number }) {
+export default function CalendarBar({
+  calendar,
+  month,
+  note,
+}: {
+  calendar: PhaseSpan[]
+  month: number
+  /** Inherited-source note (e.g. "from Apple"), shown in the otherwise-empty top-left cell. */
+  note?: string
+}) {
   const codes = phasesPresent(calendar)
   if (codes.length === 0) {
     return <p className="text-sm text-muted">No calendar recorded for this plant yet.</p>
@@ -56,8 +65,10 @@ export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]
         className="grid min-w-[30rem] text-xs"
         style={{ gridTemplateColumns: 'minmax(5.5rem, max-content) repeat(12, minmax(0, 1fr))' }}
       >
-          {/* header row: month initials, current month marked */}
-          <div className="py-1.5" />
+          {/* header row: the top-left cell carries any inherited-source note; then month initials */}
+          <div className="flex items-end py-1.5 pl-3 pr-2">
+            {note && <span className="text-[0.6rem] italic leading-tight text-subtle">{note}</span>}
+          </div>
           {MONTH_INITIALS.map((initial, i) => (
             <div
               key={i}

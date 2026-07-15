@@ -20,7 +20,7 @@ const SLOTS: PhaseCode[] = ['foliage', 'flower', 'stem', 'fruit']
 function Slot({ code, part }: { code: PhaseCode; part?: { colour?: string } }) {
   if (!part) {
     return (
-      <span className="grid h-7 w-7 place-items-center" title={`No ${PHASE_META[code].label.toLowerCase()}`}>
+      <span className="grid h-9 w-9 place-items-center" title={`No ${PHASE_META[code].label.toLowerCase()}`}>
         <span className="h-1.5 w-1.5 rounded-full bg-subtle/50" aria-hidden="true" />
       </span>
     )
@@ -32,8 +32,8 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colour?: string } }) {
   const color = pale ? 'var(--tl-border-strong)' : hex ?? 'var(--tl-text-subtle)'
   const label = PHASE_META[code].label + (part.colour ? ` — ${part.colour}` : '')
   return (
-    <span className="grid h-7 w-7 place-items-center" style={{ color }} title={label}>
-      <SeasonalIcon part={code as 'foliage' | 'flower' | 'fruit' | 'stem'} size={22} />
+    <span className="grid h-9 w-9 place-items-center" style={{ color }} title={label}>
+      <SeasonalIcon part={code as 'foliage' | 'flower' | 'fruit' | 'stem'} size={30} />
     </span>
   )
 }

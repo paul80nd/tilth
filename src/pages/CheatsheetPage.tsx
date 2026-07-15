@@ -76,55 +76,57 @@ export default function CheatsheetPage() {
           is used. DOM order (identity → calendar → seasonal) is the single-column order on mobile;
           the grid areas place calendar to the right spanning both left-hand rows on ≥lg. */}
       <div className="grid gap-6 lg:grid-cols-6 lg:items-start">
+        {/* Name leads the block visually; the classifying tags sit at the end. */}
         <header className="flex flex-col gap-2 lg:col-span-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {resolved.category && <Chip tone="brand">{resolved.category}</Chip>}
-          <Chip>{node.rank}</Chip>
-          {resolved.lifecycle && <Chip>{resolved.lifecycle}</Chip>}
-          {resolved.foliage && <Chip>{resolved.foliage}</Chip>}
-          {resolved.habit && <Chip>{resolved.habit}</Chip>}
-        </div>
-        <h1 className="font-display text-display font-semibold leading-tight">
-          {plant}
-          {variety && <span className="text-brand-ink"> · {variety}</span>}
-        </h1>
-        {botanical && (
-          <p className="text-sm italic text-muted">
-            {botanical}
-            {resolved.synonyms && resolved.synonyms.length > 0 && (
-              <span className="not-italic text-subtle"> · syn. {resolved.synonyms.join(', ')}</span>
-            )}
-          </p>
-        )}
-        {resolved.otherNames && resolved.otherNames.length > 0 && (
-          <p className="text-xs text-subtle">also known as {resolved.otherNames.join(', ')}</p>
-        )}
-        {node.awards && node.awards.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {node.awards.map((a) => (
-              <span
-                key={a}
-                className="inline-flex items-center gap-1 rounded-md bg-accent-tint px-2 py-0.5 text-xs font-semibold text-accent-ink"
-              >
-                <span aria-hidden="true">★</span>
-                {a}
-              </span>
-            ))}
+          <h1 className="font-display text-display font-semibold leading-tight">
+            {plant}
+            {variety && <span className="text-brand-ink"> · {variety}</span>}
+          </h1>
+          {botanical && (
+            <p className="text-sm italic text-muted">
+              {botanical}
+              {resolved.synonyms && resolved.synonyms.length > 0 && (
+                <span className="not-italic text-subtle"> · syn. {resolved.synonyms.join(', ')}</span>
+              )}
+            </p>
+          )}
+          {resolved.otherNames && resolved.otherNames.length > 0 && (
+            <p className="text-xs text-subtle">also known as {resolved.otherNames.join(', ')}</p>
+          )}
+          {node.awards && node.awards.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {node.awards.map((a) => (
+                <span
+                  key={a}
+                  className="inline-flex items-center gap-1 rounded-md bg-accent-tint px-2 py-0.5 text-xs font-semibold text-accent-ink"
+                >
+                  <span aria-hidden="true">★</span>
+                  {a}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {resolved.category && <Chip tone="brand">{resolved.category}</Chip>}
+            <Chip>{node.rank}</Chip>
+            {resolved.lifecycle && <Chip>{resolved.lifecycle}</Chip>}
+            {resolved.foliage && <Chip>{resolved.foliage}</Chip>}
+            {resolved.habit && <Chip>{resolved.habit}</Chip>}
           </div>
-        )}
         </header>
 
         {/* Calendar — the hero, beside the name; spans the right four columns so its left edge
             lines up with Position (and its right edge with Conditions) in the grid below. Natural
-            height, not stretched to the identity block. */}
+            height, not stretched to the identity block. No title (a month grid is self-evident);
+            when inherited, the source note (e.g. "from Apple") rides in the calendar's top-left cell. */}
         <div className="lg:col-span-4">
-          <Tile
-            title="Calendar"
-            note={resolved.calendar ? inheritedNote('calendar') : undefined}
-            bleed={!!resolved.calendar}
-          >
+          <Tile bleed={!!resolved.calendar}>
             {resolved.calendar ? (
-              <CalendarBar calendar={resolved.calendar} month={CURRENT_MONTH} />
+              <CalendarBar
+                calendar={resolved.calendar}
+                month={CURRENT_MONTH}
+                note={inheritedNote('calendar')}
+              />
             ) : (
               <Muted>No calendar recorded yet.</Muted>
             )}
@@ -292,7 +294,8 @@ export default function CheatsheetPage() {
 // card carries no padding by default so visual content (calendar, season strip) bleeds to the
 // border; `bleed={false}` re-adds a p-4 inset for text/chip content. `fill` stretches the card
 // to its row height (the evened hero pairing); `masonry` adds the column-flow rhythm and stops a
-// tile splitting across a column break.
+// tile splitting across a column break. `title` is optional — a self-evident tile (the calendar)
+// omits it but can still surface its inherited-source `note` alone.
 function Tile({
   title,
   note,
@@ -301,7 +304,7 @@ function Tile({
   masonry,
   children,
 }: {
-  title: string
+  title?: string
   note?: string
   bleed?: boolean
   fill?: boolean
@@ -314,10 +317,12 @@ function Tile({
         masonry ? 'mb-6 break-inside-avoid' : ''
       }`}
     >
-      <div className="flex items-baseline gap-2">
-        <h2 className="font-display text-h3 font-semibold text-muted">{title}</h2>
-        {note && <span className="text-xs italic text-subtle">{note}</span>}
-      </div>
+      {(title || note) && (
+        <div className="flex items-baseline gap-2">
+          {title && <h2 className="font-display text-h3 font-semibold text-muted">{title}</h2>}
+          {note && <span className="text-xs italic text-subtle">{note}</span>}
+        </div>
+      )}
       <div
         className={`overflow-hidden rounded-lg border border-line bg-card ${fill ? 'flex-1' : ''} ${
           bleed ? '' : 'p-4'
