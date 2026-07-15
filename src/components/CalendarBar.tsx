@@ -57,11 +57,11 @@ export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]
         style={{ gridTemplateColumns: 'minmax(5.5rem, max-content) repeat(12, minmax(0, 1fr))' }}
       >
           {/* header row: month initials, current month marked */}
-          <div className="py-2" />
+          <div className="py-1.5" />
           {MONTH_INITIALS.map((initial, i) => (
             <div
               key={i}
-              className={`border-l border-line py-2 text-center ${
+              className={`border-l border-line py-1.5 text-center ${
                 i + 1 === month ? 'bg-brand/10 font-bold text-brand-ink' : 'font-medium text-subtle'
               }`}
               title={i + 1 === month ? `${MONTH_NAMES[i]} (this month)` : MONTH_NAMES[i]}
@@ -76,7 +76,7 @@ export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]
             const rowLine = rowIdx > 0 ? 'border-t border-line' : ''
             return (
               <Fragment key={code}>
-                <div className={`flex items-center gap-1.5 py-1.5 pl-3 pr-2 text-muted ${rowLine}`}>
+                <div className={`flex items-center gap-1.5 py-1 pl-3 pr-2 text-muted ${rowLine}`}>
                   <span
                     className={`h-2.5 w-2.5 flex-none rounded-full ${dot.pale ? 'ring-1 ring-line-strong' : ''}`}
                     style={{ backgroundColor: dot.colour }}
@@ -95,7 +95,7 @@ export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]
                       }`}
                     >
                       <div
-                        className={`h-full min-h-[1.4rem] w-full ${fill?.pale ? 'ring-1 ring-inset ring-line-strong' : ''}`}
+                        className={`h-full min-h-[1.15rem] w-full ${fill?.pale ? 'ring-1 ring-inset ring-line-strong' : ''}`}
                         style={fill ? { backgroundColor: fill.colour } : undefined}
                         title={
                           fill
