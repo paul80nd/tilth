@@ -97,15 +97,21 @@ export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGEle
 }
 
 // Bolder, filled glyphs for the seasonal-interest strip's three parts (foliage / flower /
-// fruit). Each keeps its source's native viewBox and paint (leaf + flower are solid fills;
-// fruit is stroked cherries) — they read as strong silhouettes rather than the fine line icons
-// above. Tinted via currentColor by the caller. From open sets: Material (leaf), SmartIcons
-// (flower), ByteDance (fruit).
+// fruit). Each keeps its source's native viewBox and paint — they read as strong silhouettes
+// rather than the fine line icons above. Tinted via currentColor by the caller. Third-party
+// icons (permissive licences; recoloured + resized here) — see CREDITS.md:
+//   foliage — Material Design Icons (Pictogrammers), Apache-2.0
+//   flower  — Ionicons (Ben Sperry / Ionic), MIT
+//   fruit   — IconPark (ByteDance), Apache-2.0
 type SeasonalPart = 'foliage' | 'flower' | 'fruit'
 
-const SEASONAL: Record<SeasonalPart, { viewBox: string; body: React.ReactNode }> = {
+// `scale` visually balances the three: their source artworks fill their viewBoxes by different
+// amounts, so at one nominal size the flower/fruit read larger than the leaf. These factors bring
+// all three to the same apparent size (leaf is the reference at 1).
+const SEASONAL: Record<SeasonalPart, { viewBox: string; scale: number; body: React.ReactNode }> = {
   foliage: {
     viewBox: '0 0 24 24',
+    scale: 1,
     body: (
       <path
         fill="currentColor"
@@ -114,18 +120,21 @@ const SEASONAL: Record<SeasonalPart, { viewBox: string; body: React.ReactNode }>
     ),
   },
   flower: {
-    viewBox: '0 0 16 16',
+    viewBox: '0 0 512 512',
+    scale: 0.86,
     body: (
-      <path
-        fill="currentColor"
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M15.164 8.404c-.171-.094-.522-.237-.982-.403c.46-.166.81-.308.981-.402c1.016-.549 1.121-2.16.235-3.598c-.887-1.437-2.429-2.157-3.444-1.609c-.173.095-.48.306-.865.597c.078-.458.119-.814.119-1c0-1.1-1.437-1.99-3.208-1.99s-3.21.89-3.21 1.99c0 .186.043.541.121.998a9 9 0 0 0-.863-.596C3.032 1.842 1.488 2.562.603 4s-.779 3.048.235 3.597c.173.095.522.238.985.404c-.463.167-.814.31-.986.404c-1.016.549-1.121 2.158-.235 3.597c.886 1.437 2.429 2.157 3.444 1.608c.173-.093.479-.304.865-.595c-.078.457-.121.81-.121.997c0 1.099 1.436 1.989 3.21 1.989c1.771 0 3.208-.89 3.208-1.989c0-.187-.041-.542-.119-1.001c.385.293.693.505.866.598c1.016.549 2.558-.17 3.443-1.607c.887-1.439.781-3.049-.234-3.598M8 11.047a3.047 3.047 0 1 1 0-6.092a3.05 3.05 0 0 1 3.049 3.046A3.05 3.05 0 0 1 8 11.047"
-      />
+      <>
+        <circle cx="256" cy="256" r="48" fill="currentColor" />
+        <path
+          fill="currentColor"
+          d="M475.93 303.91a67.49 67.49 0 0 0-44.34-115.53a5.2 5.2 0 0 1-4.58-3.21a5.21 5.21 0 0 1 1-5.51A67.83 67.83 0 0 0 378 66.33h-.25A67.13 67.13 0 0 0 332.35 84a5.21 5.21 0 0 1-5.52 1a5.23 5.23 0 0 1-3.22-4.58a67.68 67.68 0 0 0-135.23 0a5.2 5.2 0 0 1-3.21 4.58a5.21 5.21 0 0 1-5.52-1a67.1 67.1 0 0 0-45.44-17.69H134a67.91 67.91 0 0 0-50 113.34a5.21 5.21 0 0 1 1 5.51a5.2 5.2 0 0 1-4.58 3.21a67.71 67.71 0 0 0 0 135.23a5.23 5.23 0 0 1 4.58 3.23a5.22 5.22 0 0 1-1 5.52a67.54 67.54 0 0 0 50.08 113h.25A67.38 67.38 0 0 0 179.65 428a5.21 5.21 0 0 1 5.51-1a5.2 5.2 0 0 1 3.21 4.58a67.71 67.71 0 0 0 135.23 0a5.23 5.23 0 0 1 3.22-4.58a5.21 5.21 0 0 1 5.51 1a67.38 67.38 0 0 0 45.29 17.42h.25a67.48 67.48 0 0 0 50.08-113a5.22 5.22 0 0 1-1-5.52a5.23 5.23 0 0 1 4.58-3.22a67.3 67.3 0 0 0 44.4-19.77M256 336a80 80 0 1 1 80-80a80.09 80.09 0 0 1-80 80"
+        />
+      </>
     ),
   },
   fruit: {
     viewBox: '0 0 48 48',
+    scale: 0.86,
     body: (
       <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth={4}>
         <circle cx="14" cy="34" r="8" fill="currentColor" strokeLinejoin="round" />
@@ -142,8 +151,9 @@ export function SeasonalIcon({
   ...props
 }: { part: SeasonalPart; size?: number } & SVGProps<SVGSVGElement>) {
   const g = SEASONAL[part]
+  const px = Math.round(size * g.scale)
   return (
-    <svg width={size} height={size} viewBox={g.viewBox} aria-hidden="true" {...props}>
+    <svg width={px} height={px} viewBox={g.viewBox} aria-hidden="true" {...props}>
       {g.body}
     </svg>
   )
