@@ -51,7 +51,7 @@ export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-line bg-card">
+    <div className="flex h-full flex-col overflow-hidden rounded-lg border border-line bg-card">
       <div className="overflow-x-auto">
         <div
           className="grid min-w-[30rem] text-xs"
@@ -96,7 +96,7 @@ export default function CalendarBar({ calendar, month }: { calendar: PhaseSpan[]
                       }`}
                     >
                       <div
-                        className={`h-5 w-full ${fill?.pale ? 'ring-1 ring-inset ring-line-strong' : ''}`}
+                        className={`h-full min-h-[1.4rem] w-full ${fill?.pale ? 'ring-1 ring-inset ring-line-strong' : ''}`}
                         style={fill ? { backgroundColor: fill.colour } : undefined}
                         title={
                           fill

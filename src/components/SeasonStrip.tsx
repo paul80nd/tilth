@@ -39,8 +39,8 @@ export default function SeasonStrip({ interest }: { interest: SeasonInterest[] }
   // One card split into four quadrants by internal dividers (Spring TL, Summer TR, Autumn BL,
   // Winter BR) — borders on the left column / top row draw the cross.
   return (
-    <div className="overflow-hidden rounded-lg border border-line bg-card">
-      <div className="grid grid-cols-2">
+    <div className="h-full overflow-hidden rounded-lg border border-line bg-card">
+      <div className="grid h-full grid-cols-2">
         {interest.map((s, i) => (
           <div
             key={s.season}

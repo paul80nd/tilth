@@ -116,11 +116,11 @@ export default function CheatsheetPage() {
 
       {/* calendar + seasonal interest, side by side (≈60/40) when there's seasonal colour */}
       {hasInterest ? (
-        <div className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-start">
-          <Section title="Calendar" note={inheritedNote('calendar')}>
+        <div className="grid gap-6 lg:grid-cols-[3fr_2fr] lg:items-stretch">
+          <Section title="Calendar" note={inheritedNote('calendar')} fill>
             <CalendarBar calendar={resolved.calendar!} month={CURRENT_MONTH} />
           </Section>
-          <Section title="Seasonal interest" note={inheritedNote('calendar')}>
+          <Section title="Seasonal interest" note={inheritedNote('calendar')} fill>
             <SeasonStrip interest={interest} />
           </Section>
         </div>
@@ -240,19 +240,21 @@ export default function CheatsheetPage() {
 function Section({
   title,
   note,
+  fill,
   children,
 }: {
   title: string
   note?: string
+  fill?: boolean
   children: React.ReactNode
 }) {
   return (
-    <section className="flex flex-col gap-3">
+    <section className={`flex flex-col gap-3 ${fill ? 'h-full' : ''}`}>
       <div className="flex items-baseline gap-2">
         <h2 className="font-display text-h2 font-semibold">{title}</h2>
         {note && <span className="text-xs italic text-subtle">{note}</span>}
       </div>
-      {children}
+      {fill ? <div className="flex-1">{children}</div> : children}
     </section>
   )
 }
