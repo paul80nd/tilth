@@ -114,19 +114,6 @@ export function SizeFacts({ size }: { size?: Size }) {
   )
 }
 
-export function ConditionsFacts({ conditions }: { conditions?: Conditions }) {
-  const c = conditions ?? {}
-  return (
-    <FactList
-      facts={[
-        { key: 'soil', icon: 'soil', label: 'Soil', value: list(c.soil) },
-        { key: 'moisture', icon: 'moisture', label: 'Moisture', value: list(c.moisture) },
-        { key: 'ph', icon: 'ph', label: 'pH', value: list(c.ph) },
-      ]}
-    />
-  )
-}
-
 export function EdibilityFacts({ edible, toxicity }: { edible?: string[]; toxicity?: string }) {
   return (
     <FactList
