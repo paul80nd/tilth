@@ -6,6 +6,8 @@ data/private/
 data/private*.zip
 adapters-private/
 *.private.json
+# Exported backups hold the user's REAL garden (incl. source URLs in sourceLinks) — never commit.
+tilth-backup*.json
 # Private session handover / notes — local context, never committed.
 *.local.md
 
