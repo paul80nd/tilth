@@ -1,7 +1,7 @@
 // User/garden data — the precious, hand-entered layer whose durable backup is an
-// exported JSON. Unlike the reference plant nodes (re-importable, never precious), these
-// records are the user's own and must survive re-imports untouched. Conceptual shapes;
-// the Dexie stores mirror these.
+// exported JSON. Conceptual shapes; the Dexie stores mirror these.
+
+import type { PlantNode, Guide, TaskTemplate } from './plant'
 
 /** Something the user grows (or plans to). An *individual planting* — two apple trees are
  *  two holdings — so notes/photos/location attach per-instance, while the jobs they imply
@@ -44,4 +44,21 @@ export interface JobLog {
 export interface Setting {
   key: string
   value: unknown
+}
+
+/** The Save/Open backup envelope — a self-contained snapshot of *every* table, so it is a
+ *  true restore point that needs no matching demo file. Unlike Forkast (whose reference data
+ *  is disposable), Tilth's reference nodes/guides/tasks can be hand-authored or merge-imported,
+ *  so they are precious and travel in the backup too — otherwise a restore would lose exactly
+ *  the plants you added. Open restores by replacing all data wholesale (no tombstones — the
+ *  saved set itself is the record of what was kept). */
+export interface BackupSnapshot {
+  version: 1
+  exportedAt: string
+  nodes: PlantNode[]
+  guides: Guide[]
+  tasks: TaskTemplate[]
+  holdings: Holding[]
+  jobLog: JobLog[]
+  settings: Setting[]
 }

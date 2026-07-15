@@ -96,3 +96,16 @@ field, distinct from `provenance[field].url`:* provenance records where a value 
 the fact; `sourceLinks` is the *intent to enrich*, entered before any value exists. It rides in
 the exported backup, so the backup doubles as the acquire worklist (no separate lookup file). A
 URL here is user data (IndexedDB/backup, never committed); committed demo uses `example.invalid`.
+
+## 2026-07-15 — The backup snapshots every table (reference data is precious once user-touched)
+
+Save/Open exports a self-contained `BackupSnapshot` of **all six tables** (nodes, guides, tasks,
+holdings, jobLog, settings) and restores by wiping then reloading wholesale — a true restore point
+with no tombstones (the saved set *is* the record of what was kept). *Why include the reference
+nodes* — Forkast's backup excludes disposable seed data, but Tilth's nodes can be hand-authored
+(`"manual"`) or merge-imported, so excluding them would lose exactly the plants the gardener built
+up. Restore validates lightly and **preserves whole records including `provenance`** — it must NOT
+run nodes through `parsePlantDataset` (that guards *import fragments*: it preserves partiality and
+strips provenance, which the merge owns). Persistence stays IndexedDB + JSON export (no File System
+Access API); Save downloads via an anchor + object URL, Open reads a picked file. A restored
+snapshot lacking a `dataSource` marker is stamped user-owned so the demo re-seed can't clobber it.

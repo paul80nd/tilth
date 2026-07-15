@@ -4,6 +4,7 @@ import BrowsePage from './pages/BrowsePage'
 import CheatsheetPage from './pages/CheatsheetPage'
 import PlantFormPage from './pages/PlantFormPage'
 import GardenPage from './pages/GardenPage'
+import DataPage from './pages/DataPage'
 
 // App shell: a slim header (wordmark + primary tabs + theme toggle) over the routed pages.
 // Browse is the whole plant knowledge base; "My garden" (holdings) arrives in a later step.
@@ -37,7 +38,8 @@ export default function App() {
             <Tab to="/">Browse</Tab>
             <Tab to="/garden">My garden</Tab>
           </nav>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <Tab to="/data">Data</Tab>
             <ThemeToggle />
           </div>
         </div>
@@ -50,6 +52,7 @@ export default function App() {
           <Route path="/plant/:id" element={<CheatsheetPage />} />
           <Route path="/plant/:id/edit" element={<PlantFormPage />} />
           <Route path="/garden" element={<GardenPage />} />
+          <Route path="/data" element={<DataPage />} />
         </Routes>
       </main>
     </div>

@@ -2,9 +2,10 @@ import Dexie, { type Table } from 'dexie'
 import type { PlantNode, Guide, TaskTemplate } from '../schema/plant'
 import type { Holding, JobLog, Setting } from '../schema/userData'
 
-// IndexedDB working store. Reference data (nodes/guides/tasks) is merge-imported and always
-// re-importable, so never precious; user data (holdings/jobLog/settings) is the part worth
-// exporting as the durable backup. Mirrors Forkast's split, with Tilth's own stores.
+// IndexedDB working store. The demo seed is disposable (re-importable), but once a gardener
+// hand-authors or merge-imports plants, the reference data (nodes/guides/tasks) is their own
+// work — so the durable backup snapshots ALL tables, not just user data (holdings/jobLog/
+// settings). See src/app/backup.ts. Mirrors Forkast's split, with Tilth's own stores.
 export class TilthDB extends Dexie {
   // Reference (re-importable; nodes are the property-level merge target).
   nodes!: Table<PlantNode, string>
