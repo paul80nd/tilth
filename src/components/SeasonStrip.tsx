@@ -2,7 +2,7 @@ import type { PhaseCode } from '../schema/plant'
 import type { SeasonInterest } from '../lib/calendar'
 import { PHASE_META } from '../lib/calendar'
 import { colourSwatch } from '../lib/colour'
-import { Icon, type IconName } from './icons'
+import { SeasonalIcon } from './icons'
 
 // The spreadsheet's "Colour" tab as a 2×2 year block: Spring (top-left), Summer (top-right),
 // Autumn (bottom-left), Winter (bottom-right). Each season has three fixed slots — foliage,
@@ -18,19 +18,20 @@ const SLOTS: PhaseCode[] = ['foliage', 'flower', 'fruit']
 function Slot({ code, part }: { code: PhaseCode; part?: { colour?: string } }) {
   if (!part) {
     return (
-      <span className="grid h-8 w-8 place-items-center" title={`No ${PHASE_META[code].label.toLowerCase()}`}>
+      <span className="grid h-12 w-12 place-items-center" title={`No ${PHASE_META[code].label.toLowerCase()}`}>
         <span className="h-1.5 w-1.5 rounded-full bg-subtle/50" aria-hidden="true" />
       </span>
     )
   }
+  // Bold silhouette tinted to the part's real colour; pale blooms (white/cream) fall back to a
+  // light neutral so they stay legible in both themes.
   const hex = part.colour ? colourSwatch(part.colour) : undefined
   const pale = !!part.colour && PALE.test(part.colour)
-  const filled = !!hex && !pale
   const color = pale ? 'var(--tl-border-strong)' : hex ?? 'var(--tl-text-subtle)'
   const label = PHASE_META[code].label + (part.colour ? ` — ${part.colour}` : '')
   return (
-    <span className="grid h-8 w-8 place-items-center" style={{ color }} title={label}>
-      <Icon name={code as IconName} filled={filled} width={26} height={26} />
+    <span className="grid h-12 w-12 place-items-center" style={{ color }} title={label}>
+      <SeasonalIcon part={code as 'foliage' | 'flower' | 'fruit'} size={38} />
     </span>
   )
 }
