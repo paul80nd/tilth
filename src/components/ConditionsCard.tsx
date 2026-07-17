@@ -50,10 +50,10 @@ const MOISTURE: Record<WedgePos, Region<MoistureLevel>> = {
 }
 
 /** Soil as a 2×2 square — Chalk / Clay / Loam / Sand (reading order), filled when suitable. */
-function SoilQuad({ set, size = 60 }: { set: Set<SoilType>; size?: number }) {
+function SoilQuad({ set, size = 60, flush = false }: { set: Set<SoilType>; size?: number; flush?: boolean }) {
   return (
     <span
-      className="grid grid-cols-2 gap-px overflow-hidden rounded"
+      className={`grid grid-cols-2 gap-px overflow-hidden ${flush ? '' : 'rounded'}`}
       style={{ width: size, height: size, backgroundColor: GAP }}
     >
       {SOIL_TYPES.map((key) => {
@@ -95,13 +95,15 @@ function WedgeGlyph<T extends string>({
   regions,
   set,
   size = 60,
+  flush = false,
 }: {
   regions: Record<WedgePos, Region<T>>
   set: Set<T>
   size?: number
+  flush?: boolean
 }) {
   return (
-    <span className="block overflow-hidden rounded" style={{ width: size, height: size }}>
+    <span className={`block overflow-hidden ${flush ? '' : 'rounded'}`} style={{ width: size, height: size }}>
       <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
         {WEDGE_ORDER.map((pos) => {
           const c = regions[pos]
@@ -141,14 +143,14 @@ function describe<T extends string>(order: readonly T[], set: Set<T>): string {
 }
 
 // Single-facet cells for the compare table — the same glyphs, sized to fill a table square.
-export function SoilCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
-  return <SoilQuad set={soilSet(conditions?.soil)} size={size} />
+export function SoilCell({ conditions, size, flush }: { conditions?: Conditions; size?: number; flush?: boolean }) {
+  return <SoilQuad set={soilSet(conditions?.soil)} size={size} flush={flush} />
 }
-export function MoistureCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
-  return <WedgeGlyph regions={MOISTURE} set={moistureSet(conditions?.moisture)} size={size} />
+export function MoistureCell({ conditions, size, flush }: { conditions?: Conditions; size?: number; flush?: boolean }) {
+  return <WedgeGlyph regions={MOISTURE} set={moistureSet(conditions?.moisture)} size={size} flush={flush} />
 }
-export function PhCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
-  return <WedgeGlyph regions={PH} set={phSet(conditions?.ph)} size={size} />
+export function PhCell({ conditions, size, flush }: { conditions?: Conditions; size?: number; flush?: boolean }) {
+  return <WedgeGlyph regions={PH} set={phSet(conditions?.ph)} size={size} flush={flush} />
 }
 
 export default function ConditionsCard({ conditions }: { conditions?: Conditions }) {

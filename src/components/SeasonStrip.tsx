@@ -17,8 +17,6 @@ const PALE = /white|cream|silver|pale/i
 // clockwise from top-left, leaf → flower → fruit → stem.
 const SLOTS: PhaseCode[] = ['foliage', 'flower', 'stem', 'fruit']
 
-const ICON = 30
-
 /** Tint for a colour word: pale blooms (white/cream) fall back to a fixed light neutral so they
  *  read as "pale" on both a white and a dark card (a theme-flipping token would go dark in dark
  *  mode and vanish); unknown words render subtle. */
@@ -58,12 +56,15 @@ function sectorClips(n: number): string[] {
   })
 }
 
-function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } }) {
+function Slot({ code, part, size = 36 }: { code: PhaseCode; part?: { colours: string[] }; size?: number }) {
   const iconPart = code as 'foliage' | 'flower' | 'fruit' | 'stem'
+  const box = { width: size, height: size }
+  const icon = Math.round(size * (5 / 6)) // 36 → 30
   if (!part) {
+    const dot = Math.max(3, Math.round(size * 0.16))
     return (
-      <span className="grid h-9 w-9 place-items-center" title={`No ${PHASE_META[code].label.toLowerCase()}`}>
-        <span className="h-1.5 w-1.5 rounded-full bg-subtle/50" aria-hidden="true" />
+      <span className="grid place-items-center" style={box} title={`No ${PHASE_META[code].label.toLowerCase()}`}>
+        <span className="rounded-full bg-subtle/50" style={{ width: dot, height: dot }} aria-hidden="true" />
       </span>
     )
   }
@@ -73,8 +74,8 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } })
   // one colour per equal sector (1st third / 2nd third / 3rd third), like a segmented swatch.
   if (part.colours.length <= 1) {
     return (
-      <span className="grid h-9 w-9 place-items-center" style={{ color: tint(part.colours[0]) }} title={label}>
-        <SeasonalIcon part={iconPart} size={ICON} />
+      <span className="grid place-items-center" style={{ ...box, color: tint(part.colours[0]) }} title={label}>
+        <SeasonalIcon part={iconPart} size={icon} />
       </span>
     )
   }
@@ -82,15 +83,15 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } })
   const clips = sectorClips(n)
   const step = 360 / n
   return (
-    <span className="grid h-9 w-9 place-items-center" title={label}>
-      <span className="relative block" style={{ width: ICON, height: ICON }}>
+    <span className="grid place-items-center" style={box} title={label}>
+      <span className="relative block" style={{ width: icon, height: icon }}>
         {part.colours.map((c, i) => (
           <span
             key={c}
             className="absolute inset-0 grid place-items-center"
             style={{ color: tint(c), clipPath: clips[i] }}
           >
-            <SeasonalIcon part={iconPart} size={ICON} />
+            <SeasonalIcon part={iconPart} size={icon} />
           </span>
         ))}
         {/* Hairline between wedges: a thin radial line in the card colour, so it reads as a clean
@@ -101,7 +102,7 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } })
             aria-hidden="true"
             className="absolute left-1/2 top-1/2"
             style={{
-              height: ICON,
+              height: icon,
               width: 1.5,
               background: 'var(--tl-surface-card)',
               transformOrigin: 'bottom center',
@@ -115,12 +116,12 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } })
 }
 
 /** One season's interest as a 2×2 of slots (foliage · flower / stem · fruit). Reused by the strip
- *  and, edge-to-edge, as a compare-table cell. */
-export function SeasonCell({ parts, className = '' }: { parts: SeasonInterest['parts']; className?: string }) {
+ *  and, edge-to-edge, as a compare-table cell (`slot` sizes the four slots). */
+export function SeasonCell({ parts, className = '', slot }: { parts: SeasonInterest['parts']; className?: string; slot?: number }) {
   return (
     <div className={`grid grid-cols-2 place-content-center ${className}`}>
       {SLOTS.map((code) => (
-        <Slot key={code} code={code} part={parts.find((p) => p.code === code)} />
+        <Slot key={code} code={code} part={parts.find((p) => p.code === code)} size={slot} />
       ))}
     </div>
   )

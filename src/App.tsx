@@ -4,12 +4,12 @@ import BrowsePage from './pages/BrowsePage'
 import CheatsheetPage from './pages/CheatsheetPage'
 import PlantFormPage from './pages/PlantFormPage'
 import GardenPage from './pages/GardenPage'
-import ComparePage from './pages/ComparePage'
+import TaxonomyPage from './pages/TaxonomyPage'
 import DataPage from './pages/DataPage'
 
-// App shell: a slim header (wordmark + primary tabs + theme toggle) over the routed pages.
-// Browse is the whole plant knowledge base; "My garden" (holdings) arrives in a later step.
-// Kept semantic and palette-light — styled only via the design-token utilities.
+// App shell: a slim fixed header (wordmark + primary tabs + theme toggle) over the routed pages.
+// The header never scrolls; each page owns the scroll below it — most via `Padded` (centred,
+// vertical scroll), while Taxonomy fills the area and manages its own two-axis scroll.
 function Tab({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <NavLink
@@ -27,17 +27,26 @@ function Tab({ to, children }: { to: string; children: React.ReactNode }) {
   )
 }
 
+/** Centred, vertically-scrollable layout for the ordinary pages. */
+function Padded({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="mx-auto max-w-5xl px-4 py-6">{children}</div>
+    </div>
+  )
+}
+
 export default function App() {
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-line bg-card/90 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
+    <div className="flex h-screen flex-col overflow-hidden">
+      <header className="z-10 flex-none border-b border-line bg-card/90 backdrop-blur">
+        <div className="flex items-center gap-4 px-4 py-3">
           <NavLink to="/" className="font-display text-h1 font-semibold tracking-tight">
             Tilth
           </NavLink>
           <nav className="flex items-center gap-1">
             <Tab to="/">Browse</Tab>
-            <Tab to="/compare">Compare</Tab>
+            <Tab to="/taxonomy">Taxonomy</Tab>
             <Tab to="/garden">My garden</Tab>
           </nav>
           <div className="ml-auto flex items-center gap-1">
@@ -47,15 +56,15 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="min-h-0 flex-1">
         <Routes>
-          <Route path="/" element={<BrowsePage />} />
-          <Route path="/add" element={<PlantFormPage />} />
-          <Route path="/plant/:id" element={<CheatsheetPage />} />
-          <Route path="/plant/:id/edit" element={<PlantFormPage />} />
-          <Route path="/garden" element={<GardenPage />} />
-          <Route path="/compare" element={<ComparePage />} />
-          <Route path="/data" element={<DataPage />} />
+          <Route path="/" element={<Padded><BrowsePage /></Padded>} />
+          <Route path="/add" element={<Padded><PlantFormPage /></Padded>} />
+          <Route path="/plant/:id" element={<Padded><CheatsheetPage /></Padded>} />
+          <Route path="/plant/:id/edit" element={<Padded><PlantFormPage /></Padded>} />
+          <Route path="/garden" element={<Padded><GardenPage /></Padded>} />
+          <Route path="/taxonomy" element={<TaxonomyPage />} />
+          <Route path="/data" element={<Padded><DataPage /></Padded>} />
         </Routes>
       </main>
     </div>

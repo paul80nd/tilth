@@ -5,7 +5,7 @@ import type { PlantNode, Rank } from '../../src/schema/plant'
 import { buildForest, flattenVisible, allIds, resolveAll } from '../../src/lib/tree'
 import type { TreeNode } from '../../src/lib/tree'
 
-const feature = await loadFeature('features/compare.feature')
+const feature = await loadFeature('features/taxonomy.feature')
 
 type Row = { id: string; rank: string; parentId: string; name: string }
 let forest: TreeNode[]

@@ -1,4 +1,4 @@
-Feature: Compare view — the taxonomy as an expandable tree
+Feature: Taxonomy view — the taxonomy as an expandable tree
   As a gardener reconciling my collection against my source sheet
   I want every plant laid out as a tree with its facets rolled up from its ancestors
   So that I can scan the whole record and see what each plant inherits

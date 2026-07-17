@@ -9,28 +9,32 @@ import { LightCell, AspectCell, ExposureCell, HardinessCell } from '../component
 import { SoilCell, MoistureCell, PhCell } from '../components/ConditionsCard'
 import Chip from '../components/Chip'
 
-// The compare view: the taxonomy as an expandable tree-table, with the cheatsheet's glyphs turned
-// on their side into per-facet square cells — a scannable overview to reconcile against the source
-// sheet. Category / Plant / Variety are frozen; the facet columns scroll horizontally.
+// The taxonomy view: the collection as an expandable family→genus→species→cultivar tree, with the
+// cheatsheet's glyphs turned on their side into per-facet square cells — a scannable overview to
+// reconcile against the source sheet. Category / Plant / Variety are frozen; the facet columns
+// scroll horizontally; both headers stay put. The whole table is the page's one scroll area.
 
-const GLYPH = 52 // glyph size inside a data cell
-const COLS = { cat: 56, plant: 210, variety: 150 }
+const CELL = 56 // square facet cell (drives the row height)
+const POS = 48 // position glyphs sit centred with a little breathing room
+const SLOT = Math.round(CELL / 2) // season 2×2 slot → the cell fills edge-to-edge
+const COLS = { cat: 56, plant: 200, variety: 150 }
 const LEFT = { cat: 0, plant: COLS.cat, variety: COLS.cat + COLS.plant }
+const GROUP_H = 29 // px height of the group-header row (col headers stick just below it)
 
 const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter']
 const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
 const CONDITIONS = ['Soil', 'Moisture', 'pH']
 
-/** A fixed square data cell with its glyph centred. */
+/** A fixed square data cell; the glyph fills it edge-to-edge. */
 function Cell({ children }: { children: React.ReactNode }) {
   return (
     <td className="border-b border-l border-divider p-0">
-      <div className="grid h-[72px] w-[72px] place-items-center">{children}</div>
+      <div className="grid place-items-center" style={{ width: CELL, height: CELL }}>{children}</div>
     </td>
   )
 }
 
-export default function ComparePage() {
+export default function TaxonomyPage() {
   const nodes = useLiveQuery(() => db.nodes.toArray(), [])
   const forest = useMemo(() => (nodes ? buildForest(nodes) : []), [nodes])
   const resolved = useMemo(() => (nodes ? resolveAll(nodes) : new Map()), [nodes])
@@ -48,7 +52,7 @@ export default function ComparePage() {
     })
   }
 
-  if (!nodes) return <p className="text-sm text-muted">Loading…</p>
+  if (!nodes) return <div className="p-6 text-sm text-muted">Loading…</div>
 
   const HeadTop = ({ label, span }: { label: string; span: number }) => (
     <th colSpan={span} className="sticky top-0 z-20 border-b border-l border-divider bg-card px-2 py-1.5 text-center text-xs font-semibold text-ink">
@@ -56,7 +60,7 @@ export default function ComparePage() {
     </th>
   )
   const HeadCol = ({ label }: { label: string }) => (
-    <th className="sticky top-[33px] z-20 border-b border-l border-divider bg-card px-1 py-1 text-center text-[0.6rem] font-medium uppercase tracking-wide text-subtle">
+    <th className="sticky z-20 border-b border-l border-divider bg-card px-1 py-1 text-center text-[0.6rem] font-medium uppercase tracking-wide text-subtle" style={{ top: GROUP_H }}>
       {label}
     </th>
   )
@@ -64,23 +68,23 @@ export default function ComparePage() {
   const frozenHead = (label: string, key: keyof typeof COLS, row: 0 | 1) => (
     <th
       className="sticky z-30 border-b border-divider bg-card px-2 py-1 text-left text-[0.6rem] font-medium uppercase tracking-wide text-subtle"
-      style={{ left: LEFT[key], width: COLS[key], top: row === 0 ? 0 : 33 }}
+      style={{ left: LEFT[key], width: COLS[key], top: row === 0 ? 0 : GROUP_H }}
     >
       {label}
     </th>
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-end justify-between gap-3">
+    <div className="flex h-full flex-col">
+      <div className="flex items-end justify-between gap-3 px-4 pb-3 pt-6">
         <div>
-          <h1 className="font-display text-display font-semibold tracking-tight">Compare</h1>
+          <h1 className="font-display text-display font-semibold tracking-tight">Taxonomy</h1>
           <p className="text-sm text-muted">
-            Every plant in your record as a tree — expand the taxonomy and scan each one's facets
-            side by side, like the source sheet.
+            Every plant as a tree — expand the hierarchy and scan each one's facets side by side,
+            like the source sheet.
           </p>
         </div>
-        <div className="flex gap-2 text-xs">
+        <div className="flex flex-none gap-2 text-xs">
           <button onClick={() => setExpanded(new Set(allIds(forest)))} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
             Expand all
           </button>
@@ -90,7 +94,7 @@ export default function ComparePage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-line">
+      <div className="min-h-0 flex-1 overflow-auto border-t border-line">
         <table className="border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -122,7 +126,7 @@ export default function ComparePage() {
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={{ left: LEFT.cat, width: COLS.cat }}>
                     {r.category && <Chip tone="brand">{r.category}</Chip>}
                   </td>
-                  <td className="sticky z-10 border-b border-r border-divider bg-card px-2 align-middle" style={{ left: LEFT.plant, width: COLS.plant }}>
+                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={{ left: LEFT.plant, width: COLS.plant }}>
                     <div className="flex items-center gap-1" style={{ paddingLeft: depth * 14 }}>
                       {children.length ? (
                         <button onClick={() => toggle(node.id)} className="w-4 flex-none text-subtle hover:text-ink" aria-label={open ? 'Collapse' : 'Expand'}>
@@ -141,16 +145,16 @@ export default function ComparePage() {
                   </td>
                   {interest.map((s) => (
                     <Cell key={s.season}>
-                      <SeasonCell parts={s.parts} />
+                      <SeasonCell parts={s.parts} slot={SLOT} />
                     </Cell>
                   ))}
-                  <Cell><LightCell conditions={c} size={GLYPH} /></Cell>
-                  <Cell><AspectCell conditions={c} size={GLYPH} /></Cell>
-                  <Cell><ExposureCell conditions={c} size={GLYPH} /></Cell>
+                  <Cell><LightCell conditions={c} size={POS} /></Cell>
+                  <Cell><AspectCell conditions={c} size={POS} /></Cell>
+                  <Cell><ExposureCell conditions={c} size={POS} /></Cell>
                   <Cell><HardinessCell conditions={c} /></Cell>
-                  <Cell><SoilCell conditions={c} size={GLYPH} /></Cell>
-                  <Cell><MoistureCell conditions={c} size={GLYPH} /></Cell>
-                  <Cell><PhCell conditions={c} size={GLYPH} /></Cell>
+                  <Cell><SoilCell conditions={c} size={CELL} flush /></Cell>
+                  <Cell><MoistureCell conditions={c} size={CELL} flush /></Cell>
+                  <Cell><PhCell conditions={c} size={CELL} flush /></Cell>
                 </tr>
               )
             })}
