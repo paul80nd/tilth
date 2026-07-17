@@ -24,12 +24,11 @@ const SLOT = Math.round(CELL / 2) // season 2×2 slot → the cell fills edge-to
 // Widths are enforced via `table-fixed` + a <colgroup> so the columns render at exactly these
 // sizes — otherwise content-driven widths drift from the sticky `left` offsets below and the
 // frozen columns misalign on horizontal scroll (facet content bleeds through the gaps).
-const COLS = { plant: 200, variety: 168, cat: 66, src: 48 }
+const COLS = { plant: 210, cat: 66, src: 48 }
 const LEFT = {
   plant: 0,
-  variety: COLS.plant,
-  cat: COLS.plant + COLS.variety,
-  src: COLS.plant + COLS.variety + COLS.cat,
+  cat: COLS.plant,
+  src: COLS.plant + COLS.cat,
 }
 const GROUP_H = 29 // px height of the group-header row (col headers stick just below it)
 
@@ -46,7 +45,7 @@ const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter']
 const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
 const CONDITIONS = ['Soil', 'Moisture', 'pH']
 // Every column a section-marker row spans: the 4 frozen identity columns + all facet columns.
-const TOTAL_COLS = 4 + SEASONS.length + POSITION.length + CONDITIONS.length
+const TOTAL_COLS = 3 + SEASONS.length + POSITION.length + CONDITIONS.length
 
 /** Count the plants beneath a tree row for the "· N" tally on a section-marker banner — every
  *  descendant that is itself a plant, i.e. not a grouping banner. A genus-LEAF (a genus with
@@ -203,7 +202,6 @@ export default function TaxonomyPage() {
           <thead>
             <tr>
               {frozenHead('', 'plant', 0)}
-              {frozenHead('', 'variety', 0)}
               {frozenHead('', 'cat', 0)}
               {frozenHead('', 'src', 0)}
               <HeadTop label="Seasonal interest" span={4} />
@@ -211,8 +209,7 @@ export default function TaxonomyPage() {
               <HeadTop label="Conditions" span={3} />
             </tr>
             <tr>
-              {frozenHead('Plant', 'plant', 1)}
-              {frozenHead('Variety', 'variety', 1)}
+              {frozenHead('Plant / Variety', 'plant', 1)}
               {frozenHead('Cat', 'cat', 1)}
               {frozenHead('Src', 'src', 1)}
               {[...SEASONS, ...POSITION, ...CONDITIONS].map((c) => (
@@ -260,7 +257,7 @@ export default function TaxonomyPage() {
               return (
                 <tr key={node.id} className="hover:bg-sunken/40">
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('plant')}>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-start gap-1">
                       {children.length ? (
                         <button onClick={() => toggle(node.id)} className="w-4 flex-none text-subtle hover:text-ink" aria-label={open ? 'Collapse' : 'Expand'}>
                           {open ? '▾' : '▸'}
@@ -268,13 +265,15 @@ export default function TaxonomyPage() {
                       ) : (
                         <span className="w-4 flex-none" />
                       )}
-                      <Link to={`/plant/${node.id}`} className="truncate hover:underline" title={name}>
-                        {name}
-                      </Link>
+                      <div className="min-w-0">
+                        <Link to={`/plant/${node.id}`} className="block truncate hover:underline" title={name}>
+                          {name}
+                        </Link>
+                        {node.variety && (
+                          <span className="block truncate text-xs text-muted" title={node.variety}>{node.variety}</span>
+                        )}
+                      </div>
                     </div>
-                  </td>
-                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle text-muted" style={frozen('variety')}>
-                    <span className="block truncate" title={node.variety ?? ''}>{node.variety ?? ''}</span>
                   </td>
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('cat')}>
                     {r.category && <Chip tone="brand">{r.category}</Chip>}
