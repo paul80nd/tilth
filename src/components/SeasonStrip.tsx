@@ -17,7 +17,48 @@ const PALE = /white|cream|silver|pale/i
 // clockwise from top-left, leaf → flower → fruit → stem.
 const SLOTS: PhaseCode[] = ['foliage', 'flower', 'stem', 'fruit']
 
-function Slot({ code, part }: { code: PhaseCode; part?: { colour?: string } }) {
+const ICON = 30
+
+/** Tint for a colour word: pale blooms (white/cream) fall back to a light neutral so they stay
+ *  legible in both themes (RHS draws them as an outline); unknown words render subtle. */
+function tint(colour?: string): string {
+  if (!colour) return 'var(--tl-text-subtle)'
+  if (PALE.test(colour)) return 'var(--tl-border-strong)'
+  return colourSwatch(colour) ?? 'var(--tl-text-subtle)'
+}
+
+// Where a ray from the box centre (at `deg` clockwise from 12 o'clock) crosses the 0–100 box.
+function edge(deg: number): [number, number] {
+  const r = (deg * Math.PI) / 180
+  const dx = Math.sin(r)
+  const dy = -Math.cos(r)
+  const ts: number[] = []
+  if (Math.abs(dx) > 1e-6) ts.push((dx > 0 ? 50 : -50) / dx)
+  if (Math.abs(dy) > 1e-6) ts.push((dy > 0 ? 50 : -50) / dy)
+  const t = Math.min(...ts.filter((v) => v > 0))
+  return [50 + t * dx, 50 + t * dy]
+}
+
+// clip-path polygons dividing the box into N equal pie sectors, clockwise from 12 o'clock — so a
+// single silhouette can be painted in N hard-edged colour wedges (a conic split SVG fill can't do).
+function sectorClips(n: number): string[] {
+  const CORNERS: Array<[number, [number, number]]> = [
+    [45, [100, 0]], [135, [100, 100]], [225, [0, 100]], [315, [0, 0]],
+  ]
+  const fmt = ([x, y]: [number, number]) => `${Math.round(x)}% ${Math.round(y)}%`
+  const step = 360 / n
+  return Array.from({ length: n }, (_, i) => {
+    const a0 = i * step
+    const a1 = (i + 1) * step
+    const pts = ['50% 50%', fmt(edge(a0))]
+    for (const [ca, pt] of CORNERS) if (ca > a0 && ca < a1) pts.push(fmt(pt))
+    pts.push(fmt(edge(a1)))
+    return `polygon(${pts.join(', ')})`
+  })
+}
+
+function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } }) {
+  const iconPart = code as 'foliage' | 'flower' | 'fruit' | 'stem'
   if (!part) {
     return (
       <span className="grid h-9 w-9 place-items-center" title={`No ${PHASE_META[code].label.toLowerCase()}`}>
@@ -25,15 +66,31 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colour?: string } }) {
       </span>
     )
   }
-  // Bold silhouette tinted to the part's real colour; pale blooms (white/cream) fall back to a
-  // light neutral so they stay legible in both themes.
-  const hex = part.colour ? colourSwatch(part.colour) : undefined
-  const pale = !!part.colour && PALE.test(part.colour)
-  const color = pale ? 'var(--tl-border-strong)' : hex ?? 'var(--tl-text-subtle)'
-  const label = PHASE_META[code].label + (part.colour ? ` — ${part.colour}` : '')
+  const label = PHASE_META[code].label + (part.colours.length ? ` — ${part.colours.join(', ')}` : '')
+
+  // 0–1 colour: a single tinted silhouette. 2+: the same silhouette painted in hard conic wedges,
+  // one colour per equal sector (1st third / 2nd third / 3rd third), like a segmented swatch.
+  if (part.colours.length <= 1) {
+    return (
+      <span className="grid h-9 w-9 place-items-center" style={{ color: tint(part.colours[0]) }} title={label}>
+        <SeasonalIcon part={iconPart} size={ICON} />
+      </span>
+    )
+  }
+  const clips = sectorClips(part.colours.length)
   return (
-    <span className="grid h-9 w-9 place-items-center" style={{ color }} title={label}>
-      <SeasonalIcon part={code as 'foliage' | 'flower' | 'fruit' | 'stem'} size={30} />
+    <span className="grid h-9 w-9 place-items-center" title={label}>
+      <span className="relative" style={{ width: ICON, height: ICON }}>
+        {part.colours.map((c, i) => (
+          <span
+            key={c}
+            className="absolute inset-0 grid place-items-center"
+            style={{ color: tint(c), clipPath: clips[i] }}
+          >
+            <SeasonalIcon part={iconPart} size={ICON} />
+          </span>
+        ))}
+      </span>
     </span>
   )
 }

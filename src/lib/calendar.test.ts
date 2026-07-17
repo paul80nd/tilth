@@ -48,10 +48,18 @@ describe('seasonalInterest', () => {
     const res = seasonalInterest(cal, { flower: ['blue'] })
     const summer = res.find((s) => s.season === 'Summer')!
     const autumn = res.find((s) => s.season === 'Autumn')!
-    expect(summer.parts).toContainEqual({ code: 'foliage', colour: 'green' })
-    expect(summer.parts).toContainEqual({ code: 'flower', colour: 'blue' }) // fallback used
-    expect(autumn.parts).toContainEqual({ code: 'foliage', colour: 'yellow' })
-    expect(autumn.parts).toContainEqual({ code: 'fruit', colour: 'red' })
+    expect(summer.parts).toContainEqual({ code: 'foliage', colours: ['green'] })
+    expect(summer.parts).toContainEqual({ code: 'flower', colours: ['blue'] }) // fallback used
+    expect(autumn.parts).toContainEqual({ code: 'foliage', colours: ['yellow'] })
+    expect(autumn.parts).toContainEqual({ code: 'fruit', colours: ['red'] })
+  })
+
+  it('carries several simultaneous colours for one part (e.g. a multi-coloured bloom)', () => {
+    const cal: PhaseSpan[] = [{ code: 'flower', months: [6, 7, 8] }] // no span colour
+    const summer = seasonalInterest(cal, { flower: ['blue', 'purple', 'white'] }).find(
+      (s) => s.season === 'Summer',
+    )!
+    expect(summer.parts).toContainEqual({ code: 'flower', colours: ['blue', 'purple', 'white'] })
   })
 
   it('reports an empty season when nothing is on show', () => {
@@ -59,9 +67,15 @@ describe('seasonalInterest', () => {
     expect(winter.parts).toEqual([])
   })
 
+  it('marks a part on show but with no known colour as an empty colour list', () => {
+    const cal: PhaseSpan[] = [{ code: 'flower', months: [7] }] // no span colour, no flat colour
+    const summer = seasonalInterest(cal).find((s) => s.season === 'Summer')!
+    expect(summer.parts).toContainEqual({ code: 'flower', colours: [] })
+  })
+
   it('includes coloured stems as an interest (e.g. winter canes)', () => {
     const stems: PhaseSpan[] = [{ code: 'stem', months: [12, 1, 2], colour: 'red' }]
     const winter = seasonalInterest(stems).find((s) => s.season === 'Winter')!
-    expect(winter.parts).toContainEqual({ code: 'stem', colour: 'red' })
+    expect(winter.parts).toContainEqual({ code: 'stem', colours: ['red'] })
   })
 })

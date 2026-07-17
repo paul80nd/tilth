@@ -91,15 +91,18 @@ export const INTEREST_CODES: PhaseCode[] = ['foliage', 'flower', 'fruit', 'stem'
 
 export interface SeasonInterest {
   season: string
-  /** The interests present that season, each with its resolved colour (if known). */
-  parts: Array<{ code: PhaseCode; colour?: string }>
+  /** The interests present that season, each with its resolved colour(s). A part can show
+   *  several colours at once (a delphinium flowering blue/purple/white together); `colours`
+   *  is empty when it's on show but no colour is recorded. */
+  parts: Array<{ code: PhaseCode; colours: string[] }>
 }
 
 /**
  * Reduce a calendar (+ optional flat colour fallback) to per-season interest: which of
- * foliage/flower/fruit show in each season and in what colour. Colour comes from the covering
- * `PhaseSpan.colour` (so it can vary by season — green foliage → yellow in autumn), falling
- * back to the flat `colour[part]` when a span carries no colour of its own.
+ * foliage/flower/fruit/stem show in each season and in what colour(s). A span that carries
+ * its OWN colour wins (so colour can vary by season — green foliage → yellow in autumn);
+ * otherwise the part's flat `colour[part]` fills in, which may be SEVERAL colours shown at
+ * once (matching RHS's multi-swatch grid). Colours are de-duplicated, order preserved.
  */
 export function seasonalInterest(
   calendar: PhaseSpan[] | undefined,
@@ -113,9 +116,10 @@ export function seasonalInterest(
         (s) => s.code === code && s.months.some((m) => season.months.includes(m)),
       )
       if (spans.length === 0) continue
-      const fallback = colour?.[code as 'flower' | 'foliage' | 'fruit' | 'stem']?.[0]
-      const colours = new Set<string | undefined>(spans.map((s) => s.colour ?? fallback))
-      for (const c of colours) parts.push({ code, colour: c })
+      const own = spans.map((s) => s.colour).filter((c): c is string => !!c)
+      const flat = colour?.[code as 'flower' | 'foliage' | 'fruit' | 'stem'] ?? []
+      const colours = [...new Set(own.length ? own : flat)]
+      parts.push({ code, colours })
     }
     return { season: season.name, parts }
   })
