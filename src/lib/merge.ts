@@ -14,8 +14,11 @@ export interface MergeMeta {
   importedAt?: string
 }
 
-// Fields that are structural rather than merged data: the key never carries provenance.
-const STRUCTURAL = new Set(['id', 'provenance'])
+// Structural fields — they place the node in the taxonomy, they aren't sourced botanical
+// data, so they never carry provenance (recording "rank came from X" is meaningless noise in
+// the sources footer). `rank`/`parentId` are still *assigned* from the fragment; `id` and
+// `provenance` are handled outside the loop, so they're skipped entirely.
+const STRUCTURAL = new Set(['id', 'rank', 'parentId', 'provenance'])
 
 /**
  * Overlay `fragment` onto `existing` (or, when there's no existing node, promote the
@@ -37,9 +40,9 @@ export function mergeNode(
   if (meta.importedAt) stamp.importedAt = meta.importedAt
 
   for (const [key, value] of Object.entries(fragment)) {
-    if (value === undefined || STRUCTURAL.has(key)) continue
+    if (value === undefined || key === 'id' || key === 'provenance') continue
     ;(base as unknown as Record<string, unknown>)[key] = value
-    provenance[key] = stamp
+    if (!STRUCTURAL.has(key)) provenance[key] = stamp
   }
 
   base.id = fragment.id

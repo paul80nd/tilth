@@ -33,6 +33,13 @@ async function importSoil(source: string, id: string, soil: string): Promise<voi
   )
 }
 
+async function importLifecycle(source: string, id: string, lifecycle: string): Promise<void> {
+  await importFragment(
+    { nodes: [{ id, lifecycle: lifecycle.split(',').map((s) => s.trim()) as never }] },
+    { source },
+  )
+}
+
 async function dataSource(): Promise<unknown> {
   return (await db.settings.get('dataSource'))?.value
 }
@@ -102,6 +109,18 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     Then('node {string} soil is {string}', async (_, id: string, expected: string) => {
       expect((await db.nodes.get(id))?.conditions?.soil).toEqual(expected.split(',').map((s) => s.trim()))
+    })
+  })
+
+  Scenario('A multi-valued life cycle imports whole and a later partial import leaves it alone', ({ Given, When, Then }) => {
+    Given('I import from {string} a node {string} with lifecycle {string}', async (_, source: string, id: string, lifecycle: string) => {
+      await importLifecycle(source, id, lifecycle)
+    })
+    When('I import from {string} a node {string} with:', async (_, source: string, id: string, rows: Row[]) => {
+      await importNode(source, id, rows[0])
+    })
+    Then('node {string} lifecycle is {string}', async (_, id: string, expected: string) => {
+      expect((await db.nodes.get(id))?.lifecycle).toEqual(expected.split(',').map((s) => s.trim()))
     })
   })
 

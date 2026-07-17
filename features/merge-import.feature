@@ -42,6 +42,13 @@ Feature: Merge-import plant fragments
     When I import from "seed-packet" a node "rose" with soil "sand"
     Then node "rose" soil is "sand"
 
+  Scenario: A multi-valued life cycle imports whole and a later partial import leaves it alone
+    Given I import from "plant-db" a node "tomato" with lifecycle "annual, perennial"
+    When I import from "seed-packet" a node "tomato" with:
+      | facts.sowing depth |
+      | 1cm                |
+    Then node "tomato" lifecycle is "annual, perennial"
+
   Scenario: An import marks the store user-owned so the demo re-seed cannot clobber it
     When I import from "plant-db" a node "rose" with:
       | commonName |

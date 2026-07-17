@@ -44,6 +44,28 @@ describe('mergeNode', () => {
     expect(merged.conditions).toEqual({ soil: ['chalk'] })
   })
 
+  it('assigns structural fields (rank/parentId) but never stamps provenance on them', () => {
+    const node = mergeNode(
+      undefined,
+      { id: 'delphinium-magic-fountains', rank: 'cultivar', parentId: 'delphinium-elatum', variety: 'Magic Fountains' },
+      DB,
+    )
+    // Placement is applied…
+    expect(node.rank).toBe('cultivar')
+    expect(node.parentId).toBe('delphinium-elatum')
+    // …but it's structural, so it carries no provenance — only the data field does.
+    expect(node.provenance?.rank).toBeUndefined()
+    expect(node.provenance?.parentId).toBeUndefined()
+    expect(node.provenance?.variety?.source).toBe('plant-db')
+  })
+
+  it('re-parents an existing node without stamping provenance', () => {
+    const existing: PlantNode = { id: 'x', rank: 'cultivar', parentId: 'old-species' }
+    const merged = mergeNode(existing, { id: 'x', parentId: 'new-species' }, DB)
+    expect(merged.parentId).toBe('new-species')
+    expect(merged.provenance?.parentId).toBeUndefined()
+  })
+
   it('does not mutate the inputs', () => {
     const existing: PlantNode = { id: 'x', rank: 'species', commonName: 'Old' }
     const frozen = structuredClone(existing)

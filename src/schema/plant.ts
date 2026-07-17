@@ -22,6 +22,12 @@ export type Rank = 'family' | 'genus' | 'species' | 'cultivar' | 'group'
  *  default job templates (veg → rotation/harvest, fruit tree → prune/thin, …). Extensible. */
 export type Category = 'flower' | 'fruit' | 'herb' | 'tree' | 'veg'
 
+/** How long a plant takes to run germinate → flower → seed → die. MULTI-VALUED because this
+ *  isn't fixed — it varies with climate, sowing time and how a plant is grown, so a source
+ *  legitimately asserts more than one (a tender perennial *grown as* an annual; a short-lived
+ *  perennial that also behaves biennial). A single value is just a one-element set. */
+export type LifecycleCode = 'annual' | 'biennial' | 'perennial'
+
 /** Where a single field's current value came from. Stamped per top-level field at merge
  *  time so provenance is inspectable and a later source can be preferred deliberately. */
 export interface FieldSource {
@@ -132,8 +138,10 @@ export interface PlantNode {
   family?: string
   genus?: string
 
-  /** Life cycle: annual / biennial / perennial (+ short-lived variants as needed). */
-  lifecycle?: 'annual' | 'biennial' | 'perennial'
+  /** Life cycle(s): any of annual / biennial / perennial. Multi-valued — a plant can
+   *  legitimately behave as more than one depending on climate/sowing/growing (see
+   *  LifecycleCode). Whole field (replace, not union) like the other closed-vocab arrays. */
+  lifecycle?: LifecycleCode[]
   foliage?: 'deciduous' | 'evergreen' | 'semi-evergreen'
   /** Growth habit shortcode from the source (e.g. "clump-forming", "bushy"). */
   habit?: string

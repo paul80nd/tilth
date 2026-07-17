@@ -5,6 +5,7 @@ import { getGuidesFor, getLineage } from '../app/plants'
 import { childrenOf, deleteNode } from '../app/editNode'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
+import { asLifecycle, lifecycleLabel } from '../lib/lifecycle'
 import { seasonalInterest } from '../lib/calendar'
 import { EdibilityFacts } from '../components/KeyFacts'
 import PositionCard from '../components/PositionCard'
@@ -138,7 +139,9 @@ export default function CheatsheetPage() {
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {resolved.category && <Chip tone="brand">{resolved.category}</Chip>}
             <Chip>{node.rank}</Chip>
-            {resolved.lifecycle && <Chip>{resolved.lifecycle}</Chip>}
+            {asLifecycle(resolved.lifecycle)?.map((c) => (
+              <Chip key={c}>{lifecycleLabel(c)}</Chip>
+            ))}
             {resolved.foliage && <Chip>{resolved.foliage}</Chip>}
             {resolved.habit && <Chip>{resolved.habit}</Chip>}
           </div>
