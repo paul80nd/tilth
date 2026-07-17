@@ -222,8 +222,7 @@ export default function TaxonomyPage() {
         <div>
           <h1 className="font-display text-display font-semibold tracking-tight">Taxonomy</h1>
           <p className="text-sm text-muted">
-            Every plant as a tree — expand the hierarchy and scan each one's facets side by side,
-            like the source sheet.
+            Every plant as a tree — expand the hierarchy and scan each one's facets side by side.
           </p>
           <p className="mt-1 flex items-center gap-1.5 text-xs text-subtle">
             <span className="text-brand"><LinkGlyph /></span>
