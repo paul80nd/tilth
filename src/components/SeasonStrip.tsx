@@ -19,11 +19,12 @@ const SLOTS: PhaseCode[] = ['foliage', 'flower', 'stem', 'fruit']
 
 const ICON = 30
 
-/** Tint for a colour word: pale blooms (white/cream) fall back to a light neutral so they stay
- *  legible in both themes (RHS draws them as an outline); unknown words render subtle. */
+/** Tint for a colour word: pale blooms (white/cream) fall back to a fixed light neutral so they
+ *  read as "pale" on both a white and a dark card (a theme-flipping token would go dark in dark
+ *  mode and vanish); unknown words render subtle. */
 function tint(colour?: string): string {
   if (!colour) return 'var(--tl-text-subtle)'
-  if (PALE.test(colour)) return 'var(--tl-border-strong)'
+  if (PALE.test(colour)) return 'var(--tl-neutral-300)'
   return colourSwatch(colour) ?? 'var(--tl-text-subtle)'
 }
 
