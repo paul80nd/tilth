@@ -102,7 +102,7 @@ export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGEle
 // licences; recoloured + resized here) — see CREDITS.md:
 //   foliage — Material Design Icons (Pictogrammers), Apache-2.0
 //   flower  — Tabler Icons (Paweł Kuna), MIT
-//   fruit   — IconPark (ByteDance), Apache-2.0
+//   fruit   — WebHostingHub Glyphs (WebHostingHub), SIL Open Font License
 //   stem    — drawn by hand for Tilth (a bundle of coloured canes; no good permissive SVG found)
 type SeasonalPart = 'foliage' | 'flower' | 'fruit' | 'stem'
 
@@ -133,14 +133,14 @@ const SEASONAL: Record<SeasonalPart, { viewBox: string; scale: number; body: Rea
     ),
   },
   fruit: {
-    viewBox: '0 0 48 48',
-    scale: 0.86,
+    viewBox: '0 0 1025 1024',
+    scale: 0.95,
+    // WebHostingHub Glyphs "apple" — a solid fruit-with-leaf silhouette.
     body: (
-      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth={4}>
-        <circle cx="14" cy="34" r="8" fill="currentColor" strokeLinejoin="round" />
-        <circle cx="35" cy="37" r="7" fill="currentColor" strokeLinejoin="round" />
-        <path d="M37 10c-2.651.812-8.372 3.015-11.72 6.26C20.255 21.13 19 24.5 18 27m19-17c-1.117 1.318-3.285 4.596-3.956 8.39C32.036 24.078 33 27.5 34 30M30 4l14 12" />
-      </g>
+      <path
+        fill="currentColor"
+        d="M640.674 1024q-32 0-51-5t-25-11t-18.5-11t-33.5-5t-33.5 5t-18.5 11t-25 11t-51 5q-38 0-89-29t-102-80.5t-94.5-115t-71-140T.674 512q0-68 19.5-122.5t51-89.5t75-59t88.5-35t94-13q-61-36-78-46q-39-20-69.5-55.5t-41.5-61.5l-11-25q5-1 12.5-2t31-2t45.5.5t51.5 9t54.5 20.5q45 24 104.5 75.5t92.5 95.5q13-106 56-170q2-3 6.5-10.5t7-11t7.5-7t11-3.5q13 0 22.5 9.5t9.5 22.5q0 19-51 185q35-25 83-25q51 0 98.5 9t94.5 32.5t81.5 58.5t56 92t21.5 128t-27.5 147.5t-71 140t-94.5 115t-102 80.5t-89 29m-320-192q0-32-32-96t-32-96q0-35 32-104t32-88v-6q0-24-.5-36.5t-3.5-32t-9.5-29t-19-17t-31.5-7.5q-31 0-61 36t-48.5 87.5t-18.5 97.5q0 60 25.5 127.5t59 115.5t64 80t43.5 32q14 0 14-5.5t-7-23.5t-7-35"
+      />
     ),
   },
   // A bundle of three bold coloured canes/stalks fanning up from a shared base (rhubarb / dogwood).

@@ -15,7 +15,7 @@ permissive licences.
 |------|-----|--------|---------|
 | Foliage (leaf) | [Material Design Icons](https://pictogrammers.com/library/mdi/) | Pictogrammers | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) |
 | Flower | [Tabler Icons](https://tabler.io/icons) | Paweł Kuna | [MIT](https://opensource.org/licenses/MIT) |
-| Fruit (cherries) | [IconPark](https://iconpark.oceanengine.com/) | ByteDance | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) |
+| Fruit (apple) | [WebHostingHub Glyphs](https://www.webhostinghub.com/glyphs/) | WebHostingHub | [OFL-1.1](https://openfontlicense.org/) |
 | Sun (Position → Light) | [IconPark](https://iconpark.oceanengine.com/) | ByteDance | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) |
 | Human figure (Size scale) | [Fontisto](https://fontisto.com/) | Team Redux (Kenan Gündoğan) | [OFL-1.1](https://openfontlicense.org/) |
 
