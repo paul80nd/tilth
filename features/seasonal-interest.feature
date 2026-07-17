@@ -23,3 +23,13 @@ Feature: Seasonal interest
     When I import a seasonal-interest-only fragment for the apple
     Then its seasonal interest lists "flower" in "summer"
     And its job calendar is unchanged
+
+  Scenario: Editing a plant's seasonal interest saves its own grid as hand-entered
+    When I edit node "malus-domestica" seasonal interest to show "flower" coloured "white" in "summer"
+    Then node "malus-domestica" records "flower" interest in "summer"
+    And node "malus-domestica" seasonal interest is sourced from "manual"
+
+  Scenario: Editing an inherited grid creates an override on the cultivar
+    When I edit node "red-falstaff" seasonal interest to show "flower" coloured "blue" in "spring"
+    Then node "red-falstaff" has its own seasonal interest
+    And node "red-falstaff" seasonal interest is sourced from "manual"

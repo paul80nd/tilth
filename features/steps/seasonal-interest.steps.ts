@@ -2,10 +2,12 @@ import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 import { db } from '../../src/db/db'
 import { importFragment } from '../../src/app/dataset'
+import { updateNode } from '../../src/app/editNode'
 import { getLineage } from '../../src/app/plants'
 import { resolveInherited } from '../../src/lib/taxonomy'
 import { PHASE_ORDER, seasonalInterest } from '../../src/lib/calendar'
-import type { PlantNode } from '../../src/schema/plant'
+import { toDraft, fromDraft } from '../../src/lib/seasonalEdit'
+import type { InterestPart, PlantNode, Season } from '../../src/schema/plant'
 
 const feature = await loadFeature('features/seasonal-interest.feature')
 
@@ -101,6 +103,44 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     And('its job calendar is unchanged', () => {
       expect(JSON.stringify(node.calendar)).toBe(calendarBefore)
+    })
+  })
+
+  // Drives the exact path the editor takes: start from the resolved (possibly inherited) grid,
+  // toggle one cell on with a colour, and save through the merge seam.
+  async function editInterest(id: string, part: InterestPart, colours: string, season: Season): Promise<void> {
+    const { node: found, ancestors } = await getLineage(id)
+    const resolved = resolveInherited(found!, ancestors)
+    const draft = toDraft(resolved.node.seasonalInterest)
+    draft[season][part] = { on: true, colours }
+    await updateNode(found!, { seasonalInterest: fromDraft(draft) })
+  }
+
+  Scenario("Editing a plant's seasonal interest saves its own grid as hand-entered", ({ When, Then, And }) => {
+    When('I edit node {string} seasonal interest to show {string} coloured {string} in {string}', async (_, id: string, part: string, colours: string, season: string) => {
+      await editInterest(id, part as InterestPart, colours, season as Season)
+    })
+    Then('node {string} records {string} interest in {string}', async (_, id: string, part: string, season: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.seasonalInterest?.[season as Season]?.[part as InterestPart]).toBeDefined()
+    })
+    And('node {string} seasonal interest is sourced from {string}', async (_, id: string, source: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.provenance?.seasonalInterest?.source).toBe(source)
+    })
+  })
+
+  Scenario('Editing an inherited grid creates an override on the cultivar', ({ When, Then, And }) => {
+    When('I edit node {string} seasonal interest to show {string} coloured {string} in {string}', async (_, id: string, part: string, colours: string, season: string) => {
+      await editInterest(id, part as InterestPart, colours, season as Season)
+    })
+    Then('node {string} has its own seasonal interest', async (_, id: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.seasonalInterest).toBeDefined()
+    })
+    And('node {string} seasonal interest is sourced from {string}', async (_, id: string, source: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.provenance?.seasonalInterest?.source).toBe(source)
     })
   })
 })

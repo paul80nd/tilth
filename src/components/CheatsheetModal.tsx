@@ -29,7 +29,7 @@ export function CheatsheetModal({ id, onClose }: { id: string; onClose: () => vo
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
-        className="relative my-4 w-full max-w-5xl rounded-2xl bg-surface p-5 shadow-xl sm:p-6"
+        className="relative my-4 w-full max-w-5xl rounded-2xl border border-line bg-surface p-5 shadow-xl sm:p-6"
       >
         <div className="mb-4 flex items-center justify-between gap-3">
           <Link to={`/plant/${id}`} className="text-sm text-brand-ink hover:underline" onClick={onClose}>

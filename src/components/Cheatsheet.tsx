@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { PlantNode, Guide } from '../schema/plant'
 import { getGuidesFor, getLineage } from '../app/plants'
@@ -11,6 +12,7 @@ import SizeCard from './SizeCard'
 import ConditionsCard from './ConditionsCard'
 import CalendarBar from './CalendarBar'
 import SeasonStrip from './SeasonStrip'
+import { SeasonalInterestEditor } from './SeasonalInterestEditor'
 import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -36,6 +38,7 @@ export function usePlantDetail(id: string): PlantDetail | undefined {
  *  tile-grid of facets, and the sources footer. Chrome (back / edit / delete / close) lives with
  *  the caller (the page or the modal) so this stays purely presentational. */
 export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[] }) {
+  const [editingSeasonal, setEditingSeasonal] = useState(false)
   const { node: resolved, inheritedFrom } = resolveInherited(node, ancestors)
   const { plant, variety } = displayName(node)
   const botanical = botanicalLabel(resolved)
@@ -120,15 +123,27 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
       {/* Everything else as one dense tile-grid. */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6 lg:[grid-auto-flow:dense]">
         <div className="lg:col-span-2">
-          {hasInterest ? (
-            <Tile title="Seasonal interest" note={inheritedNote('seasonalInterest')} fill bleed>
+          <Tile
+            title="Seasonal interest"
+            note={hasInterest ? inheritedNote('seasonalInterest') : undefined}
+            action={
+              <button
+                type="button"
+                onClick={() => setEditingSeasonal(true)}
+                className="text-xs font-medium text-brand-ink hover:underline"
+              >
+                Edit
+              </button>
+            }
+            fill
+            bleed={hasInterest}
+          >
+            {hasInterest ? (
               <SeasonStrip interest={interest} />
-            </Tile>
-          ) : (
-            <Tile title="Seasonal interest" fill>
+            ) : (
               <Muted>No seasonal interest recorded yet.</Muted>
-            </Tile>
-          )}
+            )}
+          </Tile>
         </div>
 
         <div className="lg:col-span-2">
@@ -259,6 +274,14 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
           </div>
         </footer>
       )}
+
+      {editingSeasonal && (
+        <SeasonalInterestEditor
+          node={node}
+          initial={resolved.seasonalInterest}
+          onClose={() => setEditingSeasonal(false)}
+        />
+      )}
     </>
   )
 }
@@ -268,22 +291,26 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
 function Tile({
   title,
   note,
+  action,
   bleed = false,
   fill,
   children,
 }: {
   title?: string
   note?: string
+  /** Optional control aligned to the right of the title row (e.g. an Edit button). */
+  action?: React.ReactNode
   bleed?: boolean
   fill?: boolean
   children: React.ReactNode
 }) {
   return (
     <section className={`flex flex-col gap-2 ${fill ? 'h-full' : ''}`}>
-      {(title || note) && (
+      {(title || note || action) && (
         <div className="flex items-baseline gap-2">
           {title && <h2 className="font-display text-h3 font-semibold text-muted">{title}</h2>}
           {note && <span className="text-xs italic text-subtle">{note}</span>}
+          {action && <div className="ml-auto self-center">{action}</div>}
         </div>
       )}
       <div className={`overflow-hidden rounded-lg border border-line bg-card ${fill ? 'flex-1' : ''} ${bleed ? '' : 'p-4'}`}>

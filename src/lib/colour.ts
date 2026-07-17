@@ -36,6 +36,10 @@ const SWATCHES: Record<string, string> = {
   variegated: '#8fbf6a',
 }
 
+/** The recognised colour words (those that render a swatch) — offered as autocomplete in the
+ *  seasonal-interest editor. Free text is still allowed; these just aid discovery. */
+export const COLOUR_WORDS: string[] = Object.keys(SWATCHES)
+
 /** The swatch hex for a colour word (or a phrase containing one), else undefined. */
 export function colourSwatch(name: string): string | undefined {
   const words = name.toLowerCase().split(/[^a-z]+/).filter(Boolean)
