@@ -119,20 +119,24 @@ export default function TaxonomyPage() {
 
   if (!nodes) return <div className="p-6 text-sm text-muted">Loading…</div>
 
+  // A 1px card-colour shadow under each sticky header cell paints over the sub-pixel seam
+  // between the two header rows (and header→body) — the column-header row is a fractional
+  // height, so without it scrolling content bleeds through the hairline (worst in dark mode).
+  const SEAM = 'shadow-[0_1px_0_0_var(--color-card)]'
   const HeadTop = ({ label, span }: { label: string; span: number }) => (
-    <th colSpan={span} className="sticky top-0 z-20 border-b border-l border-divider bg-card px-2 py-1.5 text-center text-xs font-semibold text-ink">
+    <th colSpan={span} className={`sticky top-0 z-20 border-b border-l border-divider bg-card px-2 py-1.5 text-center text-xs font-semibold text-ink ${SEAM}`}>
       {label}
     </th>
   )
   const HeadCol = ({ label }: { label: string }) => (
-    <th className="sticky z-20 border-b border-l border-divider bg-card px-1 py-1 text-center text-[0.6rem] font-medium uppercase tracking-wide text-subtle" style={{ top: GROUP_H }}>
+    <th className={`sticky z-20 border-b border-l border-divider bg-card px-1 py-1 text-center text-[0.6rem] font-medium uppercase tracking-wide text-subtle ${SEAM}`} style={{ top: GROUP_H }}>
       {label}
     </th>
   )
   // Frozen identity header cells (sticky both top and left → corner, above everything).
   const frozenHead = (label: string, key: keyof typeof COLS, row: 0 | 1) => (
     <th
-      className="sticky z-30 border-b border-divider bg-card px-2 py-1 text-left text-[0.6rem] font-medium uppercase tracking-wide text-subtle"
+      className={`sticky z-30 border-b border-divider bg-card px-2 py-1 text-left text-[0.6rem] font-medium uppercase tracking-wide text-subtle ${SEAM}`}
       style={{ left: LEFT[key], width: COLS[key], top: row === 0 ? 0 : GROUP_H }}
     >
       {label}
