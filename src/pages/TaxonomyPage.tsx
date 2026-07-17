@@ -37,7 +37,7 @@ const GROUP_H = 29 // px height of the group-header row (col headers stick just 
 
 const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter']
 const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
-const CONDITIONS = ['Soil', 'Moisture', 'pH']
+const CONDITIONS = ['Soil', 'Moist', 'pH'] // 'Moist' — 'Moisture' overflows the glyph cell
 const TAGW = 190 // the Tags column (chips wrap within the row); wider than a facet cell
 
 // The optional column groups, toggled by the display-options control (persisted between visits).
