@@ -102,7 +102,7 @@ export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGEle
 // licences; recoloured + resized here) — see CREDITS.md:
 //   foliage — Material Design Icons (Pictogrammers), Apache-2.0
 //   flower  — Tabler Icons (Paweł Kuna), MIT
-//   fruit   — WebHostingHub Glyphs (WebHostingHub), SIL Open Font License
+//   fruit   — MingCute (MingCute Design), Apache-2.0
 //   stem    — drawn by hand for Tilth (a bundle of coloured canes; no good permissive SVG found)
 type SeasonalPart = 'foliage' | 'flower' | 'fruit' | 'stem'
 
@@ -133,13 +133,14 @@ const SEASONAL: Record<SeasonalPart, { viewBox: string; scale: number; body: Rea
     ),
   },
   fruit: {
-    viewBox: '0 0 1025 1024',
-    scale: 0.95,
-    // WebHostingHub Glyphs "apple" — a solid fruit-with-leaf silhouette.
+    viewBox: '0 0 24 24',
+    scale: 0.92,
+    // MingCute "fruit" — a rounded twin-lobed fruit; near-symmetric, so the multi-colour sweep
+    // reads cleanly. (Its transparent bounding path is dropped; only the painted body kept.)
     body: (
       <path
         fill="currentColor"
-        d="M640.674 1024q-32 0-51-5t-25-11t-18.5-11t-33.5-5t-33.5 5t-18.5 11t-25 11t-51 5q-38 0-89-29t-102-80.5t-94.5-115t-71-140T.674 512q0-68 19.5-122.5t51-89.5t75-59t88.5-35t94-13q-61-36-78-46q-39-20-69.5-55.5t-41.5-61.5l-11-25q5-1 12.5-2t31-2t45.5.5t51.5 9t54.5 20.5q45 24 104.5 75.5t92.5 95.5q13-106 56-170q2-3 6.5-10.5t7-11t7.5-7t11-3.5q13 0 22.5 9.5t9.5 22.5q0 19-51 185q35-25 83-25q51 0 98.5 9t94.5 32.5t81.5 58.5t56 92t21.5 128t-27.5 147.5t-71 140t-94.5 115t-102 80.5t-89 29m-320-192q0-32-32-96t-32-96q0-35 32-104t32-88v-6q0-24-.5-36.5t-3.5-32t-9.5-29t-19-17t-31.5-7.5q-31 0-61 36t-48.5 87.5t-18.5 97.5q0 60 25.5 127.5t59 115.5t64 80t43.5 32q14 0 14-5.5t-7-23.5t-7-35"
+        d="M15.6 3a.9.9 0 0 1 0 1.8c-1 0-1.739.625-2.232 1.666c1.259-.53 2.607-.713 3.814-.39c1.652.443 2.912 1.38 3.507 2.97c.569 1.52.47 3.485-.172 5.884c-.515 1.923-1.446 3.596-2.71 4.695c-1.287 1.118-2.922 1.633-4.691 1.16a5.7 5.7 0 0 1-1.117-.434a5.7 5.7 0 0 1-1.116.434c-1.769.473-3.404-.042-4.69-1.16c-1.265-1.1-2.195-2.772-2.71-4.695c-.643-2.399-.741-4.365-.173-5.883c.596-1.59 1.856-2.528 3.508-2.97c.732-.196 1.515-.207 2.3-.066C8.29 5.246 7.97 4.189 8.077 4c.131-.225 1.663-.544 2.909.175c.445.257.793.613 1.05.973C12.749 3.976 13.899 3 15.6 3"
       />
     ),
   },

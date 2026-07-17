@@ -38,19 +38,22 @@ function edge(deg: number): [number, number] {
   return [50 + t * dx, 50 + t * dy]
 }
 
-// clip-path polygons dividing the box into N equal pie sectors, clockwise from 12 o'clock — so a
-// single silhouette can be painted in N hard-edged colour wedges (a conic split SVG fill can't do).
-function sectorClips(n: number): string[] {
+// clip-path polygons dividing the box into N equal pie sectors of `step` degrees, starting at
+// `offset` clockwise from 12 o'clock — so a single silhouette can be painted in N hard-edged
+// colour wedges (a conic split SVG fill can't do). A negative offset of half a sector centres a
+// wedge on 12 o'clock (rather than a cut), so the split never runs straight up through the icon.
+function sectorClips(n: number, offset: number): string[] {
   const CORNERS: Array<[number, [number, number]]> = [
     [45, [100, 0]], [135, [100, 100]], [225, [0, 100]], [315, [0, 0]],
   ]
   const fmt = ([x, y]: [number, number]) => `${Math.round(x)}% ${Math.round(y)}%`
   const step = 360 / n
   return Array.from({ length: n }, (_, i) => {
-    const a0 = i * step
-    const a1 = (i + 1) * step
+    const a0 = (((i * step + offset) % 360) + 360) % 360 // normalise into [0, 360)
+    const a1 = a0 + step
     const pts = ['50% 50%', fmt(edge(a0))]
-    for (const [ca, pt] of CORNERS) if (ca > a0 && ca < a1) pts.push(fmt(pt))
+    // A corner falls in the sector directly or one turn on (when the sector wraps past 360).
+    for (const [ca, pt] of CORNERS) if ((ca > a0 && ca < a1) || (ca + 360 > a0 && ca + 360 < a1)) pts.push(fmt(pt))
     pts.push(fmt(edge(a1)))
     return `polygon(${pts.join(', ')})`
   })
@@ -80,8 +83,9 @@ function Slot({ code, part, size = 36 }: { code: InterestPart; part?: { colours:
     )
   }
   const n = part.colours.length
-  const clips = sectorClips(n)
   const step = 360 / n
+  const offset = -step / 2 // centre the first wedge on 12 o'clock, so no cut runs straight up
+  const clips = sectorClips(n, offset)
   return (
     <span className="grid place-items-center" style={box} title={label}>
       <span className="relative block" style={{ width: icon, height: icon }}>
@@ -106,7 +110,7 @@ function Slot({ code, part, size = 36 }: { code: InterestPart; part?: { colours:
               width: 1.5,
               background: 'var(--tl-surface-card)',
               transformOrigin: 'bottom center',
-              transform: `translate(-50%, -100%) rotate(${step * i}deg)`,
+              transform: `translate(-50%, -100%) rotate(${step * i + offset}deg)`,
             }}
           />
         ))}
