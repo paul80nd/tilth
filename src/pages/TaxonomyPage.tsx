@@ -154,6 +154,17 @@ export default function TaxonomyPage() {
           </p>
         </div>
         <div className="flex flex-none items-center gap-2 text-xs">
+          {mode === 'tree' && (
+            <>
+              <button onClick={() => setExpanded(new Set(allIds(forest)))} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
+                Expand all
+              </button>
+              <button onClick={() => setExpanded(new Set())} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
+                Collapse all
+              </button>
+            </>
+          )}
+          {/* Kept last so it stays anchored to the right as Expand/Collapse show/hide. */}
           <div className="flex overflow-hidden rounded-md border border-line">
             <button
               onClick={() => setMode('tree')}
@@ -168,16 +179,6 @@ export default function TaxonomyPage() {
               A–Z
             </button>
           </div>
-          {mode === 'tree' && (
-            <>
-              <button onClick={() => setExpanded(new Set(allIds(forest)))} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
-                Expand all
-              </button>
-              <button onClick={() => setExpanded(new Set())} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
-                Collapse all
-              </button>
-            </>
-          )}
         </div>
       </div>
 
