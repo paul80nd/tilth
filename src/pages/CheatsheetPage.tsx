@@ -67,6 +67,12 @@ export default function CheatsheetPage() {
     const fs = anc.provenance?.[field]
     if (fs) sources.add(fs.source)
   }
+  // The enrich-from link declared for each source (on this node or an ancestor it inherited
+  // from), so a Sources tag below can double as the link to the page it came from.
+  const sourceUrl = new Map<string, string>()
+  for (const n of [node, ...ancestors]) {
+    for (const l of n.sourceLinks ?? []) if (!sourceUrl.has(l.source)) sourceUrl.set(l.source, l.url)
+  }
 
   async function onDelete() {
     const kids = await childrenOf(node.id)
@@ -145,22 +151,6 @@ export default function CheatsheetPage() {
             {resolved.foliage && <Chip>{resolved.foliage}</Chip>}
             {resolved.habit && <Chip>{resolved.habit}</Chip>}
           </div>
-          {node.sourceLinks && node.sourceLinks.length > 0 && (
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-              <span className="uppercase tracking-wide text-subtle">Enrich from</span>
-              {node.sourceLinks.map((l) => (
-                <a
-                  key={l.url}
-                  href={l.url}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="font-medium text-brand-ink hover:underline"
-                >
-                  {l.label ?? l.source} ↗
-                </a>
-              ))}
-            </div>
-          )}
         </header>
 
         {/* Calendar — the hero, beside the name; spans the right four columns so its left edge
@@ -328,9 +318,23 @@ export default function CheatsheetPage() {
         <footer className="border-t border-divider pt-4">
           <div className="flex flex-wrap items-center gap-2 text-xs text-subtle">
             <span className="uppercase tracking-wide">Sources</span>
-            {[...sources].map((s) => (
-              <Chip key={s}>{s}</Chip>
-            ))}
+            {[...sources].map((s) => {
+              const url = sourceUrl.get(s)
+              return url ? (
+                <a
+                  key={s}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  title={`Open the ${s} page this was enriched from`}
+                  className="inline-flex items-center gap-0.5 rounded-md bg-sunken px-2 py-0.5 text-xs font-medium text-brand-ink hover:underline"
+                >
+                  {s} <span aria-hidden="true">↗</span>
+                </a>
+              ) : (
+                <Chip key={s}>{s}</Chip>
+              )
+            })}
           </div>
         </footer>
       )}
