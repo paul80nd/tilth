@@ -7,6 +7,7 @@ import { seasonalInterest } from '../lib/calendar'
 import { SeasonCell } from '../components/SeasonStrip'
 import { LightCell, AspectCell, ExposureCell, HardinessCell } from '../components/PositionCard'
 import { SoilCell, MoistureCell, PhCell } from '../components/ConditionsCard'
+import { SizeCell, SizeDims } from '../components/SizeCard'
 import Chip from '../components/Chip'
 import { CheatsheetModal } from '../components/CheatsheetModal'
 import { FilterPopover } from '../components/FilterPopover'
@@ -39,20 +40,23 @@ const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter']
 const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
 const CONDITIONS = ['Soil', 'Moist', 'pH'] // 'Moist' — 'Moisture' overflows the glyph cell
 const TAGW = 190 // the Tags column (chips wrap within the row); wider than a facet cell
+const SIZEW = 168 // the Size column: a to-scale glyph + height/spread/time stacked beside it
 
 // The optional column groups, toggled by the display-options control (persisted between visits).
-// Tags reproduces the cheatsheet's description chips (Type / Foliage / Habit — the fields Paul
-// reconciles); it's hidden by default so the three facet groups lead.
-type ColKey = 'tags' | 'season' | 'position' | 'conditions'
+// Tags and Size are single-column groups (a header spanning both header rows, no sub-columns);
+// the facet groups (season/position/conditions) fan out into per-facet glyph sub-columns.
+type ColKey = 'tags' | 'season' | 'position' | 'conditions' | 'size'
+const SINGLE_COL: Partial<Record<ColKey, number>> = { tags: TAGW, size: SIZEW }
 const SECTIONS: Array<{ key: ColKey; label: string; span: number }> = [
   { key: 'tags', label: 'Tags', span: 1 },
   { key: 'season', label: 'Seasonal interest', span: SEASONS.length },
   { key: 'position', label: 'Position', span: POSITION.length },
   { key: 'conditions', label: 'Conditions', span: CONDITIONS.length },
+  { key: 'size', label: 'Size', span: 1 },
 ]
 type ColVisibility = Record<ColKey, boolean>
-// Tags is on by default — it now carries category (the old frozen Cat column folded into it).
-const DEFAULT_COLS: ColVisibility = { tags: true, season: true, position: true, conditions: true }
+// All groups on by default — Tags carries category (the old frozen Cat column folded into it).
+const DEFAULT_COLS: ColVisibility = { tags: true, season: true, position: true, conditions: true, size: true }
 
 /** Count the plants beneath a tree row for the "· N" tally on a section-marker banner — every
  *  descendant that is itself a plant, i.e. not a grouping banner. A genus-LEAF (a genus with
@@ -165,8 +169,14 @@ export default function TaxonomyPage() {
   // scroll position while you inspect a plant.
   const [modalId, setModalId] = useState<string | null>(null)
   // Which optional column groups are shown — persisted so the choice survives a reload/revisit.
-  const [cols, setCols] = usePersistentState<ColVisibility>('tilth.taxonomy.cols', DEFAULT_COLS)
-  const toggleCol = (key: ColKey) => setCols((prev) => ({ ...prev, [key]: !prev[key] }))
+  // Merge over the defaults on read so a column added later shows up for returning gardeners
+  // (their saved prefs predate it) rather than staying hidden until they find the toggle.
+  const [storedCols, setCols] = usePersistentState<ColVisibility>('tilth.taxonomy.cols', DEFAULT_COLS)
+  const cols = { ...DEFAULT_COLS, ...storedCols }
+  const toggleCol = (key: ColKey) => setCols((prev) => {
+    const cur = { ...DEFAULT_COLS, ...prev }
+    return { ...cur, [key]: !cur[key] }
+  })
 
   const openSet = useMemo(() => expanded ?? new Set(allIds(forest)), [expanded, forest])
   const rows = useMemo(
@@ -215,13 +225,13 @@ export default function TaxonomyPage() {
       {label}
     </th>
   )
-  // The Tags group is a single column, so its header spans both header rows (no sub-columns).
-  const TagsHead = () => (
-    <th rowSpan={2} className={`sticky top-0 z-20 border-b border-l border-divider bg-card px-2 text-center text-xs font-semibold text-ink ${SEAM}`} style={{ width: TAGW, minWidth: TAGW, maxWidth: TAGW }}>
-      Tags
+  // A single-column group (Tags, Size): its header spans both header rows — no sub-columns.
+  const SingleHead = ({ label, width }: { label: string; width: number }) => (
+    <th rowSpan={2} className={`sticky top-0 z-20 border-b border-l border-divider bg-card px-2 text-center text-xs font-semibold text-ink ${SEAM}`} style={{ width, minWidth: width, maxWidth: width }}>
+      {label}
     </th>
   )
-  const SECTION_COLS: Record<ColKey, string[]> = { tags: [], season: SEASONS, position: POSITION, conditions: CONDITIONS }
+  const SECTION_COLS: Record<ColKey, string[]> = { tags: [], season: SEASONS, position: POSITION, conditions: CONDITIONS, size: [] }
   // Frozen identity header cells (sticky both top and left → corner, above everything).
   const frozenHead = (label: string, key: keyof typeof COLW, row: 0 | 1) => (
     <th
@@ -290,10 +300,15 @@ export default function TaxonomyPage() {
       <div className="min-h-0 flex-1 overflow-auto border-t border-line">
         <table className="border-separate border-spacing-0 text-sm">
           <thead>
-            <tr>
+            {/* Pin the group-header row to GROUP_H so the second header row (sticky at top:GROUP_H)
+                sits flush beneath it even when only single-column groups (no sub-headers) show —
+                otherwise this row collapses to its content and a gap opens under the group header. */}
+            <tr style={{ height: GROUP_H }}>
               {frozenCols.map((k) => frozenHead('', k, 0))}
               {visibleSections.map((s) =>
-                s.key === 'tags' ? <TagsHead key="tags" /> : <HeadTop key={s.key} label={s.label} span={s.span} />,
+                SINGLE_COL[s.key] != null
+                  ? <SingleHead key={s.key} label={s.label} width={SINGLE_COL[s.key]!} />
+                  : <HeadTop key={s.key} label={s.label} span={s.span} />,
               )}
             </tr>
             <tr>
@@ -346,6 +361,8 @@ export default function TaxonomyPage() {
               const ancLabel = (a?: PlantNode) => (a ? (a.commonName ?? a.botanicalName ?? a.id) : undefined)
               const seasonFrom = ancLabel(inh.seasonalInterest)
               const condFrom = ancLabel(inh.conditions)
+              const sizeFrom = ancLabel(inh.size)
+              const hasSize = !!(r.size && (r.size.height || r.size.spread || r.size.timeToSize))
               return (
                 <tr key={node.id} className="hover:bg-sunken/40">
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('plant')}>
@@ -399,6 +416,20 @@ export default function TaxonomyPage() {
                       <Cell from={condFrom}>{c?.moisture?.length ? <MoistureCell conditions={c} size={CELL} flush /> : null}</Cell>
                       <Cell from={condFrom}>{c?.ph?.length ? <PhCell conditions={c} size={CELL} flush /> : null}</Cell>
                     </>
+                  )}
+                  {cols.size && (
+                    <td
+                      className="border-b border-l border-divider px-2 align-middle"
+                      style={{ width: SIZEW, minWidth: SIZEW, maxWidth: SIZEW }}
+                      title={hasSize && sizeFrom ? `Inherited from ${sizeFrom}` : undefined}
+                    >
+                      {hasSize ? (
+                        <div className={`flex items-center gap-2 ${sizeFrom ? 'opacity-40' : ''}`}>
+                          <SizeCell size={r.size} />
+                          <SizeDims size={r.size} />
+                        </div>
+                      ) : null}
+                    </td>
                   )}
                 </tr>
               )

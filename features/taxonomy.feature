@@ -52,3 +52,13 @@ Feature: Taxonomy view — the taxonomy as an expandable tree
     When I build the taxonomy tree
     Then the resolved node "apple-red-falstaff" has hardiness "H6"
     And the resolved node "apple-red-falstaff" has category "fruit"
+
+  Scenario: The Size column shows a cultivar the ultimate size it inherits
+    Given these nodes exist:
+      | id                | rank     | parentId        | name  |
+      | malus             | genus    |                 | Malus |
+      | malus-domestica   | species  | malus           | Apple |
+      | apple-red-falstaff| cultivar | malus-domestica | Apple |
+    And node "malus-domestica" has size height "2-4m" spread "2-4m" time "5-10 years"
+    When I build the taxonomy tree
+    Then the resolved node "apple-red-falstaff" has height "2-4m" and time "5-10 years"

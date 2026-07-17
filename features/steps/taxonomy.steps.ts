@@ -129,4 +129,22 @@ describeFeature(feature, ({ Background, Scenario }) => {
       expect(resolved.get(id)?.node.category).toBe(cat)
     })
   })
+
+  Scenario('The Size column shows a cultivar the ultimate size it inherits', ({ Given, And, When, Then }) => {
+    Given('these nodes exist:', async (_, rows: Row[]) => {
+      await seed(rows)
+    })
+    And('node {string} has size height {string} spread {string} time {string}', async (_, id: string, height: string, spread: string, time: string) => {
+      const n = (await db.nodes.get(id))!
+      await db.nodes.put({ ...n, size: { height, spread, timeToSize: time } })
+    })
+    When('I build the taxonomy tree', async () => {
+      await build()
+    })
+    Then('the resolved node {string} has height {string} and time {string}', (_, id: string, height: string, time: string) => {
+      const size = resolved.get(id)?.node.size
+      expect(size?.height).toBe(height)
+      expect(size?.timeToSize).toBe(time)
+    })
+  })
 })
