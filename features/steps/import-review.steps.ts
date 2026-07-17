@@ -39,7 +39,7 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
   })
 
-  Scenario('The review classifies each incoming field as new, changed or unchanged', ({ Given, When, Then, And }) => {
+  Scenario('The review classifies each incoming field as new, changed or unchanged', ({ Given, When, Then }) => {
     Given('a node {string} exists with commonName {string} and family {string}', async (_, id: string, cn: string, fam: string) => {
       await seedNode(id, cn, fam)
     })
