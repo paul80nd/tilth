@@ -77,10 +77,12 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } })
       </span>
     )
   }
-  const clips = sectorClips(part.colours.length)
+  const n = part.colours.length
+  const clips = sectorClips(n)
+  const step = 360 / n
   return (
     <span className="grid h-9 w-9 place-items-center" title={label}>
-      <span className="relative" style={{ width: ICON, height: ICON }}>
+      <span className="relative block" style={{ width: ICON, height: ICON }}>
         {part.colours.map((c, i) => (
           <span
             key={c}
@@ -89,6 +91,22 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } })
           >
             <SeasonalIcon part={iconPart} size={ICON} />
           </span>
+        ))}
+        {/* Hairline between wedges: a thin radial line in the card colour, so it reads as a clean
+            cut across the silhouette and stays invisible where it overshoots into empty space. */}
+        {part.colours.map((_, i) => (
+          <span
+            key={`edge-${i}`}
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2"
+            style={{
+              height: ICON,
+              width: 1.5,
+              background: 'var(--tl-surface-card)',
+              transformOrigin: 'bottom center',
+              transform: `translate(-50%, -100%) rotate(${step * i}deg)`,
+            }}
+          />
         ))}
       </span>
     </span>
