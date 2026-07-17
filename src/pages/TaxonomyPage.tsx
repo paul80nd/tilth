@@ -61,11 +61,14 @@ function countPlants(kids: TreeNode[]): number {
   return kids.reduce((n, k) => n + (isBannerRow(k) ? 0 : 1) + countPlants(k.children), 0)
 }
 
-/** A fixed square data cell; the glyph fills it edge-to-edge. */
-function Cell({ children }: { children: React.ReactNode }) {
+/** A fixed square data cell; the glyph fills it edge-to-edge. An inherited glyph is dimmed and
+ *  titled "from {ancestor}" — the value is still the plant's *effective* one, but the fade flags
+ *  that it's borrowed, not asserted on this node (a whole row of faded conditions = nothing
+ *  cultivar-specific recorded yet). */
+function Cell({ children, from }: { children: React.ReactNode; from?: string }) {
   return (
-    <td className="border-b border-l border-divider p-0">
-      <div className="grid place-items-center" style={{ width: CELL, height: CELL }}>{children}</div>
+    <td className="border-b border-l border-divider p-0" title={from && children ? `Inherited from ${from}` : undefined}>
+      <div className={`grid place-items-center ${from && children ? 'opacity-40' : ''}`} style={{ width: CELL, height: CELL }}>{children}</div>
     </td>
   )
 }
@@ -121,14 +124,28 @@ function TaxonLine({ rank, sci, muted }: { rank: 'family' | 'genus'; sci?: strin
 
 /** The Tags cell — the cheatsheet header's description chips (category · rank · lifecycle ·
  *  foliage · habit), wrapped within the row. Shares `nodeTags` with the cheatsheet so the two
- *  never drift. */
-function TagList({ node }: { node: PlantNode }) {
-  const tags = nodeTags(node)
+ *  never drift. A chip whose field was inherited is dimmed and titled with its source, so a
+ *  cultivar reconciling Type/Foliage/Habit can see which of those it actually asserts itself. */
+function TagList({ node, inheritedFrom }: { node: PlantNode; inheritedFrom: Partial<Record<keyof PlantNode, PlantNode>> }) {
+  // Each tag kind maps to the node field it came from; `rank` is structural and never inherited.
+  const fieldFor: Partial<Record<ReturnType<typeof nodeTags>[number]['kind'], keyof PlantNode>> = {
+    category: 'category',
+    lifecycle: 'lifecycle',
+    foliage: 'foliage',
+    habit: 'habit',
+  }
   return (
     <div className="flex flex-wrap items-center gap-1">
-      {tags.map((t, i) => (
-        <Chip key={i} tone={t.tone}>{t.label}</Chip>
-      ))}
+      {nodeTags(node).map((t, i) => {
+        const field = fieldFor[t.kind]
+        const anc = field ? inheritedFrom[field] : undefined
+        const from = anc ? (anc.commonName ?? anc.botanicalName ?? anc.id) : undefined
+        return (
+          <span key={i} className={from ? 'opacity-40' : ''} title={from ? `Inherited from ${from}` : undefined}>
+            <Chip tone={t.tone}>{t.label}</Chip>
+          </span>
+        )
+      })}
     </div>
   )
 }
@@ -142,8 +159,8 @@ export default function TaxonomyPage() {
   // `null` means "all expanded" (the default); a Set once the gardener starts collapsing.
   const [expanded, setExpanded] = useState<Set<string> | null>(null)
   // Group by the family→genus tree, or a flat A–Z list of plants (to reconcile against a
-  // spreadsheet sorted by plant name).
-  const [mode, setMode] = useState<'tree' | 'flat'>('tree')
+  // spreadsheet sorted by plant name) — persisted so the choice survives a revisit.
+  const [mode, setMode] = usePersistentState<'tree' | 'flat'>('tilth.taxonomy.mode', 'tree')
   // The plant whose cheatsheet is open in the modal — a modal (not a route) so the tree keeps its
   // scroll position while you inspect a plant.
   const [modalId, setModalId] = useState<string | null>(null)
@@ -315,12 +332,20 @@ export default function TaxonomyPage() {
                 )
               }
 
-              const r = resolved.get(node.id)?.node ?? node
+              const res = resolved.get(node.id)
+              const r = res?.node ?? node
+              const inh = res?.inheritedFrom ?? {}
               const c = r.conditions
               const interest = seasonalInterest(r.calendar, r.colour)
               // Only draw a glyph where the plant actually has that facet — an empty cell reads far
               // cleaner across the whole record and makes "still to enrich" obvious at a glance.
               const hasInterest = interest.some((s) => s.parts.length > 0)
+              // Which ancestor a facet-group was borrowed from (dims the glyph). Season comes from
+              // `calendar`; Position + Conditions both read the `conditions` field, so they share
+              // one source. undefined = the node asserts it itself.
+              const ancLabel = (a?: PlantNode) => (a ? (a.commonName ?? a.botanicalName ?? a.id) : undefined)
+              const seasonFrom = ancLabel(inh.calendar)
+              const condFrom = ancLabel(inh.conditions)
               return (
                 <tr key={node.id} className="hover:bg-sunken/40">
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('plant')}>
@@ -353,26 +378,26 @@ export default function TaxonomyPage() {
                   </td>
                   {cols.tags && (
                     <td className="border-b border-l border-divider px-2 py-1 align-middle" style={{ width: TAGW, minWidth: TAGW, maxWidth: TAGW }}>
-                      <TagList node={r} />
+                      <TagList node={r} inheritedFrom={inh} />
                     </td>
                   )}
                   {cols.season &&
                     interest.map((s) => (
-                      <Cell key={s.season}>{hasInterest ? <SeasonCell parts={s.parts} slot={SLOT} /> : null}</Cell>
+                      <Cell key={s.season} from={seasonFrom}>{hasInterest ? <SeasonCell parts={s.parts} slot={SLOT} /> : null}</Cell>
                     ))}
                   {cols.position && (
                     <>
-                      <Cell>{c?.sun?.length ? <LightCell conditions={c} size={POS} /> : null}</Cell>
-                      <Cell>{c?.aspect?.length ? <AspectCell conditions={c} size={POS} /> : null}</Cell>
-                      <Cell>{c?.exposure?.length ? <ExposureCell conditions={c} size={POS} /> : null}</Cell>
-                      <Cell>{c?.hardiness ? <HardinessCell conditions={c} /> : null}</Cell>
+                      <Cell from={condFrom}>{c?.sun?.length ? <LightCell conditions={c} size={POS} /> : null}</Cell>
+                      <Cell from={condFrom}>{c?.aspect?.length ? <AspectCell conditions={c} size={POS} /> : null}</Cell>
+                      <Cell from={condFrom}>{c?.exposure?.length ? <ExposureCell conditions={c} size={POS} /> : null}</Cell>
+                      <Cell from={condFrom}>{c?.hardiness ? <HardinessCell conditions={c} /> : null}</Cell>
                     </>
                   )}
                   {cols.conditions && (
                     <>
-                      <Cell>{c?.soil?.length ? <SoilCell conditions={c} size={CELL} flush /> : null}</Cell>
-                      <Cell>{c?.moisture?.length ? <MoistureCell conditions={c} size={CELL} flush /> : null}</Cell>
-                      <Cell>{c?.ph?.length ? <PhCell conditions={c} size={CELL} flush /> : null}</Cell>
+                      <Cell from={condFrom}>{c?.soil?.length ? <SoilCell conditions={c} size={CELL} flush /> : null}</Cell>
+                      <Cell from={condFrom}>{c?.moisture?.length ? <MoistureCell conditions={c} size={CELL} flush /> : null}</Cell>
+                      <Cell from={condFrom}>{c?.ph?.length ? <PhCell conditions={c} size={CELL} flush /> : null}</Cell>
                     </>
                   )}
                 </tr>
