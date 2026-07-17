@@ -15,6 +15,7 @@ import SeasonStrip from './SeasonStrip'
 import { SeasonalInterestEditor } from './SeasonalInterestEditor'
 import { PositionEditor } from './PositionEditor'
 import { ConditionsEditor } from './ConditionsEditor'
+import { SizeEditor } from './SizeEditor'
 import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -43,6 +44,7 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
   const [editingSeasonal, setEditingSeasonal] = useState(false)
   const [editingPosition, setEditingPosition] = useState(false)
   const [editingConditions, setEditingConditions] = useState(false)
+  const [editingSize, setEditingSize] = useState(false)
   const { node: resolved, inheritedFrom } = resolveInherited(node, ancestors)
   const { plant, variety } = displayName(node)
   const botanical = botanicalLabel(resolved)
@@ -191,7 +193,21 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
         </div>
 
         <div className="lg:col-span-2 lg:row-span-2">
-          <Tile title="Size" note={inheritedNote('size')} fill bleed>
+          <Tile
+            title="Size"
+            note={inheritedNote('size')}
+            action={
+              <button
+                type="button"
+                onClick={() => setEditingSize(true)}
+                className="text-xs font-medium text-brand-ink hover:underline"
+              >
+                Edit
+              </button>
+            }
+            fill
+            bleed
+          >
             <SizeCard size={resolved.size} />
           </Tile>
         </div>
@@ -329,6 +345,10 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
           conditions={resolved.conditions}
           onClose={() => setEditingConditions(false)}
         />
+      )}
+
+      {editingSize && (
+        <SizeEditor node={node} size={resolved.size} onClose={() => setEditingSize(false)} />
       )}
     </>
   )
