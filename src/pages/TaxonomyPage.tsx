@@ -9,6 +9,7 @@ import { SeasonCell } from '../components/SeasonStrip'
 import { LightCell, AspectCell, ExposureCell, HardinessCell } from '../components/PositionCard'
 import { SoilCell, MoistureCell, PhCell } from '../components/ConditionsCard'
 import Chip from '../components/Chip'
+import { bannerLabel } from '../lib/taxonNames'
 import type { PlantNode } from '../schema/plant'
 
 // The taxonomy view: the collection as an expandable family→genus→species→cultivar tree, with the
@@ -19,12 +20,13 @@ import type { PlantNode } from '../schema/plant'
 const CELL = 56 // square facet cell (drives the row height)
 const POS = 48 // position glyphs sit centred with a little breathing room
 const SLOT = Math.round(CELL / 2) // season 2×2 slot → the cell fills edge-to-edge
-const COLS = { cat: 56, plant: 200, variety: 150, src: 48 }
+// Frozen identity columns, left → right: the plant name leads, then variety, category, source.
+const COLS = { plant: 200, variety: 150, cat: 56, src: 48 }
 const LEFT = {
-  cat: 0,
-  plant: COLS.cat,
-  variety: COLS.cat + COLS.plant,
-  src: COLS.cat + COLS.plant + COLS.variety,
+  plant: 0,
+  variety: COLS.plant,
+  cat: COLS.plant + COLS.variety,
+  src: COLS.plant + COLS.variety + COLS.cat,
 }
 const GROUP_H = 29 // px height of the group-header row (col headers stick just below it)
 
@@ -156,18 +158,18 @@ export default function TaxonomyPage() {
         <table className="border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
-              {frozenHead('', 'cat', 0)}
               {frozenHead('', 'plant', 0)}
               {frozenHead('', 'variety', 0)}
+              {frozenHead('', 'cat', 0)}
               {frozenHead('', 'src', 0)}
               <HeadTop label="Seasonal interest" span={4} />
               <HeadTop label="Position" span={4} />
               <HeadTop label="Conditions" span={3} />
             </tr>
             <tr>
-              {frozenHead('Cat', 'cat', 1)}
               {frozenHead('Plant', 'plant', 1)}
               {frozenHead('Variety', 'variety', 1)}
+              {frozenHead('Cat', 'cat', 1)}
               {frozenHead('Src', 'src', 1)}
               {[...SEASONS, ...POSITION, ...CONDITIONS].map((c) => (
                 <HeadCol key={c} label={c} />
@@ -176,7 +178,7 @@ export default function TaxonomyPage() {
           </thead>
           <tbody>
             {rows.map((t) => {
-              const { node, depth, children } = t
+              const { node, children } = t
               const open = openSet.has(node.id)
               const name = node.commonName ?? node.botanicalName ?? node.id
 
@@ -185,14 +187,16 @@ export default function TaxonomyPage() {
               // sticks to the left edge as the facet columns scroll.
               if (isBannerRow(t)) {
                 const isFamily = node.rank === 'family'
+                // Family and genus both sit flush left — the font weight/tone carries the
+                // hierarchy, not indentation. The label sticks to the left as facets scroll.
                 return (
                   <tr key={node.id}>
                     <td colSpan={TOTAL_COLS} className={`border-b border-divider p-0 ${isFamily ? 'bg-sunken' : 'bg-sunken/60'}`}>
-                      <div className="sticky left-0 flex w-max items-center gap-1.5 py-1.5 pr-4" style={{ paddingLeft: 8 + depth * 14 }}>
+                      <div className="sticky left-0 flex w-max items-center gap-1.5 py-1.5 pl-2 pr-4">
                         <button onClick={() => toggle(node.id)} className="w-4 flex-none text-subtle hover:text-ink" aria-label={open ? 'Collapse' : 'Expand'}>
                           {open ? '▾' : '▸'}
                         </button>
-                        <span className={isFamily ? 'text-sm font-semibold text-ink' : 'text-sm font-medium text-muted'}>{name}</span>
+                        <span className={isFamily ? 'text-sm font-semibold text-ink' : 'text-sm font-medium text-muted'}>{bannerLabel(node)}</span>
                         <span className="text-[0.65rem] tabular-nums text-subtle">· {countPlants(children)}</span>
                       </div>
                     </td>
@@ -208,11 +212,8 @@ export default function TaxonomyPage() {
               const hasInterest = interest.some((s) => s.parts.length > 0)
               return (
                 <tr key={node.id} className="hover:bg-sunken/40">
-                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={{ left: LEFT.cat, width: COLS.cat }}>
-                    {r.category && <Chip tone="brand">{r.category}</Chip>}
-                  </td>
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={{ left: LEFT.plant, width: COLS.plant }}>
-                    <div className="flex items-center gap-1" style={{ paddingLeft: depth * 14 }}>
+                    <div className="flex items-center gap-1">
                       {children.length ? (
                         <button onClick={() => toggle(node.id)} className="w-4 flex-none text-subtle hover:text-ink" aria-label={open ? 'Collapse' : 'Expand'}>
                           {open ? '▾' : '▸'}
@@ -226,7 +227,11 @@ export default function TaxonomyPage() {
                     </div>
                   </td>
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle text-muted" style={{ left: LEFT.variety, width: COLS.variety }}>
-                    <span className="block truncate" title={node.variety ?? ''}>{node.variety ?? ''}</span>
+                    {/* Only the variety is visually indented — it reads as hanging under its species. */}
+                    <span className="block truncate" style={{ paddingLeft: node.rank === 'cultivar' ? 14 : 0 }} title={node.variety ?? ''}>{node.variety ?? ''}</span>
+                  </td>
+                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={{ left: LEFT.cat, width: COLS.cat }}>
+                    {r.category && <Chip tone="brand">{r.category}</Chip>}
                   </td>
                   <td className="sticky z-10 border-b border-r border-line bg-card px-0 align-middle" style={{ left: LEFT.src, width: COLS.src }}>
                     <div className="grid place-items-center"><SourceCell node={node} byId={byId} /></div>
