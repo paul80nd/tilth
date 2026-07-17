@@ -172,11 +172,12 @@ export default function ImportPanel() {
           {result.res.guides + result.res.tasks > 0 &&
             ` (+${result.res.guides + result.res.tasks} guide/task)`}
           .{' '}
-          {result.ids.map((id) => (
+          {result.ids.slice(0, 8).map((id) => (
             <Link key={id} to={`/plant/${id}`} className="mr-2 font-medium underline">
               {id}
             </Link>
           ))}
+          {result.ids.length > 8 && <span>and {result.ids.length - 8} more.</span>}
         </div>
       )}
 
