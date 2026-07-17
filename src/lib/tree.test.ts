@@ -57,14 +57,14 @@ describe('linkedAncestor', () => {
     const linked = new Map(byId)
     linked.set('malus-domestica', {
       ...byId.get('malus-domestica')!,
-      sourceLinks: [{ source: 'rhs', url: 'https://example.invalid/apple' }],
+      sourceLinks: [{ source: 'plant-db', url: 'https://example.invalid/apple' }],
     })
     const cultivar = linked.get('malus-domestica-red-falstaff')!
     expect(linkedAncestor(cultivar, linked)?.id).toBe('malus-domestica')
   })
 
   it('ignores the node\'s own links (only looks upward)', () => {
-    const own = { ...nodes.find((n) => n.id === 'malus-domestica')!, sourceLinks: [{ source: 'rhs', url: 'https://example.invalid/apple' }] }
+    const own = { ...nodes.find((n) => n.id === 'malus-domestica')!, sourceLinks: [{ source: 'plant-db', url: 'https://example.invalid/apple' }] }
     // species has its own link but no linked ancestor above it
     expect(linkedAncestor(own, new Map(nodes.map((n) => [n.id, n])).set(own.id, own))).toBeNull()
   })

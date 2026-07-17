@@ -53,11 +53,12 @@ export interface SourceLink {
   label?: string
 }
 
-/** A phase in the 12-month calendar. Stored as a source-neutral shortcode; the UI maps
- *  the code to a colour + label + legend (seed brands colour these differently, so colour
- *  is never stored). "Actionable" codes (sow*, plant-out, pot-on, prune, thin, harvest,
- *  feed, divide) also feed the jobs engine; "state" codes (flower, foliage, fruit, stem) are
- *  display-only. See docs/spec.md § Calendar. */
+/** A phase in the 12-month calendar. Stored as a source-neutral shortcode; the UI maps the
+ *  code to a legend colour + label. Every code is ACTIONABLE — a job that feeds the jobs
+ *  engine (sow*, plant-out, pot-on, prune, thin, harvest, feed, divide). Ornamental "state"
+ *  (in flower / in leaf / in fruit / coloured stems) is NOT here — it's the separate,
+ *  season-granular `seasonalInterest` field, so the calendar stays a pure activity chart.
+ *  See docs/spec.md § Calendar. */
 export type PhaseCode =
   | 'sow-indoors'
   | 'sow-outdoors'
@@ -68,10 +69,6 @@ export type PhaseCode =
   | 'divide'
   | 'feed'
   | 'harvest'
-  | 'flower'
-  | 'foliage'
-  | 'fruit'
-  | 'stem'
 
 /** One phase over a set of months (1 = Jan … 12 = Dec). Contiguous or not. */
 export interface PhaseSpan {
@@ -79,12 +76,21 @@ export interface PhaseSpan {
   months: number[]
   /** Optional free note shown on the phase (e.g. "under glass", "every 2–3 weeks"). */
   note?: string
-  /** For STATE codes (flower/foliage/fruit): the real ornamental colour in *these* months —
-   *  e.g. foliage "green" in summer but "yellow" in autumn (two spans). This is genuine
-   *  botanical data, distinct from the fixed legend colour of action codes; the UI maps known
-   *  colour words to a swatch (lib/colour). Lets colour vary through the year. */
-  colour?: string
 }
+
+/** Northern-hemisphere seasons — the columns of the seasonal-interest grid. */
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter'
+
+/** The plant parts a seasonal interest can be shown for — the grid's rows. */
+export type InterestPart = 'stem' | 'flower' | 'foliage' | 'fruit'
+
+/** Ornamental interest as a season × part grid of colour words (a source's "seasonal
+ *  interest" chart). A part listed for a season is on show then; its colour words map to
+ *  swatches in the UI (lib/colour), and several at once are allowed (a bloom flowering
+ *  blue/purple/white together). Deliberately season-granular — the source asserts seasons,
+ *  not months — and kept SEPARATE from the `calendar` (which is jobs only): the two are
+ *  different things. Whole field (replace, not union) like the other closed-vocab shapes. */
+export type SeasonalInterest = Partial<Record<Season, Partial<Record<InterestPart, string[]>>>>
 
 /** Soil / position facets, kept as small closed vocabularies so the cheatsheet can render
  *  them as compact iconography (like the spreadsheet). All optional — a node only carries
@@ -146,14 +152,18 @@ export interface PlantNode {
   /** Growth habit shortcode from the source (e.g. "clump-forming", "bushy"). */
   habit?: string
 
-  /** Per-month phases for the cheatsheet chart + the jobs engine. */
+  /** Per-month ACTIONABLE phases (jobs) for the cheatsheet chart + the jobs engine. */
   calendar?: PhaseSpan[]
   conditions?: Conditions
   size?: Size
 
-  /** Ornamental colour by plant part — the spreadsheet's "seasonal colour". Pairs with the
-   *  calendar's state phases (which say WHEN foliage/flower/fruit show); this says WHICH
-   *  colour. Free colour words; the UI maps known ones to a swatch. Whole field (replace). */
+  /** Ornamental interest by season and part — the source's "seasonal interest" grid. This is
+   *  the strip on the cheatsheet; it does NOT touch the `calendar`. Season-granular. */
+  seasonalInterest?: SeasonalInterest
+
+  /** Flat ornamental colour by plant part — a lighter fallback when there's no per-season
+   *  `seasonalInterest` grid (says WHICH colour, not when). Free colour words; the UI maps
+   *  known ones to a swatch. Whole field (replace). */
   colour?: {
     flower?: string[]
     foliage?: string[]

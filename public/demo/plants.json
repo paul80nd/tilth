@@ -15,7 +15,6 @@
       "summary": "Fictional demo plant. Tender fruiting vegetable grown under cover or outdoors in a warm, sheltered spot.",
       "otherNames": ["Love apple"],
       "synonyms": ["Lycopersicon esculentum"],
-      "colour": { "flower": ["yellow"], "fruit": ["red"] },
       "edible": ["fruit"],
       "wildlife": ["attracts pollinators"],
       "uses": ["containers", "greenhouse", "grow-bags"],
@@ -24,11 +23,13 @@
         { "code": "pot-on", "months": [5] },
         { "code": "plant-out", "months": [6] },
         { "code": "feed", "months": [6, 7, 8], "note": "weekly once flowering" },
-        { "code": "harvest", "months": [8, 9] },
-        { "code": "foliage", "months": [5, 6, 7, 8, 9], "colour": "green" },
-        { "code": "flower", "months": [6, 7], "colour": "yellow" },
-        { "code": "fruit", "months": [8, 9], "colour": "red" }
+        { "code": "harvest", "months": [8, 9] }
       ],
+      "seasonalInterest": {
+        "spring": { "foliage": ["green"] },
+        "summer": { "foliage": ["green"], "flower": ["yellow"], "fruit": ["red"] },
+        "autumn": { "foliage": ["green"], "fruit": ["red"] }
+      },
       "conditions": {
         "soil": ["loam"],
         "moisture": ["moist"],
@@ -67,17 +68,19 @@
       "lifecycle": ["annual"],
       "summary": "Fictional demo plant. Fast, tall annual for a sunny border; seed heads feed birds in autumn.",
       "otherNames": ["Common sunflower"],
-      "colour": { "flower": ["yellow", "golden"] },
       "edible": ["seeds"],
       "wildlife": ["attracts pollinators", "bird food (seed heads)"],
       "uses": ["cut flowers", "back of border", "children's gardening"],
       "calendar": [
         { "code": "sow-indoors", "months": [3, 4] },
         { "code": "plant-out", "months": [5] },
-        { "code": "foliage", "months": [5, 6, 7, 8, 9], "colour": "green" },
-        { "code": "flower", "months": [7, 8, 9], "colour": "yellow" },
         { "code": "harvest", "months": [9, 10], "note": "seed heads" }
       ],
+      "seasonalInterest": {
+        "spring": { "foliage": ["green"] },
+        "summer": { "foliage": ["green"], "flower": ["yellow"] },
+        "autumn": { "foliage": ["green"], "flower": ["yellow"] }
+      },
       "conditions": {
         "soil": ["loam", "sand"],
         "moisture": ["well-drained"],
@@ -100,16 +103,18 @@
       "genus": "Ocimum",
       "lifecycle": ["annual"],
       "summary": "Fictional demo plant. Tender culinary herb; best on a warm windowsill and pinched often.",
-      "colour": { "foliage": ["green"] },
       "edible": ["leaves"],
       "wildlife": ["attracts pollinators"],
       "uses": ["containers", "windowsill", "kitchen garden"],
       "calendar": [
         { "code": "sow-indoors", "months": [3, 4, 5] },
-        { "code": "harvest", "months": [6, 7, 8, 9], "note": "pinch tips" },
-        { "code": "foliage", "months": [5, 6, 7, 8, 9], "colour": "green" },
-        { "code": "flower", "months": [8], "colour": "white", "note": "pinch out to keep leafy" }
+        { "code": "harvest", "months": [6, 7, 8, 9], "note": "pinch tips" }
       ],
+      "seasonalInterest": {
+        "spring": { "foliage": ["green"] },
+        "summer": { "foliage": ["green"], "flower": ["white"] },
+        "autumn": { "foliage": ["green"] }
+      },
       "conditions": {
         "soil": ["loam"],
         "moisture": ["moist"],
@@ -131,18 +136,19 @@
       "genus": "Fragaria",
       "lifecycle": ["perennial"],
       "summary": "Fictional demo plant. Low, spreading perennial fruit; crops best in its first few years.",
-      "colour": { "flower": ["white"], "fruit": ["red"] },
       "edible": ["fruit"],
       "wildlife": ["attracts pollinators"],
       "uses": ["containers", "edging", "ground cover"],
       "calendar": [
         { "code": "plant-out", "months": [3, 9] },
         { "code": "feed", "months": [4], "note": "high-potash" },
-        { "code": "foliage", "months": [3, 4, 5, 6, 7, 8, 9], "colour": "green" },
-        { "code": "flower", "months": [5], "colour": "white" },
-        { "code": "fruit", "months": [6, 7], "colour": "red" },
         { "code": "harvest", "months": [6, 7] }
       ],
+      "seasonalInterest": {
+        "spring": { "foliage": ["green"], "flower": ["white"] },
+        "summer": { "foliage": ["green"], "fruit": ["red"] },
+        "autumn": { "foliage": ["green"] }
+      },
       "conditions": {
         "soil": ["loam", "sand"],
         "moisture": ["well-drained", "moist"],
@@ -167,7 +173,6 @@
       "foliage": "deciduous",
       "habit": "tree",
       "summary": "Fictional demo plant. Deciduous fruit tree; winter-pruned and thinned for a good crop.",
-      "colour": { "flower": ["white", "pink"], "fruit": ["red", "green"] },
       "edible": ["fruit"],
       "toxicity": "Pips are harmful if eaten in quantity",
       "wildlife": ["attracts pollinators", "blossom for early bees"],
@@ -175,12 +180,13 @@
       "calendar": [
         { "code": "prune", "months": [1, 2], "note": "winter, when dormant" },
         { "code": "thin", "months": [6], "note": "after natural drop" },
-        { "code": "harvest", "months": [9, 10] },
-        { "code": "foliage", "months": [4, 5, 6, 7, 8, 9, 10], "colour": "green" },
-        { "code": "flower", "months": [4, 5], "colour": "pink" },
-        { "code": "fruit", "months": [7, 8], "colour": "green" },
-        { "code": "fruit", "months": [9, 10], "colour": "red" }
+        { "code": "harvest", "months": [9, 10] }
       ],
+      "seasonalInterest": {
+        "spring": { "foliage": ["green"], "flower": ["pink"] },
+        "summer": { "foliage": ["green"], "fruit": ["green"] },
+        "autumn": { "foliage": ["green"], "fruit": ["red"] }
+      },
       "conditions": {
         "soil": ["loam", "clay"],
         "moisture": ["moist", "well-drained"],

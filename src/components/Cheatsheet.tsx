@@ -47,7 +47,7 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
     return from ? `from ${displayLabel(from)}` : undefined
   }
 
-  const interest = seasonalInterest(resolved.calendar, resolved.colour)
+  const interest = seasonalInterest(resolved.seasonalInterest)
   const hasInterest = interest.some((s) => s.parts.length > 0)
   const hasColour = !!resolved.colour && Object.values(resolved.colour).some((v) => v?.length)
   const hasFacts = !!resolved.facts && Object.keys(resolved.facts).length > 0
@@ -123,7 +123,7 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6 lg:[grid-auto-flow:dense]">
         <div className="lg:col-span-2">
           {hasInterest ? (
-            <Tile title="Seasonal interest" note={inheritedNote('calendar')} fill bleed>
+            <Tile title="Seasonal interest" note={inheritedNote('seasonalInterest')} fill bleed>
               <SeasonStrip interest={interest} />
             </Tile>
           ) : hasColour ? (

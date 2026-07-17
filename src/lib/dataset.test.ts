@@ -23,7 +23,7 @@ describe('parsePlantDataset', () => {
   it('passes arrays and nested objects through as whole fields', () => {
     const calendar = [
       { code: 'sow-indoors', months: [3, 4] },
-      { code: 'foliage', months: [6, 7], colour: 'green' },
+      { code: 'harvest', months: [6, 7] },
     ]
     const conditions = { soil: ['loam'], sun: ['full-sun'], aspect: ['south', 'west'] }
     const { nodes } = parsePlantDataset({ nodes: [{ id: 'x', calendar, conditions, awards: ['A', 'B'] }] })

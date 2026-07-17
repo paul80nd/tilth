@@ -1,6 +1,6 @@
-import type { PhaseCode } from '../schema/plant'
+import type { InterestPart } from '../schema/plant'
 import type { SeasonInterest } from '../lib/calendar'
-import { PHASE_META } from '../lib/calendar'
+import { INTEREST_META } from '../lib/calendar'
 import { colourSwatch } from '../lib/colour'
 import { SeasonalIcon } from './icons'
 
@@ -15,7 +15,7 @@ const PALE = /white|cream|silver|pale/i
 
 // The four interest slots as a 2×2, reading TL→TR→BL→BR: foliage · flower / stem · fruit — i.e.
 // clockwise from top-left, leaf → flower → fruit → stem.
-const SLOTS: PhaseCode[] = ['foliage', 'flower', 'stem', 'fruit']
+const SLOTS: InterestPart[] = ['foliage', 'flower', 'stem', 'fruit']
 
 /** Tint for a colour word: pale blooms (white/cream) fall back to a fixed light neutral so they
  *  read as "pale" on both a white and a dark card (a theme-flipping token would go dark in dark
@@ -56,19 +56,19 @@ function sectorClips(n: number): string[] {
   })
 }
 
-function Slot({ code, part, size = 36 }: { code: PhaseCode; part?: { colours: string[] }; size?: number }) {
-  const iconPart = code as 'foliage' | 'flower' | 'fruit' | 'stem'
+function Slot({ code, part, size = 36 }: { code: InterestPart; part?: { colours: string[] }; size?: number }) {
+  const iconPart = code
   const box = { width: size, height: size }
   const icon = Math.round(size * (5 / 6)) // 36 → 30
   if (!part) {
     const dot = Math.max(3, Math.round(size * 0.16))
     return (
-      <span className="grid place-items-center" style={box} title={`No ${PHASE_META[code].label.toLowerCase()}`}>
+      <span className="grid place-items-center" style={box} title={`No ${INTEREST_META[code].label.toLowerCase()}`}>
         <span className="rounded-full bg-subtle/50" style={{ width: dot, height: dot }} aria-hidden="true" />
       </span>
     )
   }
-  const label = PHASE_META[code].label + (part.colours.length ? ` — ${part.colours.join(', ')}` : '')
+  const label = INTEREST_META[code].label + (part.colours.length ? ` — ${part.colours.join(', ')}` : '')
 
   // 0–1 colour: a single tinted silhouette. 2+: the same silhouette painted in hard conic wedges,
   // one colour per equal sector (1st third / 2nd third / 3rd third), like a segmented swatch.

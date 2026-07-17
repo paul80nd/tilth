@@ -1,43 +1,25 @@
 import { Fragment } from 'react'
 import type { PhaseCode, PhaseSpan } from '../schema/plant'
-import { MONTH_INITIALS, MONTH_NAMES, PHASE_META, isActionable, phasesPresent } from '../lib/calendar'
-import { colourSwatch } from '../lib/colour'
+import { MONTH_INITIALS, MONTH_NAMES, PHASE_META, phasesPresent } from '../lib/calendar'
 
 // The cheatsheet centrepiece: a compact 12-month × phase grid, held in a card that matches the
-// seasonal-interest block. Rows are the phases the plant has, columns are Jan–Dec split by
-// hairline dividers so the card reads as a month grid; a filled cell means "this phase happens
+// seasonal-interest block. Rows are the jobs the plant has, columns are Jan–Dec split by
+// hairline dividers so the card reads as a month grid; a filled cell means "this job happens
 // this month". Cells fill edge-to-edge, so a run of months forms one continuous band (touching,
-// not rounded islands). ACTION phases (the jobs) use the fixed legend tokens (--tl-phase-*).
-// STATE phases (flower/foliage/fruit) are drawn in their *real* colour (PhaseSpan.colour →
-// swatch) so the chart carries the plant's actual seasonal colour — the calendar and the colour
-// tab of the spreadsheet, unified. Colour applies inline (no dynamic Tailwind classes to purge).
-// No bottom legend: each row is named by its own label + coloured dot on the left. The current
-// month column is tinted and its header marked.
+// not rounded islands). Every phase is a job, coloured by its fixed legend token (--tl-phase-*);
+// ornamental interest is a separate strip, not shown here. No bottom legend: each row is named by
+// its own label + coloured dot on the left. The current month column is tinted and its header marked.
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-const PALE = /white|cream|silver|pale/i
 
-/** The fill for a (code, month) cell, or null if the phase isn't active that month. */
-function cellFill(
-  calendar: PhaseSpan[],
-  code: PhaseCode,
-  month: number,
-): { colour: string; pale: boolean } | null {
-  const span = calendar.find((s) => s.code === code && s.months.includes(month))
-  if (!span) return null
-  const legend = `var(--tl-phase-${PHASE_META[code].token})`
-  if (isActionable(code)) return { colour: legend, pale: false }
-  const hex = span.colour ? colourSwatch(span.colour) : undefined
-  return { colour: hex ?? legend, pale: !!span.colour && PALE.test(span.colour) }
+/** The legend colour for a phase code. */
+function tokenColour(code: PhaseCode): string {
+  return `var(--tl-phase-${PHASE_META[code].token})`
 }
 
-/** A representative colour for the row's label dot. */
-function labelColour(calendar: PhaseSpan[], code: PhaseCode): { colour: string; pale: boolean } {
-  const legend = `var(--tl-phase-${PHASE_META[code].token})`
-  if (isActionable(code)) return { colour: legend, pale: false }
-  const withColour = calendar.find((s) => s.code === code && s.colour)?.colour
-  const hex = withColour ? colourSwatch(withColour) : undefined
-  return { colour: hex ?? legend, pale: !!withColour && PALE.test(withColour) }
+/** True if the phase is active in the month. */
+function isActive(calendar: PhaseSpan[], code: PhaseCode, month: number): boolean {
+  return calendar.some((s) => s.code === code && s.months.includes(month))
 }
 
 function noteFor(calendar: PhaseSpan[], code: PhaseCode, month: number): string | undefined {
@@ -83,33 +65,33 @@ export default function CalendarBar({
 
           {/* one row per present phase; cells fill edge-to-edge so runs form continuous bands */}
           {codes.map((code, rowIdx) => {
-            const dot = labelColour(calendar, code)
+            const colour = tokenColour(code)
             const rowLine = rowIdx > 0 ? 'border-t border-line' : ''
             return (
               <Fragment key={code}>
                 <div className={`flex items-center gap-1.5 py-1 pl-3 pr-2 text-muted ${rowLine}`}>
                   <span
-                    className={`h-2.5 w-2.5 flex-none rounded-full ${dot.pale ? 'ring-1 ring-line-strong' : ''}`}
-                    style={{ backgroundColor: dot.colour }}
+                    className="h-2.5 w-2.5 flex-none rounded-full"
+                    style={{ backgroundColor: colour }}
                     aria-hidden="true"
                   />
                   <span className="truncate">{PHASE_META[code].label}</span>
                 </div>
                 {MONTHS.map((m) => {
-                  const fill = cellFill(calendar, code, m)
+                  const active = isActive(calendar, code, m)
                   const isCurrent = m === month
                   return (
                     <div
                       key={m}
                       className={`border-l border-line ${rowLine} ${
-                        !fill && isCurrent ? 'bg-brand/10' : ''
+                        !active && isCurrent ? 'bg-brand/10' : ''
                       }`}
                     >
                       <div
-                        className={`h-full min-h-[1.15rem] w-full ${fill?.pale ? 'ring-1 ring-inset ring-line-strong' : ''}`}
-                        style={fill ? { backgroundColor: fill.colour } : undefined}
+                        className="h-full min-h-[1.15rem] w-full"
+                        style={active ? { backgroundColor: colour } : undefined}
                         title={
-                          fill
+                          active
                             ? `${PHASE_META[code].label} — ${MONTH_NAMES[m - 1]}${
                                 noteFor(calendar, code, m) ? ` (${noteFor(calendar, code, m)})` : ''
                               }`

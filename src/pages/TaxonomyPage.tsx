@@ -84,7 +84,7 @@ function LinkGlyph({ className }: { className?: string }) {
   )
 }
 
-/** The frozen source-state cell: own RHS link (solid, clickable), covered-by-parent (muted),
+/** The frozen source-state cell: own source link (solid, clickable), covered-by-parent (muted),
  *  or an empty gap still to match. */
 function SourceCell({ node, byId }: { node: PlantNode; byId: Map<string, PlantNode> }) {
   const own = node.sourceLinks ?? []
@@ -336,15 +336,15 @@ export default function TaxonomyPage() {
               const r = res?.node ?? node
               const inh = res?.inheritedFrom ?? {}
               const c = r.conditions
-              const interest = seasonalInterest(r.calendar, r.colour)
+              const interest = seasonalInterest(r.seasonalInterest)
               // Only draw a glyph where the plant actually has that facet — an empty cell reads far
               // cleaner across the whole record and makes "still to enrich" obvious at a glance.
               const hasInterest = interest.some((s) => s.parts.length > 0)
               // Which ancestor a facet-group was borrowed from (dims the glyph). Season comes from
-              // `calendar`; Position + Conditions both read the `conditions` field, so they share
-              // one source. undefined = the node asserts it itself.
+              // `seasonalInterest`; Position + Conditions both read the `conditions` field, so they
+              // share one source. undefined = the node asserts it itself.
               const ancLabel = (a?: PlantNode) => (a ? (a.commonName ?? a.botanicalName ?? a.id) : undefined)
-              const seasonFrom = ancLabel(inh.calendar)
+              const seasonFrom = ancLabel(inh.seasonalInterest)
               const condFrom = ancLabel(inh.conditions)
               return (
                 <tr key={node.id} className="hover:bg-sunken/40">
