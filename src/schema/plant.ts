@@ -161,15 +161,6 @@ export interface PlantNode {
    *  the strip on the cheatsheet; it does NOT touch the `calendar`. Season-granular. */
   seasonalInterest?: SeasonalInterest
 
-  /** Flat ornamental colour by plant part — a lighter fallback when there's no per-season
-   *  `seasonalInterest` grid (says WHICH colour, not when). Free colour words; the UI maps
-   *  known ones to a swatch. Whole field (replace). */
-  colour?: {
-    flower?: string[]
-    foliage?: string[]
-    fruit?: string[]
-    stem?: string[]
-  }
   /** Edible parts, e.g. ["fruit"], ["leaves"]. Absent = not recorded (not "inedible"). */
   edible?: string[]
   /** Toxicity / harm note, free text (e.g. "Harmful if eaten", "Toxic to cats and dogs"). */

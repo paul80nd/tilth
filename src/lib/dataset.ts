@@ -68,7 +68,6 @@ const NODE_FIELDS: Array<keyof PlantNode> = [
   'conditions',
   'size',
   'seasonalInterest',
-  'colour',
   'edible',
   'toxicity',
   'wildlife',

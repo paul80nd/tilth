@@ -33,12 +33,12 @@ describe('parsePlantDataset', () => {
   })
 
   it('passes the descriptive fields through (colour, edible, wildlife, uses, names, synonyms)', () => {
-    const colour = { flower: ['yellow'], fruit: ['red'] }
+    const seasonalInterest = { summer: { flower: ['yellow'], fruit: ['red'] } }
     const { nodes } = parsePlantDataset({
       nodes: [
         {
           id: 'x',
-          colour,
+          seasonalInterest,
           edible: ['fruit'],
           toxicity: 'Harmful if eaten',
           wildlife: ['attracts pollinators'],
@@ -49,7 +49,7 @@ describe('parsePlantDataset', () => {
       ],
     })
     const n = nodes[0]
-    expect(n.colour).toEqual(colour)
+    expect(n.seasonalInterest).toEqual(seasonalInterest)
     expect(n.edible).toEqual(['fruit'])
     expect(n.toxicity).toBe('Harmful if eaten')
     expect(n.wildlife).toEqual(['attracts pollinators'])

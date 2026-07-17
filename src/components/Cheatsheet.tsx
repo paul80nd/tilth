@@ -10,7 +10,6 @@ import PositionCard from './PositionCard'
 import SizeCard from './SizeCard'
 import ConditionsCard from './ConditionsCard'
 import CalendarBar from './CalendarBar'
-import ColourInterest from './ColourInterest'
 import SeasonStrip from './SeasonStrip'
 import Chip from './Chip'
 
@@ -49,7 +48,6 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
 
   const interest = seasonalInterest(resolved.seasonalInterest)
   const hasInterest = interest.some((s) => s.parts.length > 0)
-  const hasColour = !!resolved.colour && Object.values(resolved.colour).some((v) => v?.length)
   const hasFacts = !!resolved.facts && Object.keys(resolved.facts).length > 0
   const hasWildlife = (resolved.wildlife?.length ?? 0) > 0
   const hasUses = (resolved.uses?.length ?? 0) > 0
@@ -126,13 +124,9 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
             <Tile title="Seasonal interest" note={inheritedNote('seasonalInterest')} fill bleed>
               <SeasonStrip interest={interest} />
             </Tile>
-          ) : hasColour ? (
-            <Tile title="Colour" note={inheritedNote('colour')} fill>
-              <ColourInterest colour={resolved.colour!} />
-            </Tile>
           ) : (
             <Tile title="Seasonal interest" fill>
-              <Muted>No seasonal colour recorded yet.</Muted>
+              <Muted>No seasonal interest recorded yet.</Muted>
             </Tile>
           )}
         </div>

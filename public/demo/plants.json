@@ -54,7 +54,6 @@
       "variety": "Sunny Bench",
       "summary": "Fictional demo cultivar. A compact cordon type for pots and grow-bags, sweet cherry fruit.",
       "awards": ["Kitchen Garden Pick (demo)"],
-      "colour": { "fruit": ["red"] },
       "facts": { "fruit": "cherry, sweet", "habit note": "cordon — pinch side-shoots" }
     },
     {
@@ -208,7 +207,6 @@
       "variety": "Orchard Gold",
       "summary": "Fictional demo cultivar. A dessert apple on dwarfing rootstock for smaller gardens.",
       "awards": ["Merit Award (demo)"],
-      "colour": { "fruit": ["golden", "red-flushed"] },
       "facts": { "use": "dessert", "picking": "early October", "storage": "keeps 4-6 weeks" },
       "sourceLinks": [
         { "source": "plant-db", "url": "https://example.invalid/demo/plants/apple-orchard-gold", "label": "Cultivar page" }

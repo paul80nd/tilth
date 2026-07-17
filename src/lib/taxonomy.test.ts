@@ -54,16 +54,16 @@ describe('resolveInherited', () => {
     expect(node.size).toBeUndefined()
   })
 
-  it('inherits the descriptive fields (colour, edible, wildlife, uses)', () => {
+  it('inherits the descriptive fields (seasonalInterest, edible, wildlife, uses)', () => {
     const parent: PlantNode = {
       ...species,
-      colour: { flower: ['yellow'] },
+      seasonalInterest: { summer: { flower: ['yellow'] } },
       edible: ['fruit'],
       wildlife: ['attracts pollinators'],
       uses: ['containers'],
     }
     const { node, inheritedFrom } = resolveInherited(cultivar, [parent])
-    expect(node.colour).toEqual({ flower: ['yellow'] })
+    expect(node.seasonalInterest).toEqual({ summer: { flower: ['yellow'] } })
     expect(node.edible).toEqual(['fruit'])
     expect(node.wildlife).toEqual(['attracts pollinators'])
     expect(inheritedFrom.edible).toBe(parent)

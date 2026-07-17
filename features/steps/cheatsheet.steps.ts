@@ -17,7 +17,6 @@ const FIXTURE = {
       commonName: 'Tomato',
       calendar: [{ code: 'sow-indoors', months: [3, 4] }],
       conditions: { sun: ['full-sun'], aspect: ['south', 'west'] },
-      colour: { flower: ['yellow'], fruit: ['red'] },
       edible: ['fruit'],
       facts: { spacing: '45cm' },
       awards: ['Trial Award'],
