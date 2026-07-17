@@ -19,9 +19,6 @@ permissive licences.
 | Sun (Position → Light) | [IconPark](https://iconpark.oceanengine.com/) | ByteDance | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) |
 | Human figure (Size scale) | [Fontisto](https://fontisto.com/) | Team Redux (Kenan Gündoğan) | [OFL-1.1](https://openfontlicense.org/) |
 
-The Flower icon additionally has its **central circle removed** so the bloom renders solid (the
-seasonal strip can split it into hard colour wedges).
-
 The Size card's to-scale human figure uses the Fontisto "male" glyph, and the Position card's
 Light slot uses the IconPark "sunny" glyph — each embedded as an inline SVG path (in
 `src/components/SizeCard.tsx` / `PositionCard.tsx`), **recoloured** and **resized** from the
