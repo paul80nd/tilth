@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
-import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor, withUnplacedBucket, isBannerRow } from '../lib/tree'
+import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor, withUnplacedBucket, isBannerRow, flatPlants } from '../lib/tree'
 import type { TreeNode } from '../lib/tree'
 import { seasonalInterest } from '../lib/calendar'
 import { SeasonCell } from '../components/SeasonStrip'
@@ -96,9 +96,18 @@ export default function TaxonomyPage() {
   const linkedCount = useMemo(() => (nodes ?? []).filter((n) => n.sourceLinks?.length).length, [nodes])
   // `null` means "all expanded" (the default); a Set once the gardener starts collapsing.
   const [expanded, setExpanded] = useState<Set<string> | null>(null)
+  // Group by the family→genus tree, or a flat A–Z list of plants (to reconcile against a
+  // spreadsheet sorted by plant name).
+  const [mode, setMode] = useState<'tree' | 'flat'>('tree')
 
   const openSet = useMemo(() => expanded ?? new Set(allIds(forest)), [expanded, forest])
-  const rows = useMemo(() => flattenVisible(forest, openSet), [forest, openSet])
+  const rows = useMemo(
+    () =>
+      mode === 'flat'
+        ? flatPlants(nodes ?? []).map((node) => ({ node, depth: 0, children: [] as TreeNode[] }))
+        : flattenVisible(forest, openSet),
+    [mode, nodes, forest, openSet],
+  )
 
   function toggle(id: string) {
     setExpanded((prev) => {
@@ -144,13 +153,31 @@ export default function TaxonomyPage() {
             {linkedCount} linked to a source
           </p>
         </div>
-        <div className="flex flex-none gap-2 text-xs">
-          <button onClick={() => setExpanded(new Set(allIds(forest)))} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
-            Expand all
-          </button>
-          <button onClick={() => setExpanded(new Set())} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
-            Collapse all
-          </button>
+        <div className="flex flex-none items-center gap-2 text-xs">
+          <div className="flex overflow-hidden rounded-md border border-line">
+            <button
+              onClick={() => setMode('tree')}
+              className={mode === 'tree' ? 'bg-brand px-2 py-1 font-medium text-white' : 'px-2 py-1 text-muted hover:bg-sunken hover:text-ink'}
+            >
+              Family tree
+            </button>
+            <button
+              onClick={() => setMode('flat')}
+              className={mode === 'flat' ? 'bg-brand px-2 py-1 font-medium text-white' : 'px-2 py-1 text-muted hover:bg-sunken hover:text-ink'}
+            >
+              A–Z
+            </button>
+          </div>
+          {mode === 'tree' && (
+            <>
+              <button onClick={() => setExpanded(new Set(allIds(forest)))} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
+                Expand all
+              </button>
+              <button onClick={() => setExpanded(new Set())} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
+                Collapse all
+              </button>
+            </>
+          )}
         </div>
       </div>
 

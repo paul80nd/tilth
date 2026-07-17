@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor, withUnplacedBucket, isBannerRow, UNKNOWN_FAMILY_ID, UNKNOWN_GENUS_ID } from './tree'
+import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor, withUnplacedBucket, isBannerRow, flatPlants, UNKNOWN_FAMILY_ID, UNKNOWN_GENUS_ID } from './tree'
 import type { PlantNode } from '../schema/plant'
 
 const nodes: PlantNode[] = [
@@ -113,5 +113,28 @@ describe('withUnplacedBucket', () => {
     expect(find('floating-basil')?.depth).toBe(2)
     // the genuinely-placed plant is NOT bucketed
     expect(find('malus-domestica')?.depth).toBe(2)
+  })
+})
+
+describe('flatPlants', () => {
+  const src: PlantNode[] = [
+    { id: 'rosaceae', rank: 'family', commonName: 'Rosaceae' },
+    { id: 'malus', rank: 'genus', parentId: 'rosaceae', botanicalName: 'Malus' },
+    { id: 'malus-domestica', rank: 'species', parentId: 'malus', commonName: 'Apple' },
+    { id: 'apple-falstaff', rank: 'cultivar', parentId: 'malus-domestica', commonName: 'Apple', variety: 'Red Falstaff' },
+    { id: 'dahlia', rank: 'genus', commonName: 'Dahlia' }, // genus-leaf → a plant
+    { id: 'basil', rank: 'species', commonName: 'Basil' },
+  ]
+
+  it('keeps only plant rows (drops family and child-bearing genus)', () => {
+    const ids = flatPlants(src).map((n) => n.id)
+    expect(ids).not.toContain('rosaceae')
+    expect(ids).not.toContain('malus') // structural genus omitted
+    expect(ids).toContain('dahlia') // genus-leaf kept
+    expect(ids).toContain('malus-domestica')
+  })
+
+  it('sorts by display name then variety', () => {
+    expect(flatPlants(src).map((n) => n.id)).toEqual(['malus-domestica', 'apple-falstaff', 'basil', 'dahlia'])
   })
 })
