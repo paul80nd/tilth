@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor, withUnplacedBucket, isBannerRow, flatPlants } from '../lib/tree'
@@ -9,6 +8,7 @@ import { SeasonCell } from '../components/SeasonStrip'
 import { LightCell, AspectCell, ExposureCell, HardinessCell } from '../components/PositionCard'
 import { SoilCell, MoistureCell, PhCell } from '../components/ConditionsCard'
 import Chip from '../components/Chip'
+import { CheatsheetModal } from '../components/CheatsheetModal'
 import { bannerParts } from '../lib/taxonNames'
 import type { PlantNode } from '../schema/plant'
 
@@ -114,6 +114,9 @@ export default function TaxonomyPage() {
   // Group by the family→genus tree, or a flat A–Z list of plants (to reconcile against a
   // spreadsheet sorted by plant name).
   const [mode, setMode] = useState<'tree' | 'flat'>('tree')
+  // The plant whose cheatsheet is open in the modal — a modal (not a route) so the tree keeps its
+  // scroll position while you inspect a plant.
+  const [modalId, setModalId] = useState<string | null>(null)
 
   const openSet = useMemo(() => expanded ?? new Set(allIds(forest)), [expanded, forest])
   const rows = useMemo(
@@ -279,9 +282,9 @@ export default function TaxonomyPage() {
                         <span className="w-4 flex-none" />
                       )}
                       <div className="min-w-0">
-                        <Link to={`/plant/${node.id}`} className="block truncate hover:underline" title={name}>
+                        <button type="button" onClick={() => setModalId(node.id)} className="block max-w-full truncate text-left hover:underline" title={name}>
                           {name}
-                        </Link>
+                        </button>
                         {node.variety && (
                           <span className="block truncate text-xs text-muted" title={node.variety}>{node.variety}</span>
                         )}
@@ -316,6 +319,8 @@ export default function TaxonomyPage() {
           </tbody>
         </table>
       </div>
+
+      {modalId && <CheatsheetModal id={modalId} onClose={() => setModalId(null)} />}
     </div>
   )
 }
