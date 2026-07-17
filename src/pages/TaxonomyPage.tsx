@@ -20,32 +20,23 @@ import type { PlantNode } from '../schema/plant'
 const CELL = 56 // square facet cell (drives the row height)
 const POS = 48 // position glyphs sit centred with a little breathing room
 const SLOT = Math.round(CELL / 2) // season 2×2 slot → the cell fills edge-to-edge
-// Frozen identity columns, left → right: the plant name leads, then variety, category, source.
-// Widths are enforced via `table-fixed` + a <colgroup> so the columns render at exactly these
-// sizes — otherwise content-driven widths drift from the sticky `left` offsets below and the
-// frozen columns misalign on horizontal scroll (facet content bleeds through the gaps).
-const COLS = { plant: 210, cat: 66, src: 48 }
-const LEFT = {
-  plant: 0,
-  cat: COLS.plant,
-  src: COLS.plant + COLS.cat,
+// Frozen identity column widths. Which columns appear depends on the view mode: the flat A–Z
+// list adds a Family / Genus column (the tree's banners give that context; the flat list can't).
+// Each is pinned to an exact width (min == max == width, see `frozen`) so content can't stretch
+// it past its sticky `left` offset and misalign the frozen columns on horizontal scroll.
+const COLW = { plant: 210, famgen: 210, cat: 66, src: 48 }
+const HEAD: Record<keyof typeof COLW, string> = {
+  plant: 'Plant / Variety',
+  famgen: 'Family / Genus',
+  cat: 'Cat',
+  src: 'Src',
 }
 const GROUP_H = 29 // px height of the group-header row (col headers stick just below it)
-
-// Pin a frozen column to an exact width (min == max == width) so content can't stretch it past
-// its sticky `left` offset — otherwise adjacent frozen columns misalign on horizontal scroll.
-const frozen = (key: keyof typeof COLS) => ({
-  left: LEFT[key],
-  width: COLS[key],
-  minWidth: COLS[key],
-  maxWidth: COLS[key],
-})
 
 const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter']
 const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
 const CONDITIONS = ['Soil', 'Moisture', 'pH']
-// Every column a section-marker row spans: the 4 frozen identity columns + all facet columns.
-const TOTAL_COLS = 3 + SEASONS.length + POSITION.length + CONDITIONS.length
+const FACET_COLS = SEASONS.length + POSITION.length + CONDITIONS.length
 
 /** Count the plants beneath a tree row for the "· N" tally on a section-marker banner — every
  *  descendant that is itself a plant, i.e. not a grouping banner. A genus-LEAF (a genus with
@@ -99,6 +90,19 @@ function SourceCell({ node, byId }: { node: PlantNode; byId: Map<string, PlantNo
   return <span className="text-line" aria-hidden>·</span>
 }
 
+/** One line of the flat-view Family / Genus cell — the same "common name · scientific" label
+ *  construction the tree banners use, built from a plant's resolved family/genus string. */
+function TaxonLine({ rank, sci, muted }: { rank: 'family' | 'genus'; sci?: string; muted?: boolean }) {
+  if (!sci) return null
+  const { primary, secondary } = bannerParts({ id: sci, rank, botanicalName: sci })
+  return (
+    <span className={`block truncate text-xs ${muted ? 'text-muted' : 'text-ink'}`} title={secondary ? `${primary} · ${secondary}` : primary}>
+      {primary}
+      {secondary && <span className="italic text-subtle"> · {secondary}</span>}
+    </span>
+  )
+}
+
 export default function TaxonomyPage() {
   const nodes = useLiveQuery(() => db.nodes.toArray(), [])
   const forest = useMemo(() => (nodes ? withUnplacedBucket(buildForest(nodes)) : []), [nodes])
@@ -130,6 +134,18 @@ export default function TaxonomyPage() {
 
   if (!nodes) return <div className="p-6 text-sm text-muted">Loading…</div>
 
+  // The frozen columns for this mode, and their cumulative left offsets.
+  const frozenCols: Array<keyof typeof COLW> = mode === 'flat' ? ['plant', 'famgen', 'cat', 'src'] : ['plant', 'cat', 'src']
+  const leftOf: Partial<Record<keyof typeof COLW, number>> = {}
+  let acc = 0
+  for (const k of frozenCols) {
+    leftOf[k] = acc
+    acc += COLW[k]
+  }
+  const TOTAL_COLS = frozenCols.length + FACET_COLS
+  // Pin a frozen column to an exact width and its sticky left offset.
+  const frozen = (key: keyof typeof COLW) => ({ left: leftOf[key], width: COLW[key], minWidth: COLW[key], maxWidth: COLW[key] })
+
   // A 1px card-colour shadow under each sticky header cell paints over the sub-pixel seam
   // between the two header rows (and header→body) — the column-header row is a fractional
   // height, so without it scrolling content bleeds through the hairline (worst in dark mode).
@@ -145,8 +161,9 @@ export default function TaxonomyPage() {
     </th>
   )
   // Frozen identity header cells (sticky both top and left → corner, above everything).
-  const frozenHead = (label: string, key: keyof typeof COLS, row: 0 | 1) => (
+  const frozenHead = (label: string, key: keyof typeof COLW, row: 0 | 1) => (
     <th
+      key={key}
       className={`sticky z-30 border-b border-divider bg-card px-2 py-1 text-left text-[0.6rem] font-medium uppercase tracking-wide text-subtle ${SEAM}`}
       style={{ ...frozen(key), top: row === 0 ? 0 : GROUP_H }}
     >
@@ -201,17 +218,13 @@ export default function TaxonomyPage() {
         <table className="border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
-              {frozenHead('', 'plant', 0)}
-              {frozenHead('', 'cat', 0)}
-              {frozenHead('', 'src', 0)}
+              {frozenCols.map((k) => frozenHead('', k, 0))}
               <HeadTop label="Seasonal interest" span={4} />
               <HeadTop label="Position" span={4} />
               <HeadTop label="Conditions" span={3} />
             </tr>
             <tr>
-              {frozenHead('Plant / Variety', 'plant', 1)}
-              {frozenHead('Cat', 'cat', 1)}
-              {frozenHead('Src', 'src', 1)}
+              {frozenCols.map((k) => frozenHead(HEAD[k], k, 1))}
               {[...SEASONS, ...POSITION, ...CONDITIONS].map((c) => (
                 <HeadCol key={c} label={c} />
               ))}
@@ -275,6 +288,12 @@ export default function TaxonomyPage() {
                       </div>
                     </div>
                   </td>
+                  {mode === 'flat' && (
+                    <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('famgen')}>
+                      <TaxonLine rank="family" sci={r.family} />
+                      <TaxonLine rank="genus" sci={r.genus} muted />
+                    </td>
+                  )}
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('cat')}>
                     {r.category && <Chip tone="brand">{r.category}</Chip>}
                   </td>
