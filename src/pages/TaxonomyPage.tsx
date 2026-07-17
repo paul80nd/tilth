@@ -119,6 +119,9 @@ export default function TaxonomyPage() {
               const r = resolved.get(node.id)?.node ?? node
               const c = r.conditions
               const interest = seasonalInterest(r.calendar, r.colour)
+              // Only draw a glyph where the plant actually has that facet — an empty cell reads far
+              // cleaner across the whole record and makes "still to enrich" obvious at a glance.
+              const hasInterest = interest.some((s) => s.parts.length > 0)
               const open = openSet.has(node.id)
               const name = node.commonName ?? node.botanicalName ?? node.id
               return (
@@ -144,17 +147,15 @@ export default function TaxonomyPage() {
                     <span className="block truncate" title={node.variety ?? ''}>{node.variety ?? ''}</span>
                   </td>
                   {interest.map((s) => (
-                    <Cell key={s.season}>
-                      <SeasonCell parts={s.parts} slot={SLOT} />
-                    </Cell>
+                    <Cell key={s.season}>{hasInterest ? <SeasonCell parts={s.parts} slot={SLOT} /> : null}</Cell>
                   ))}
-                  <Cell><LightCell conditions={c} size={POS} /></Cell>
-                  <Cell><AspectCell conditions={c} size={POS} /></Cell>
-                  <Cell><ExposureCell conditions={c} size={POS} /></Cell>
-                  <Cell><HardinessCell conditions={c} /></Cell>
-                  <Cell><SoilCell conditions={c} size={CELL} flush /></Cell>
-                  <Cell><MoistureCell conditions={c} size={CELL} flush /></Cell>
-                  <Cell><PhCell conditions={c} size={CELL} flush /></Cell>
+                  <Cell>{c?.sun?.length ? <LightCell conditions={c} size={POS} /> : null}</Cell>
+                  <Cell>{c?.aspect?.length ? <AspectCell conditions={c} size={POS} /> : null}</Cell>
+                  <Cell>{c?.exposure?.length ? <ExposureCell conditions={c} size={POS} /> : null}</Cell>
+                  <Cell>{c?.hardiness ? <HardinessCell conditions={c} /> : null}</Cell>
+                  <Cell>{c?.soil?.length ? <SoilCell conditions={c} size={CELL} flush /> : null}</Cell>
+                  <Cell>{c?.moisture?.length ? <MoistureCell conditions={c} size={CELL} flush /> : null}</Cell>
+                  <Cell>{c?.ph?.length ? <PhCell conditions={c} size={CELL} flush /> : null}</Cell>
                 </tr>
               )
             })}
