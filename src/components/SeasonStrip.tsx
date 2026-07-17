@@ -84,7 +84,9 @@ function Slot({ code, part, size = 36 }: { code: InterestPart; part?: { colours:
   }
   const n = part.colours.length
   const step = 360 / n
-  const offset = -step / 2 // centre the first wedge on 12 o'clock, so no cut runs straight up
+  // Even splits (2, 4…) cut on the axes — a left/right (or +) division that suits the bilaterally
+  // symmetric petalled flower; odd splits centre a wedge on 12 o'clock so no cut runs straight up.
+  const offset = n % 2 === 0 ? 0 : -step / 2
   const clips = sectorClips(n, offset)
   return (
     <span className="grid place-items-center" style={box} title={label}>
