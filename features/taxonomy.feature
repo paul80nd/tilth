@@ -17,6 +17,17 @@ Feature: Taxonomy view — the taxonomy as an expandable tree
     Then "malus-domestica" is a descendant of "rosaceae"
     And "apple-red-falstaff" is at depth 3
 
+  Scenario: Structural orphans are grouped under an Unknown family bucket
+    Given these nodes exist:
+      | id              | rank    | parentId | name     |
+      | rosaceae        | family  |          | Rosaceae |
+      | malus           | genus   | rosaceae | Malus    |
+      | malus-domestica | species | malus    | Apple    |
+      | floating-basil  | species |          | Basil    |
+    When I build the taxonomy tree with the unplaced bucket
+    Then "floating-basil" is a descendant of "__unknown-family__"
+    And "malus-domestica" is a descendant of "rosaceae"
+
   Scenario: A cultivar's facets roll up from its ancestors
     Given these nodes exist:
       | id                | rank     | parentId        | name  |

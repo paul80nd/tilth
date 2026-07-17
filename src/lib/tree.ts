@@ -62,6 +62,53 @@ export function allIds(forest: TreeNode[]): string[] {
   return out
 }
 
+/** Synthetic banner ids for the unplaced-nodes bucket (structural orphans). */
+export const UNKNOWN_FAMILY_ID = '__unknown-family__'
+export const UNKNOWN_GENUS_ID = '__unknown-genus__'
+
+/**
+ * True when a tree row is a structural section marker (a family/genus that groups plants
+ * beneath it) rather than a plant you grow. The switch is rank AND children, not rank alone:
+ * a genus-LEAF (a genus with nothing beneath it — the thing you actually grow, e.g. Dahlia)
+ * is a data row, and a species WITH cultivars beneath it is still a data row. Only ranks that
+ * exist to group — family/genus — with at least one child are banners.
+ */
+export function isBannerRow(t: TreeNode): boolean {
+  return (t.node.rank === 'family' || t.node.rank === 'genus') && t.children.length > 0
+}
+
+function redepth(t: TreeNode, depth: number): TreeNode {
+  return { ...t, depth, children: t.children.map((c) => redepth(c, depth + 1)) }
+}
+
+/**
+ * Corral structural orphans into a synthetic "Unknown family → Unknown genus" bucket. Any
+ * top-level root that isn't a well-formed family (rank family with children) is "unplaced" —
+ * a floating species/cultivar, or a junk/empty node — and gets grouped so missing
+ * classification surfaces as a self-liquidating to-do at the end of the tree. Returns the
+ * forest unchanged when nothing is unplaced.
+ */
+export function withUnplacedBucket(forest: TreeNode[]): TreeNode[] {
+  const real: TreeNode[] = []
+  const unplaced: TreeNode[] = []
+  for (const t of forest) {
+    if (t.node.rank === 'family' && t.children.length > 0) real.push(t)
+    else unplaced.push(t)
+  }
+  if (!unplaced.length) return forest
+  const genusBanner: TreeNode = {
+    node: { id: UNKNOWN_GENUS_ID, rank: 'genus', commonName: 'Unknown genus' },
+    depth: 1,
+    children: unplaced.map((t) => redepth(t, 2)),
+  }
+  const familyBanner: TreeNode = {
+    node: { id: UNKNOWN_FAMILY_ID, rank: 'family', commonName: 'Unknown family' },
+    depth: 0,
+    children: [genusBanner],
+  }
+  return [...real, familyBanner]
+}
+
 /**
  * Nearest ancestor (walking parentId) that carries its own `sourceLinks`, or null. Source
  * links are the per-node acquire worklist and deliberately NOT inherited — but a cultivar

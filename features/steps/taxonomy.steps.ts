@@ -2,7 +2,7 @@ import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 import { db } from '../../src/db/db'
 import type { PlantNode, Rank } from '../../src/schema/plant'
-import { buildForest, flattenVisible, allIds, resolveAll } from '../../src/lib/tree'
+import { buildForest, flattenVisible, allIds, resolveAll, withUnplacedBucket } from '../../src/lib/tree'
 import type { TreeNode } from '../../src/lib/tree'
 
 const feature = await loadFeature('features/taxonomy.feature')
@@ -56,6 +56,23 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     And('{string} is at depth {int}', (_, id: string, depth: number) => {
       expect(find(id)?.depth).toBe(depth)
+    })
+  })
+
+  Scenario('Structural orphans are grouped under an Unknown family bucket', ({ Given, When, Then, And }) => {
+    Given('these nodes exist:', async (_, rows: Row[]) => {
+      await seed(rows)
+    })
+    When('I build the taxonomy tree with the unplaced bucket', async () => {
+      const nodes = await db.nodes.toArray()
+      forest = withUnplacedBucket(buildForest(nodes))
+      resolved = resolveAll(nodes)
+    })
+    Then('{string} is a descendant of {string}', (_, id: string, ancestor: string) => {
+      expect(isDescendant(ancestor, id)).toBe(true)
+    })
+    And('{string} is a descendant of {string}', (_, id: string, ancestor: string) => {
+      expect(isDescendant(ancestor, id)).toBe(true)
     })
   })
 

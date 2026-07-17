@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
-import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor } from '../lib/tree'
+import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor, withUnplacedBucket, isBannerRow } from '../lib/tree'
+import type { TreeNode } from '../lib/tree'
 import { seasonalInterest } from '../lib/calendar'
 import { SeasonCell } from '../components/SeasonStrip'
 import { LightCell, AspectCell, ExposureCell, HardinessCell } from '../components/PositionCard'
@@ -30,6 +31,15 @@ const GROUP_H = 29 // px height of the group-header row (col headers stick just 
 const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter']
 const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
 const CONDITIONS = ['Soil', 'Moisture', 'pH']
+// Every column a section-marker row spans: the 4 frozen identity columns + all facet columns.
+const TOTAL_COLS = 4 + SEASONS.length + POSITION.length + CONDITIONS.length
+
+/** Count the plants beneath a tree row for the "· N" tally on a section-marker banner — every
+ *  descendant that is itself a plant, i.e. not a grouping banner. A genus-LEAF (a genus with
+ *  nothing beneath it, e.g. Viburnum) counts as a plant; a grouping family/genus does not. */
+function countPlants(kids: TreeNode[]): number {
+  return kids.reduce((n, k) => n + (isBannerRow(k) ? 0 : 1) + countPlants(k.children), 0)
+}
 
 /** A fixed square data cell; the glyph fills it edge-to-edge. */
 function Cell({ children }: { children: React.ReactNode }) {
@@ -78,7 +88,7 @@ function SourceCell({ node, byId }: { node: PlantNode; byId: Map<string, PlantNo
 
 export default function TaxonomyPage() {
   const nodes = useLiveQuery(() => db.nodes.toArray(), [])
-  const forest = useMemo(() => (nodes ? buildForest(nodes) : []), [nodes])
+  const forest = useMemo(() => (nodes ? withUnplacedBucket(buildForest(nodes)) : []), [nodes])
   const resolved = useMemo(() => (nodes ? resolveAll(nodes) : new Map()), [nodes])
   const byId = useMemo(() => new Map((nodes ?? []).map((n) => [n.id, n])), [nodes])
   const linkedCount = useMemo(() => (nodes ?? []).filter((n) => n.sourceLinks?.length).length, [nodes])
@@ -165,15 +175,37 @@ export default function TaxonomyPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ node, depth, children }) => {
+            {rows.map((t) => {
+              const { node, depth, children } = t
+              const open = openSet.has(node.id)
+              const name = node.commonName ?? node.botanicalName ?? node.id
+
+              // Family/genus grouping rows are full-width section markers, not data rows — their
+              // facets would describe a taxon, not a plant, so they'd always be blank. The label
+              // sticks to the left edge as the facet columns scroll.
+              if (isBannerRow(t)) {
+                const isFamily = node.rank === 'family'
+                return (
+                  <tr key={node.id}>
+                    <td colSpan={TOTAL_COLS} className={`border-b border-divider p-0 ${isFamily ? 'bg-sunken' : 'bg-sunken/60'}`}>
+                      <div className="sticky left-0 flex w-max items-center gap-1.5 py-1.5 pr-4" style={{ paddingLeft: 8 + depth * 14 }}>
+                        <button onClick={() => toggle(node.id)} className="w-4 flex-none text-subtle hover:text-ink" aria-label={open ? 'Collapse' : 'Expand'}>
+                          {open ? '▾' : '▸'}
+                        </button>
+                        <span className={isFamily ? 'text-sm font-semibold text-ink' : 'text-sm font-medium text-muted'}>{name}</span>
+                        <span className="text-[0.65rem] tabular-nums text-subtle">· {countPlants(children)}</span>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              }
+
               const r = resolved.get(node.id)?.node ?? node
               const c = r.conditions
               const interest = seasonalInterest(r.calendar, r.colour)
               // Only draw a glyph where the plant actually has that facet — an empty cell reads far
               // cleaner across the whole record and makes "still to enrich" obvious at a glance.
               const hasInterest = interest.some((s) => s.parts.length > 0)
-              const open = openSet.has(node.id)
-              const name = node.commonName ?? node.botanicalName ?? node.id
               return (
                 <tr key={node.id} className="hover:bg-sunken/40">
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={{ left: LEFT.cat, width: COLS.cat }}>
