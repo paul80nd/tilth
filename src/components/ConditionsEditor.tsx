@@ -4,26 +4,23 @@ import type { Conditions, PlantNode } from '../schema/plant'
 import { updateNode } from '../app/editNode'
 import { deepEqual } from '../lib/equal'
 import {
-  CARDINALS,
-  EXPOSURE_LEVELS,
-  HARDINESS_MAX,
-  LIGHT_LEVELS,
+  MOISTURE_LEVELS,
+  PH_LEVELS,
+  SOIL_TYPES,
   conditionLabel,
 } from '../lib/conditions'
-import { applyPosition, toPositionDraft, type PositionDraft } from '../lib/positionEdit'
-import PositionCard from './PositionCard'
+import { applyConditions, toConditionsDraft, type ConditionsDraft } from '../lib/conditionsEdit'
+import ConditionsCard from './ConditionsCard'
 import { Row, Toggle } from './EditorControls'
 
-// A modal for editing the Position facets (light · aspect · exposure · hardiness) with a live
-// preview of the exact card the cheatsheet shows. These share the `conditions` field with the
-// Conditions card (soil/moisture/ph), which the merge replaces wholesale — so we start from the
-// resolved conditions and carry the sibling soil/moisture/ph through untouched (see positionEdit).
+// A modal for editing the growing-condition facets (soil · moisture · pH) with a live preview of
+// the exact card the cheatsheet shows. These share the `conditions` field with the Position card
+// (light/aspect/exposure/hardiness), which the merge replaces wholesale — so we start from the
+// resolved conditions and carry the sibling position facets through untouched (see conditionsEdit).
 // Saving writes the node's own conditions via the normal merge seam (stamped `manual`); an
 // unchanged edit writes nothing.
 
-const HARDINESS = Array.from({ length: HARDINESS_MAX }, (_, i) => `H${i + 1}`)
-
-export function PositionEditor({
+export function ConditionsEditor({
   node,
   conditions,
   onClose,
@@ -33,8 +30,8 @@ export function PositionEditor({
   conditions: Conditions | undefined
   onClose: () => void
 }) {
-  const initial = useMemo(() => toPositionDraft(conditions), [conditions])
-  const [draft, setDraft] = useState<PositionDraft>(initial)
+  const initial = useMemo(() => toConditionsDraft(conditions), [conditions])
+  const [draft, setDraft] = useState<ConditionsDraft>(initial)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -51,15 +48,13 @@ export function PositionEditor({
     }
   }, [onClose])
 
-  // Fold the draft back onto the conditions so the preview is exactly what the card will render.
-  const preview = useMemo(() => applyPosition(conditions, draft), [conditions, draft])
+  const preview = useMemo(() => applyConditions(conditions, draft), [conditions, draft])
   const dirty = !deepEqual(draft, initial)
 
-  function toggle<T>(key: 'sun' | 'aspect' | 'exposure', value: T, order: readonly T[]) {
+  function toggle<T>(key: keyof ConditionsDraft, value: T, order: readonly T[]) {
     setDraft((d) => {
       const cur = d[key] as unknown as T[]
-      const has = cur.includes(value)
-      const next = has ? cur.filter((v) => v !== value) : order.filter((v) => v === value || cur.includes(v))
+      const next = cur.includes(value) ? cur.filter((v) => v !== value) : order.filter((v) => v === value || cur.includes(v))
       return { ...d, [key]: next }
     })
   }
@@ -82,14 +77,14 @@ export function PositionEditor({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Edit position"
+        aria-label="Edit conditions"
         onClick={(e) => e.stopPropagation()}
         className="relative my-4 w-full max-w-2xl rounded-2xl border border-line bg-surface p-5 shadow-xl sm:p-6"
       >
         <div className="mb-4 flex items-baseline justify-between gap-3">
           <div>
-            <h2 className="font-display text-h3 font-semibold">Position</h2>
-            <p className="text-xs text-subtle">Where this plant wants to grow — light, the aspect it faces, shelter, and hardiness.</p>
+            <h2 className="font-display text-h3 font-semibold">Conditions</h2>
+            <p className="text-xs text-subtle">The soil this plant tolerates — texture, how moist, and pH. Tick every type that suits.</p>
           </div>
           <button
             type="button"
@@ -105,44 +100,31 @@ export function PositionEditor({
         <div className="mb-5">
           <div className="mb-1.5 text-[0.6rem] font-medium uppercase tracking-wide text-subtle">Preview</div>
           <div className="h-32 overflow-hidden rounded-lg border border-line bg-card">
-            <PositionCard conditions={preview} />
+            <ConditionsCard conditions={preview} />
           </div>
         </div>
 
         <div className="flex flex-col gap-4">
-          <Row label="Light">
-            {LIGHT_LEVELS.map((l) => (
-              <Toggle key={l} on={draft.sun.includes(l)} onClick={() => toggle('sun', l, LIGHT_LEVELS)}>
-                {conditionLabel(l)}
+          <Row label="Soil" hint="texture">
+            {SOIL_TYPES.map((t) => (
+              <Toggle key={t} on={draft.soil.includes(t)} onClick={() => toggle('soil', t, SOIL_TYPES)}>
+                {conditionLabel(t)}
               </Toggle>
             ))}
           </Row>
 
-          <Row label="Aspect" hint="the direction the spot faces">
-            {CARDINALS.map((c) => (
-              <Toggle key={c} on={draft.aspect.includes(c)} onClick={() => toggle('aspect', c, CARDINALS)}>
-                {conditionLabel(c)}
+          <Row label="Moisture" hint="dry → wet">
+            {MOISTURE_LEVELS.map((m) => (
+              <Toggle key={m} on={draft.moisture.includes(m)} onClick={() => toggle('moisture', m, MOISTURE_LEVELS)}>
+                {conditionLabel(m)}
               </Toggle>
             ))}
           </Row>
 
-          <Row label="Exposure" hint="tick both for “any”">
-            {EXPOSURE_LEVELS.map((e) => (
-              <Toggle key={e} on={draft.exposure.includes(e)} onClick={() => toggle('exposure', e, EXPOSURE_LEVELS)}>
-                {conditionLabel(e)}
-              </Toggle>
-            ))}
-          </Row>
-
-          <Row label="Hardiness" hint="H1 tender → H7 very hardy">
-            {HARDINESS.map((h) => (
-              <Toggle
-                key={h}
-                on={draft.hardiness === h}
-                // Single-select: re-tick to clear.
-                onClick={() => setDraft((d) => ({ ...d, hardiness: d.hardiness === h ? '' : h }))}
-              >
-                {h}
+          <Row label="pH">
+            {PH_LEVELS.map((p) => (
+              <Toggle key={p} on={draft.ph.includes(p)} onClick={() => toggle('ph', p, PH_LEVELS)}>
+                {conditionLabel(p)}
               </Toggle>
             ))}
           </Row>

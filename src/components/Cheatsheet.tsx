@@ -14,6 +14,7 @@ import CalendarBar from './CalendarBar'
 import SeasonStrip from './SeasonStrip'
 import { SeasonalInterestEditor } from './SeasonalInterestEditor'
 import { PositionEditor } from './PositionEditor'
+import { ConditionsEditor } from './ConditionsEditor'
 import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -41,6 +42,7 @@ export function usePlantDetail(id: string): PlantDetail | undefined {
 export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[] }) {
   const [editingSeasonal, setEditingSeasonal] = useState(false)
   const [editingPosition, setEditingPosition] = useState(false)
+  const [editingConditions, setEditingConditions] = useState(false)
   const { node: resolved, inheritedFrom } = resolveInherited(node, ancestors)
   const { plant, variety } = displayName(node)
   const botanical = botanicalLabel(resolved)
@@ -169,7 +171,21 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
         </div>
 
         <div className="lg:col-span-2">
-          <Tile title="Conditions" note={inheritedNote('conditions')} fill bleed>
+          <Tile
+            title="Conditions"
+            note={inheritedNote('conditions')}
+            action={
+              <button
+                type="button"
+                onClick={() => setEditingConditions(true)}
+                className="text-xs font-medium text-brand-ink hover:underline"
+              >
+                Edit
+              </button>
+            }
+            fill
+            bleed
+          >
             <ConditionsCard conditions={resolved.conditions} />
           </Tile>
         </div>
@@ -304,6 +320,14 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
           node={node}
           conditions={resolved.conditions}
           onClose={() => setEditingPosition(false)}
+        />
+      )}
+
+      {editingConditions && (
+        <ConditionsEditor
+          node={node}
+          conditions={resolved.conditions}
+          onClose={() => setEditingConditions(false)}
         />
       )}
     </>
