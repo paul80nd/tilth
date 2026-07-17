@@ -9,7 +9,10 @@ import { LightCell, AspectCell, ExposureCell, HardinessCell } from '../component
 import { SoilCell, MoistureCell, PhCell } from '../components/ConditionsCard'
 import Chip from '../components/Chip'
 import { CheatsheetModal } from '../components/CheatsheetModal'
+import { FilterPopover } from '../components/FilterPopover'
 import { bannerParts } from '../lib/taxonNames'
+import { nodeTags } from '../lib/tags'
+import { usePersistentState } from '../hooks/usePersistentState'
 import type { PlantNode } from '../schema/plant'
 
 // The taxonomy view: the collection as an expandable family→genus→species→cultivar tree, with the
@@ -24,11 +27,10 @@ const SLOT = Math.round(CELL / 2) // season 2×2 slot → the cell fills edge-to
 // list adds a Family / Genus column (the tree's banners give that context; the flat list can't).
 // Each is pinned to an exact width (min == max == width, see `frozen`) so content can't stretch
 // it past its sticky `left` offset and misalign the frozen columns on horizontal scroll.
-const COLW = { plant: 210, famgen: 210, cat: 66, src: 48 }
+const COLW = { plant: 210, famgen: 210, src: 48 }
 const HEAD: Record<keyof typeof COLW, string> = {
   plant: 'Plant / Variety',
   famgen: 'Family / Genus',
-  cat: 'Cat',
   src: 'Src',
 }
 const GROUP_H = 29 // px height of the group-header row (col headers stick just below it)
@@ -36,7 +38,21 @@ const GROUP_H = 29 // px height of the group-header row (col headers stick just 
 const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter']
 const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
 const CONDITIONS = ['Soil', 'Moisture', 'pH']
-const FACET_COLS = SEASONS.length + POSITION.length + CONDITIONS.length
+const TAGW = 190 // the Tags column (chips wrap within the row); wider than a facet cell
+
+// The optional column groups, toggled by the display-options control (persisted between visits).
+// Tags reproduces the cheatsheet's description chips (Type / Foliage / Habit — the fields Paul
+// reconciles); it's hidden by default so the three facet groups lead.
+type ColKey = 'tags' | 'season' | 'position' | 'conditions'
+const SECTIONS: Array<{ key: ColKey; label: string; span: number }> = [
+  { key: 'tags', label: 'Tags', span: 1 },
+  { key: 'season', label: 'Seasonal interest', span: SEASONS.length },
+  { key: 'position', label: 'Position', span: POSITION.length },
+  { key: 'conditions', label: 'Conditions', span: CONDITIONS.length },
+]
+type ColVisibility = Record<ColKey, boolean>
+// Tags is on by default — it now carries category (the old frozen Cat column folded into it).
+const DEFAULT_COLS: ColVisibility = { tags: true, season: true, position: true, conditions: true }
 
 /** Count the plants beneath a tree row for the "· N" tally on a section-marker banner — every
  *  descendant that is itself a plant, i.e. not a grouping banner. A genus-LEAF (a genus with
@@ -103,6 +119,20 @@ function TaxonLine({ rank, sci, muted }: { rank: 'family' | 'genus'; sci?: strin
   )
 }
 
+/** The Tags cell — the cheatsheet header's description chips (category · rank · lifecycle ·
+ *  foliage · habit), wrapped within the row. Shares `nodeTags` with the cheatsheet so the two
+ *  never drift. */
+function TagList({ node }: { node: PlantNode }) {
+  const tags = nodeTags(node)
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {tags.map((t, i) => (
+        <Chip key={i} tone={t.tone}>{t.label}</Chip>
+      ))}
+    </div>
+  )
+}
+
 export default function TaxonomyPage() {
   const nodes = useLiveQuery(() => db.nodes.toArray(), [])
   const forest = useMemo(() => (nodes ? withUnplacedBucket(buildForest(nodes)) : []), [nodes])
@@ -117,6 +147,9 @@ export default function TaxonomyPage() {
   // The plant whose cheatsheet is open in the modal — a modal (not a route) so the tree keeps its
   // scroll position while you inspect a plant.
   const [modalId, setModalId] = useState<string | null>(null)
+  // Which optional column groups are shown — persisted so the choice survives a reload/revisit.
+  const [cols, setCols] = usePersistentState<ColVisibility>('tilth.taxonomy.cols', DEFAULT_COLS)
+  const toggleCol = (key: ColKey) => setCols((prev) => ({ ...prev, [key]: !prev[key] }))
 
   const openSet = useMemo(() => expanded ?? new Set(allIds(forest)), [expanded, forest])
   const rows = useMemo(
@@ -138,14 +171,16 @@ export default function TaxonomyPage() {
   if (!nodes) return <div className="p-6 text-sm text-muted">Loading…</div>
 
   // The frozen columns for this mode, and their cumulative left offsets.
-  const frozenCols: Array<keyof typeof COLW> = mode === 'flat' ? ['plant', 'famgen', 'cat', 'src'] : ['plant', 'cat', 'src']
+  const frozenCols: Array<keyof typeof COLW> = mode === 'flat' ? ['plant', 'famgen', 'src'] : ['plant', 'src']
   const leftOf: Partial<Record<keyof typeof COLW, number>> = {}
   let acc = 0
   for (const k of frozenCols) {
     leftOf[k] = acc
     acc += COLW[k]
   }
-  const TOTAL_COLS = frozenCols.length + FACET_COLS
+  const visibleSections = SECTIONS.filter((s) => cols[s.key])
+  const facetCols = visibleSections.reduce((n, s) => n + s.span, 0)
+  const TOTAL_COLS = frozenCols.length + facetCols
   // Pin a frozen column to an exact width and its sticky left offset.
   const frozen = (key: keyof typeof COLW) => ({ left: leftOf[key], width: COLW[key], minWidth: COLW[key], maxWidth: COLW[key] })
 
@@ -163,6 +198,13 @@ export default function TaxonomyPage() {
       {label}
     </th>
   )
+  // The Tags group is a single column, so its header spans both header rows (no sub-columns).
+  const TagsHead = () => (
+    <th rowSpan={2} className={`sticky top-0 z-20 border-b border-l border-divider bg-card px-2 text-center text-xs font-semibold text-ink ${SEAM}`} style={{ width: TAGW, minWidth: TAGW, maxWidth: TAGW }}>
+      Tags
+    </th>
+  )
+  const SECTION_COLS: Record<ColKey, string[]> = { tags: [], season: SEASONS, position: POSITION, conditions: CONDITIONS }
   // Frozen identity header cells (sticky both top and left → corner, above everything).
   const frozenHead = (label: string, key: keyof typeof COLW, row: 0 | 1) => (
     <th
@@ -189,6 +231,18 @@ export default function TaxonomyPage() {
           </p>
         </div>
         <div className="flex flex-none items-center gap-2 text-xs">
+          {/* Show/hide the optional column groups; the choice is persisted between visits. A
+              dropdown (not inline pills) so it stays calm as more columns are added over time. */}
+          <FilterPopover label="Columns" count={SECTIONS.filter((s) => cols[s.key]).length} width={200}>
+            <div className="flex flex-col gap-1.5">
+              {SECTIONS.map((s) => (
+                <label key={s.key} className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+                  <input type="checkbox" checked={cols[s.key]} onChange={() => toggleCol(s.key)} className="accent-brand" />
+                  {s.label}
+                </label>
+              ))}
+            </div>
+          </FilterPopover>
           {mode === 'tree' && (
             <>
               <button onClick={() => setExpanded(new Set(allIds(forest)))} className="rounded-md border border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink">
@@ -222,15 +276,13 @@ export default function TaxonomyPage() {
           <thead>
             <tr>
               {frozenCols.map((k) => frozenHead('', k, 0))}
-              <HeadTop label="Seasonal interest" span={4} />
-              <HeadTop label="Position" span={4} />
-              <HeadTop label="Conditions" span={3} />
+              {visibleSections.map((s) =>
+                s.key === 'tags' ? <TagsHead key="tags" /> : <HeadTop key={s.key} label={s.label} span={s.span} />,
+              )}
             </tr>
             <tr>
               {frozenCols.map((k) => frozenHead(HEAD[k], k, 1))}
-              {[...SEASONS, ...POSITION, ...CONDITIONS].map((c) => (
-                <HeadCol key={c} label={c} />
-              ))}
+              {visibleSections.flatMap((s) => SECTION_COLS[s.key].map((c) => <HeadCol key={c} label={c} />))}
             </tr>
           </thead>
           <tbody>
@@ -297,22 +349,33 @@ export default function TaxonomyPage() {
                       <TaxonLine rank="genus" sci={r.genus} muted />
                     </td>
                   )}
-                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('cat')}>
-                    {r.category && <Chip tone="brand">{r.category}</Chip>}
-                  </td>
                   <td className="sticky z-10 border-b border-r border-line bg-card px-0 align-middle" style={frozen('src')}>
                     <div className="grid place-items-center"><SourceCell node={node} byId={byId} /></div>
                   </td>
-                  {interest.map((s) => (
-                    <Cell key={s.season}>{hasInterest ? <SeasonCell parts={s.parts} slot={SLOT} /> : null}</Cell>
-                  ))}
-                  <Cell>{c?.sun?.length ? <LightCell conditions={c} size={POS} /> : null}</Cell>
-                  <Cell>{c?.aspect?.length ? <AspectCell conditions={c} size={POS} /> : null}</Cell>
-                  <Cell>{c?.exposure?.length ? <ExposureCell conditions={c} size={POS} /> : null}</Cell>
-                  <Cell>{c?.hardiness ? <HardinessCell conditions={c} /> : null}</Cell>
-                  <Cell>{c?.soil?.length ? <SoilCell conditions={c} size={CELL} flush /> : null}</Cell>
-                  <Cell>{c?.moisture?.length ? <MoistureCell conditions={c} size={CELL} flush /> : null}</Cell>
-                  <Cell>{c?.ph?.length ? <PhCell conditions={c} size={CELL} flush /> : null}</Cell>
+                  {cols.tags && (
+                    <td className="border-b border-l border-divider px-2 py-1 align-middle" style={{ width: TAGW, minWidth: TAGW, maxWidth: TAGW }}>
+                      <TagList node={r} />
+                    </td>
+                  )}
+                  {cols.season &&
+                    interest.map((s) => (
+                      <Cell key={s.season}>{hasInterest ? <SeasonCell parts={s.parts} slot={SLOT} /> : null}</Cell>
+                    ))}
+                  {cols.position && (
+                    <>
+                      <Cell>{c?.sun?.length ? <LightCell conditions={c} size={POS} /> : null}</Cell>
+                      <Cell>{c?.aspect?.length ? <AspectCell conditions={c} size={POS} /> : null}</Cell>
+                      <Cell>{c?.exposure?.length ? <ExposureCell conditions={c} size={POS} /> : null}</Cell>
+                      <Cell>{c?.hardiness ? <HardinessCell conditions={c} /> : null}</Cell>
+                    </>
+                  )}
+                  {cols.conditions && (
+                    <>
+                      <Cell>{c?.soil?.length ? <SoilCell conditions={c} size={CELL} flush /> : null}</Cell>
+                      <Cell>{c?.moisture?.length ? <MoistureCell conditions={c} size={CELL} flush /> : null}</Cell>
+                      <Cell>{c?.ph?.length ? <PhCell conditions={c} size={CELL} flush /> : null}</Cell>
+                    </>
+                  )}
                 </tr>
               )
             })}

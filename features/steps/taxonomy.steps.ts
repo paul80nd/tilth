@@ -4,6 +4,7 @@ import { db } from '../../src/db/db'
 import type { PlantNode, Rank } from '../../src/schema/plant'
 import { buildForest, flattenVisible, allIds, resolveAll, withUnplacedBucket } from '../../src/lib/tree'
 import type { TreeNode } from '../../src/lib/tree'
+import { nodeTags } from '../../src/lib/tags'
 
 const feature = await loadFeature('features/taxonomy.feature')
 
@@ -73,6 +74,36 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     And('{string} is a descendant of {string}', (_, id: string, ancestor: string) => {
       expect(isDescendant(ancestor, id)).toBe(true)
+    })
+  })
+
+  Scenario('The Tags column reproduces a plant\'s description chips, rolled up from its ancestors', ({ Given, And, When, Then }) => {
+    Given('these nodes exist:', async (_, rows: Row[]) => {
+      await seed(rows)
+    })
+    And('{string} is categorised {string}', async (_, id: string, cat: string) => {
+      const n = (await db.nodes.get(id))!
+      await db.nodes.put({ ...n, category: cat as PlantNode['category'] })
+    })
+    And('{string} has foliage {string}', async (_, id: string, f: string) => {
+      const n = (await db.nodes.get(id))!
+      await db.nodes.put({ ...n, foliage: f as PlantNode['foliage'] })
+    })
+    And('{string} has lifecycle {string}', async (_, id: string, l: string) => {
+      const n = (await db.nodes.get(id))!
+      await db.nodes.put({ ...n, lifecycle: [l as 'annual' | 'biennial' | 'perennial'] })
+    })
+    And('{string} has habit {string}', async (_, id: string, h: string) => {
+      const n = (await db.nodes.get(id))!
+      await db.nodes.put({ ...n, habit: h })
+    })
+    When('I build the taxonomy tree', async () => {
+      await build()
+    })
+    Then('the Tags for {string} are {string}', (_, id: string, expected: string) => {
+      const node = resolved.get(id)?.node
+      expect(node).toBeTruthy()
+      expect(nodeTags(node!).map((t) => t.label).join(', ')).toBe(expected)
     })
   })
 

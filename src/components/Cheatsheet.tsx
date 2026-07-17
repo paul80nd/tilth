@@ -3,7 +3,7 @@ import type { PlantNode, Guide } from '../schema/plant'
 import { getGuidesFor, getLineage } from '../app/plants'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
-import { asLifecycle, lifecycleLabel } from '../lib/lifecycle'
+import { nodeTags } from '../lib/tags'
 import { seasonalInterest } from '../lib/calendar'
 import { EdibilityFacts } from './KeyFacts'
 import PositionCard from './PositionCard'
@@ -102,13 +102,9 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
             </div>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            {resolved.category && <Chip tone="brand">{resolved.category}</Chip>}
-            <Chip>{node.rank}</Chip>
-            {asLifecycle(resolved.lifecycle)?.map((c) => (
-              <Chip key={c}>{lifecycleLabel(c)}</Chip>
+            {nodeTags(resolved).map((t, i) => (
+              <Chip key={i} tone={t.tone}>{t.label}</Chip>
             ))}
-            {resolved.foliage && <Chip>{resolved.foliage}</Chip>}
-            {resolved.habit && <Chip>{resolved.habit}</Chip>}
           </div>
         </header>
 

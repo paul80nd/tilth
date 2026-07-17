@@ -28,6 +28,19 @@ Feature: Taxonomy view — the taxonomy as an expandable tree
     Then "floating-basil" is a descendant of "__unknown-family__"
     And "malus-domestica" is a descendant of "rosaceae"
 
+  Scenario: The Tags column reproduces a plant's description chips, rolled up from its ancestors
+    Given these nodes exist:
+      | id                | rank     | parentId        | name  |
+      | malus             | genus    |                 | Malus |
+      | malus-domestica   | species  | malus           | Apple |
+      | apple-red-falstaff| cultivar | malus-domestica | Apple |
+    And "malus-domestica" is categorised "fruit"
+    And "malus-domestica" has foliage "deciduous"
+    And "apple-red-falstaff" has lifecycle "perennial"
+    And "apple-red-falstaff" has habit "columnar-upright"
+    When I build the taxonomy tree
+    Then the Tags for "apple-red-falstaff" are "fruit, cultivar, Perennial, deciduous, columnar-upright"
+
   Scenario: A cultivar's facets roll up from its ancestors
     Given these nodes exist:
       | id                | rank     | parentId        | name  |
