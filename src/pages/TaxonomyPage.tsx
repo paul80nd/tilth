@@ -21,7 +21,10 @@ const CELL = 56 // square facet cell (drives the row height)
 const POS = 48 // position glyphs sit centred with a little breathing room
 const SLOT = Math.round(CELL / 2) // season 2×2 slot → the cell fills edge-to-edge
 // Frozen identity columns, left → right: the plant name leads, then variety, category, source.
-const COLS = { plant: 200, variety: 150, cat: 56, src: 48 }
+// Widths are enforced via `table-fixed` + a <colgroup> so the columns render at exactly these
+// sizes — otherwise content-driven widths drift from the sticky `left` offsets below and the
+// frozen columns misalign on horizontal scroll (facet content bleeds through the gaps).
+const COLS = { plant: 200, variety: 168, cat: 66, src: 48 }
 const LEFT = {
   plant: 0,
   variety: COLS.plant,
@@ -29,6 +32,15 @@ const LEFT = {
   src: COLS.plant + COLS.variety + COLS.cat,
 }
 const GROUP_H = 29 // px height of the group-header row (col headers stick just below it)
+
+// Pin a frozen column to an exact width (min == max == width) so content can't stretch it past
+// its sticky `left` offset — otherwise adjacent frozen columns misalign on horizontal scroll.
+const frozen = (key: keyof typeof COLS) => ({
+  left: LEFT[key],
+  width: COLS[key],
+  minWidth: COLS[key],
+  maxWidth: COLS[key],
+})
 
 const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter']
 const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
@@ -137,7 +149,7 @@ export default function TaxonomyPage() {
   const frozenHead = (label: string, key: keyof typeof COLS, row: 0 | 1) => (
     <th
       className={`sticky z-30 border-b border-divider bg-card px-2 py-1 text-left text-[0.6rem] font-medium uppercase tracking-wide text-subtle ${SEAM}`}
-      style={{ left: LEFT[key], width: COLS[key], top: row === 0 ? 0 : GROUP_H }}
+      style={{ ...frozen(key), top: row === 0 ? 0 : GROUP_H }}
     >
       {label}
     </th>
@@ -247,7 +259,7 @@ export default function TaxonomyPage() {
               const hasInterest = interest.some((s) => s.parts.length > 0)
               return (
                 <tr key={node.id} className="hover:bg-sunken/40">
-                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={{ left: LEFT.plant, width: COLS.plant }}>
+                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('plant')}>
                     <div className="flex items-center gap-1">
                       {children.length ? (
                         <button onClick={() => toggle(node.id)} className="w-4 flex-none text-subtle hover:text-ink" aria-label={open ? 'Collapse' : 'Expand'}>
@@ -261,14 +273,14 @@ export default function TaxonomyPage() {
                       </Link>
                     </div>
                   </td>
-                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle text-muted" style={{ left: LEFT.variety, width: COLS.variety }}>
+                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle text-muted" style={frozen('variety')}>
                     {/* Only the variety is visually indented — it reads as hanging under its species. */}
                     <span className="block truncate" style={{ paddingLeft: node.rank === 'cultivar' ? 14 : 0 }} title={node.variety ?? ''}>{node.variety ?? ''}</span>
                   </td>
-                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={{ left: LEFT.cat, width: COLS.cat }}>
+                  <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('cat')}>
                     {r.category && <Chip tone="brand">{r.category}</Chip>}
                   </td>
-                  <td className="sticky z-10 border-b border-r border-line bg-card px-0 align-middle" style={{ left: LEFT.src, width: COLS.src }}>
+                  <td className="sticky z-10 border-b border-r border-line bg-card px-0 align-middle" style={frozen('src')}>
                     <div className="grid place-items-center"><SourceCell node={node} byId={byId} /></div>
                   </td>
                   {interest.map((s) => (
