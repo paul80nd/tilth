@@ -101,7 +101,7 @@ export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGEle
 // the fine line icons above. Tinted via currentColor by the caller. Third-party icons (permissive
 // licences; recoloured + resized here) — see CREDITS.md:
 //   foliage — Material Design Icons (Pictogrammers), Apache-2.0
-//   flower  — Ionicons (Ben Sperry / Ionic), MIT
+//   flower  — Tabler Icons (Paweł Kuna), MIT (central circle dropped for a solid bloom)
 //   fruit   — IconPark (ByteDance), Apache-2.0
 //   stem    — drawn by hand for Tilth (a bundle of coloured canes; no good permissive SVG found)
 type SeasonalPart = 'foliage' | 'flower' | 'fruit' | 'stem'
@@ -121,16 +121,15 @@ const SEASONAL: Record<SeasonalPart, { viewBox: string; scale: number; body: Rea
     ),
   },
   flower: {
-    viewBox: '0 0 512 512',
-    scale: 0.86,
+    viewBox: '0 0 24 24',
+    scale: 1,
+    // Tabler "flower" with its central circle dropped, so it's a solid bloom the colour wedges
+    // can split cleanly (a central hole would show the card through the middle).
     body: (
-      <>
-        <circle cx="256" cy="256" r="48" fill="currentColor" />
-        <path
-          fill="currentColor"
-          d="M475.93 303.91a67.49 67.49 0 0 0-44.34-115.53a5.2 5.2 0 0 1-4.58-3.21a5.21 5.21 0 0 1 1-5.51A67.83 67.83 0 0 0 378 66.33h-.25A67.13 67.13 0 0 0 332.35 84a5.21 5.21 0 0 1-5.52 1a5.23 5.23 0 0 1-3.22-4.58a67.68 67.68 0 0 0-135.23 0a5.2 5.2 0 0 1-3.21 4.58a5.21 5.21 0 0 1-5.52-1a67.1 67.1 0 0 0-45.44-17.69H134a67.91 67.91 0 0 0-50 113.34a5.21 5.21 0 0 1 1 5.51a5.2 5.2 0 0 1-4.58 3.21a67.71 67.71 0 0 0 0 135.23a5.23 5.23 0 0 1 4.58 3.23a5.22 5.22 0 0 1-1 5.52a67.54 67.54 0 0 0 50.08 113h.25A67.38 67.38 0 0 0 179.65 428a5.21 5.21 0 0 1 5.51-1a5.2 5.2 0 0 1 3.21 4.58a67.71 67.71 0 0 0 135.23 0a5.23 5.23 0 0 1 3.22-4.58a5.21 5.21 0 0 1 5.51 1a67.38 67.38 0 0 0 45.29 17.42h.25a67.48 67.48 0 0 0 50.08-113a5.22 5.22 0 0 1-1-5.52a5.23 5.23 0 0 1 4.58-3.22a67.3 67.3 0 0 0 44.4-19.77M256 336a80 80 0 1 1 80-80a80.09 80.09 0 0 1-80 80"
-        />
-      </>
+      <path
+        fill="currentColor"
+        d="M12 1a4 4 0 0 1 4 4l-.002.055l.03-.018a3.97 3.97 0 0 1 2.79-.455l.237.056a3.97 3.97 0 0 1 2.412 1.865a4.01 4.01 0 0 1-1.455 5.461l-.068.036l.071.039a4.01 4.01 0 0 1 1.555 5.27l-.101.186a3.97 3.97 0 0 1-5.441 1.468l-.03-.02L16 19a4 4 0 0 1-3.8 3.995L12 23a4 4 0 0 1-4-4l.001-.056l-.029.019a3.97 3.97 0 0 1-2.79.456l-.236-.056a3.97 3.97 0 0 1-2.413-1.865a4.01 4.01 0 0 1 1.453-5.46l.07-.038l-.071-.038a4.01 4.01 0 0 1-1.555-5.27l.1-.187a3.97 3.97 0 0 1 5.444-1.468L8 5.055V5a4 4 0 0 1 3.8-3.995z"
+      />
     ),
   },
   fruit: {
