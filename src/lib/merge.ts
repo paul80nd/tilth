@@ -45,6 +45,10 @@ export function mergeNode(
     if (!STRUCTURAL.has(key)) provenance[key] = stamp
   }
 
+  // Enforce the invariant: structural fields never carry provenance. Also self-heals nodes
+  // stamped by an earlier version (a pre-existing store/backup) the next time they're merged.
+  for (const key of STRUCTURAL) delete provenance[key]
+
   base.id = fragment.id
   base.provenance = provenance
   return base

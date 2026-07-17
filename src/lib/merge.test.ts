@@ -66,6 +66,22 @@ describe('mergeNode', () => {
     expect(merged.provenance?.parentId).toBeUndefined()
   })
 
+  it('self-heals stale structural provenance left by an earlier version', () => {
+    const existing: PlantNode = {
+      id: 'x',
+      rank: 'species',
+      commonName: 'Rose',
+      // A pre-fix import wrongly stamped structural fields.
+      provenance: { rank: { source: 'plant-db' }, parentId: { source: 'plant-db' }, commonName: { source: 'plant-db' } },
+    }
+    const merged = mergeNode(existing, { id: 'x', family: 'Rosaceae' }, DB)
+    expect(merged.provenance?.rank).toBeUndefined()
+    expect(merged.provenance?.parentId).toBeUndefined()
+    // Real data provenance is untouched.
+    expect(merged.provenance?.commonName?.source).toBe('plant-db')
+    expect(merged.provenance?.family?.source).toBe('plant-db')
+  })
+
   it('does not mutate the inputs', () => {
     const existing: PlantNode = { id: 'x', rank: 'species', commonName: 'Old' }
     const frozen = structuredClone(existing)
