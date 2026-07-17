@@ -1,0 +1,55 @@
+// Pure helpers for the Position editor (light · aspect · exposure · hardiness). These four facets
+// live on the shared `conditions` field alongside the Conditions card's soil/moisture/ph — and the
+// merge replaces `conditions` as a whole field — so editing Position must carry the sibling
+// soil/moisture/ph through untouched. `toPositionDraft` normalises the stored (possibly free-text)
+// values to the canonical vocab for the toggle controls; `applyPosition` folds a draft back onto a
+// base `Conditions`, dropping empties. Side-effect-free; the Dexie write goes through `updateNode`.
+
+import type { Conditions } from '../schema/plant'
+import {
+  CARDINALS,
+  EXPOSURE_LEVELS,
+  LIGHT_LEVELS,
+  aspectSet,
+  exposureSet,
+  lightSet,
+  type Cardinal,
+  type Exposure,
+  type LightLevel,
+} from './conditions'
+
+export interface PositionDraft {
+  sun: LightLevel[]
+  aspect: Cardinal[]
+  exposure: Exposure[]
+  /** Exact hardiness label (e.g. "H5"); '' = none. Kept as the source's string. */
+  hardiness: string
+}
+
+/** Read a node's conditions into an editable draft — canonical order, tolerant of free-text input
+ *  ("Full sun" → 'full-sun'), so the dirty check compares stable, normalised values. */
+export function toPositionDraft(conditions: Conditions | undefined): PositionDraft {
+  const sun = lightSet(conditions?.sun)
+  const aspect = aspectSet(conditions?.aspect)
+  const exposure = exposureSet(conditions?.exposure)
+  return {
+    sun: LIGHT_LEVELS.filter((l) => sun.has(l)),
+    aspect: CARDINALS.filter((c) => aspect.has(c)),
+    exposure: EXPOSURE_LEVELS.filter((e) => exposure.has(e)),
+    hardiness: conditions?.hardiness?.trim() ?? '',
+  }
+}
+
+/** Fold a Position draft onto a base `Conditions`, preserving soil/moisture/ph and omitting any
+ *  empty facet so the stored object stays minimal. */
+export function applyPosition(base: Conditions | undefined, draft: PositionDraft): Conditions {
+  const out: Conditions = {}
+  if (base?.soil) out.soil = base.soil
+  if (base?.moisture) out.moisture = base.moisture
+  if (base?.ph) out.ph = base.ph
+  if (draft.sun.length) out.sun = draft.sun
+  if (draft.aspect.length) out.aspect = draft.aspect
+  if (draft.exposure.length) out.exposure = draft.exposure
+  if (draft.hardiness.trim()) out.hardiness = draft.hardiness.trim()
+  return out
+}
