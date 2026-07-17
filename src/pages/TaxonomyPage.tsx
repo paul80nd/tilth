@@ -274,8 +274,7 @@ export default function TaxonomyPage() {
                     </div>
                   </td>
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle text-muted" style={frozen('variety')}>
-                    {/* Only the variety is visually indented — it reads as hanging under its species. */}
-                    <span className="block truncate" style={{ paddingLeft: node.rank === 'cultivar' ? 14 : 0 }} title={node.variety ?? ''}>{node.variety ?? ''}</span>
+                    <span className="block truncate" title={node.variety ?? ''}>{node.variety ?? ''}</span>
                   </td>
                   <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('cat')}>
                     {r.category && <Chip tone="brand">{r.category}</Chip>}
