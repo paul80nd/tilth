@@ -6,25 +6,10 @@
 
 import type { NodeFragment } from './dataset'
 import type { PlantNode } from '../schema/plant'
+import { deepEqual } from './equal'
 
-function isObj(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-}
-
-/** Structural/value-equality over the plain-JSON shapes a node carries (scalars, string
- *  arrays, {source,url,label} arrays, the facts map). Key order is ignored for objects. */
-export function deepEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((x, i) => deepEqual(x, b[i]))
-  }
-  if (isObj(a) && isObj(b)) {
-    const ak = Object.keys(a)
-    const bk = Object.keys(b)
-    return ak.length === bk.length && ak.every((k) => k in b && deepEqual(a[k], b[k]))
-  }
-  return false
-}
+// Re-exported so existing callers/tests can keep importing it from here.
+export { deepEqual }
 
 /**
  * A merge fragment carrying only the fields of `patch` that differ from `existing`. `id` is
