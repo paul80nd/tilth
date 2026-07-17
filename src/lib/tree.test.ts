@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildForest, flattenVisible, allIds, resolveAll } from './tree'
+import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor } from './tree'
 import type { PlantNode } from '../schema/plant'
 
 const nodes: PlantNode[] = [
@@ -42,5 +42,30 @@ describe('resolveAll', () => {
     expect(cultivar.node.category).toBe('fruit') // from species
     expect(cultivar.node.conditions?.hardiness).toBe('H6') // from genus, two hops up
     expect(cultivar.inheritedFrom.conditions?.id).toBe('malus')
+  })
+})
+
+describe('linkedAncestor', () => {
+  const byId = new Map(nodes.map((n) => [n.id, n]))
+
+  it('returns null when no ancestor carries a source link', () => {
+    const cultivar = nodes.find((n) => n.id === 'malus-domestica-red-falstaff')!
+    expect(linkedAncestor(cultivar, byId)).toBeNull()
+  })
+
+  it('finds the nearest ancestor that has its own sourceLinks', () => {
+    const linked = new Map(byId)
+    linked.set('malus-domestica', {
+      ...byId.get('malus-domestica')!,
+      sourceLinks: [{ source: 'rhs', url: 'https://example.invalid/apple' }],
+    })
+    const cultivar = linked.get('malus-domestica-red-falstaff')!
+    expect(linkedAncestor(cultivar, linked)?.id).toBe('malus-domestica')
+  })
+
+  it('ignores the node\'s own links (only looks upward)', () => {
+    const own = { ...nodes.find((n) => n.id === 'malus-domestica')!, sourceLinks: [{ source: 'rhs', url: 'https://example.invalid/apple' }] }
+    // species has its own link but no linked ancestor above it
+    expect(linkedAncestor(own, new Map(nodes.map((n) => [n.id, n])).set(own.id, own))).toBeNull()
   })
 })

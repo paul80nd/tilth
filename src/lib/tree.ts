@@ -62,6 +62,23 @@ export function allIds(forest: TreeNode[]): string[] {
   return out
 }
 
+/**
+ * Nearest ancestor (walking parentId) that carries its own `sourceLinks`, or null. Source
+ * links are the per-node acquire worklist and deliberately NOT inherited — but a cultivar
+ * whose species is linked is effectively "covered" (it enriches by inheritance), so callers
+ * can surface that as a muted state rather than a missing-source gap.
+ */
+export function linkedAncestor(node: PlantNode, byId: Map<string, PlantNode>): PlantNode | null {
+  const seen = new Set<string>([node.id])
+  let cur = node.parentId ? byId.get(node.parentId) : undefined
+  while (cur && !seen.has(cur.id)) {
+    if (cur.sourceLinks?.length) return cur
+    seen.add(cur.id)
+    cur = cur.parentId ? byId.get(cur.parentId) : undefined
+  }
+  return null
+}
+
 /** Resolve inheritance for every node against its own ancestor chain, keyed by id. */
 export function resolveAll(nodes: PlantNode[]): Map<string, ResolvedNode> {
   const byId = new Map(nodes.map((n) => [n.id, n]))
