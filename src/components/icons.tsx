@@ -134,7 +134,7 @@ const SEASONAL: Record<SeasonalPart, { viewBox: string; scale: number; body: Rea
   },
   fruit: {
     viewBox: '0 0 24 24',
-    scale: 0.92,
+    scale: 1,
     // MingCute "fruit" — a rounded twin-lobed fruit; near-symmetric, so the multi-colour sweep
     // reads cleanly. (Its transparent bounding path is dropped; only the painted body kept.)
     body: (

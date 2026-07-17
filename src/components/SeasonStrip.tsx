@@ -106,7 +106,9 @@ function Slot({ code, part, size = 36 }: { code: InterestPart; part?: { colours:
             aria-hidden="true"
             className="absolute left-1/2 top-1/2"
             style={{
-              height: icon,
+              // A radius-length spoke from the centre: reaches the icon's edge to part the wedges
+              // without the long overshoot a full icon-height line left outside the silhouette.
+              height: icon / 2,
               width: 1.5,
               background: 'var(--tl-surface-card)',
               transformOrigin: 'bottom center',
