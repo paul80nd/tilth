@@ -75,16 +75,23 @@ const GENUS_COMMON: Record<string, string> = {
   Tulipa: 'Tulip',
 }
 
+export interface BannerParts {
+  /** The friendly primary label, e.g. "Onion genus" — shown first, prominent. */
+  primary: string
+  /** The scientific name, e.g. "Allium" — shown after, muted. Absent when there's no gloss. */
+  secondary?: string
+}
+
 /**
- * Label for a family/genus section-marker row: the scientific name, with a common-name gloss
- * in parentheses when we know one — "Liliaceae (Lily family)", "Allium (Onion genus)". Falls
- * back to the scientific name alone when there's no gloss, or when the gloss would just repeat
- * it (e.g. Dahlia). Non-banner ranks just get their scientific/common name.
+ * Parts for a family/genus section-marker label: the common name leads ("Onion genus"), with
+ * the scientific name kept as a muted trailer ("Allium"). Falls back to the scientific name
+ * alone as `primary` when there's no gloss, or when the gloss would just repeat it (e.g.
+ * Dahlia). The UI renders `primary · secondary` with `secondary` muted.
  */
-export function bannerLabel(node: PlantNode): string {
+export function bannerParts(node: PlantNode): BannerParts {
   const sci = node.botanicalName ?? (node.rank === 'family' ? node.family : node.genus) ?? node.commonName ?? node.id
   const map = node.rank === 'family' ? FAMILY_COMMON : node.rank === 'genus' ? GENUS_COMMON : undefined
   const common = map?.[sci]
-  if (common && common.toLowerCase() !== sci.toLowerCase()) return `${sci} (${common} ${node.rank})`
-  return sci
+  if (common && common.toLowerCase() !== sci.toLowerCase()) return { primary: `${common} ${node.rank}`, secondary: sci }
+  return { primary: sci }
 }

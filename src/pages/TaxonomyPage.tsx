@@ -9,7 +9,7 @@ import { SeasonCell } from '../components/SeasonStrip'
 import { LightCell, AspectCell, ExposureCell, HardinessCell } from '../components/PositionCard'
 import { SoilCell, MoistureCell, PhCell } from '../components/ConditionsCard'
 import Chip from '../components/Chip'
-import { bannerLabel } from '../lib/taxonNames'
+import { bannerParts } from '../lib/taxonNames'
 import type { PlantNode } from '../schema/plant'
 
 // The taxonomy view: the collection as an expandable family→genus→species→cultivar tree, with the
@@ -188,15 +188,18 @@ export default function TaxonomyPage() {
               if (isBannerRow(t)) {
                 const isFamily = node.rank === 'family'
                 // Family and genus both sit flush left — the font weight/tone carries the
-                // hierarchy, not indentation. The label sticks to the left as facets scroll.
+                // hierarchy, not indentation. Common name leads; the scientific name trails
+                // muted. The label sticks to the left as the facet columns scroll.
+                const { primary, secondary } = bannerParts(node)
                 return (
                   <tr key={node.id}>
                     <td colSpan={TOTAL_COLS} className={`border-b border-divider p-0 ${isFamily ? 'bg-sunken' : 'bg-sunken/60'}`}>
-                      <div className="sticky left-0 flex w-max items-center gap-1.5 py-1.5 pl-2 pr-4">
-                        <button onClick={() => toggle(node.id)} className="w-4 flex-none text-subtle hover:text-ink" aria-label={open ? 'Collapse' : 'Expand'}>
+                      <div className="sticky left-0 flex w-max items-baseline gap-1.5 py-1.5 pl-2 pr-4">
+                        <button onClick={() => toggle(node.id)} className="w-4 flex-none self-center text-subtle hover:text-ink" aria-label={open ? 'Collapse' : 'Expand'}>
                           {open ? '▾' : '▸'}
                         </button>
-                        <span className={isFamily ? 'text-sm font-semibold text-ink' : 'text-sm font-medium text-muted'}>{bannerLabel(node)}</span>
+                        <span className={isFamily ? 'text-sm font-semibold text-ink' : 'text-sm font-medium text-muted'}>{primary}</span>
+                        {secondary && <span className="text-xs italic text-subtle">· {secondary}</span>}
                         <span className="text-[0.65rem] tabular-nums text-subtle">· {countPlants(children)}</span>
                       </div>
                     </td>
