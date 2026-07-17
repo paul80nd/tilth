@@ -4,6 +4,7 @@ import BrowsePage from './pages/BrowsePage'
 import CheatsheetPage from './pages/CheatsheetPage'
 import PlantFormPage from './pages/PlantFormPage'
 import GardenPage from './pages/GardenPage'
+import ComparePage from './pages/ComparePage'
 import DataPage from './pages/DataPage'
 
 // App shell: a slim header (wordmark + primary tabs + theme toggle) over the routed pages.
@@ -36,6 +37,7 @@ export default function App() {
           </NavLink>
           <nav className="flex items-center gap-1">
             <Tab to="/">Browse</Tab>
+            <Tab to="/compare">Compare</Tab>
             <Tab to="/garden">My garden</Tab>
           </nav>
           <div className="ml-auto flex items-center gap-1">
@@ -52,6 +54,7 @@ export default function App() {
           <Route path="/plant/:id" element={<CheatsheetPage />} />
           <Route path="/plant/:id/edit" element={<PlantFormPage />} />
           <Route path="/garden" element={<GardenPage />} />
+          <Route path="/compare" element={<ComparePage />} />
           <Route path="/data" element={<DataPage />} />
         </Routes>
       </main>

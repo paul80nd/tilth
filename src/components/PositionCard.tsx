@@ -208,6 +208,21 @@ function exposureLabel(set: Set<Exposure>): string {
   return hit.length ? hit.join(', ') : 'Exposure not recorded'
 }
 
+// Single-facet cells for the compare table — the same glyphs, sized to fill a table square.
+export function LightCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
+  return <SunGlyph level={lightLevel(lightSet(conditions?.sun))} size={size} />
+}
+export function AspectCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
+  return <CompassGlyph set={aspectSet(conditions?.aspect)} size={size} />
+}
+export function ExposureCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
+  return <ExposureGlyph level={exposureLevel(exposureSet(conditions?.exposure))} size={size} />
+}
+export function HardinessCell({ conditions }: { conditions?: Conditions }) {
+  const hardy = hardiness(conditions?.hardiness)
+  return hardy ? <HardinessGlyph rank={hardy.rank} label={hardy.label} /> : <span className="text-sm text-subtle">—</span>
+}
+
 export default function PositionCard({ conditions }: { conditions?: Conditions }) {
   const light = lightSet(conditions?.sun)
   const aspect = aspectSet(conditions?.aspect)

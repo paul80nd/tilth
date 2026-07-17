@@ -140,6 +140,17 @@ function describe<T extends string>(order: readonly T[], set: Set<T>): string {
   return hit.length ? `Suitable for ${hit.join(', ')} soils` : 'Not recorded'
 }
 
+// Single-facet cells for the compare table — the same glyphs, sized to fill a table square.
+export function SoilCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
+  return <SoilQuad set={soilSet(conditions?.soil)} size={size} />
+}
+export function MoistureCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
+  return <WedgeGlyph regions={MOISTURE} set={moistureSet(conditions?.moisture)} size={size} />
+}
+export function PhCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
+  return <WedgeGlyph regions={PH} set={phSet(conditions?.ph)} size={size} />
+}
+
 export default function ConditionsCard({ conditions }: { conditions?: Conditions }) {
   const soil = soilSet(conditions?.soil)
   const ph = phSet(conditions?.ph)

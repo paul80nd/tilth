@@ -114,6 +114,18 @@ function Slot({ code, part }: { code: PhaseCode; part?: { colours: string[] } })
   )
 }
 
+/** One season's interest as a 2×2 of slots (foliage · flower / stem · fruit). Reused by the strip
+ *  and, edge-to-edge, as a compare-table cell. */
+export function SeasonCell({ parts, className = '' }: { parts: SeasonInterest['parts']; className?: string }) {
+  return (
+    <div className={`grid grid-cols-2 place-content-center ${className}`}>
+      {SLOTS.map((code) => (
+        <Slot key={code} code={code} part={parts.find((p) => p.code === code)} />
+      ))}
+    </div>
+  )
+}
+
 export default function SeasonStrip({ interest }: { interest: SeasonInterest[] }) {
   // Four season columns split by hairline dividers; each holds a 2×2 of interest slots. The
   // enclosing tile frames it.
@@ -127,11 +139,7 @@ export default function SeasonStrip({ interest }: { interest: SeasonInterest[] }
           <div className="text-[0.6rem] font-medium uppercase tracking-wide text-subtle">
             {s.season}
           </div>
-          <div className="grid flex-1 grid-cols-2 place-content-center">
-            {SLOTS.map((code) => (
-              <Slot key={code} code={code} part={s.parts.find((p) => p.code === code)} />
-            ))}
-          </div>
+          <SeasonCell parts={s.parts} className="flex-1" />
         </div>
       ))}
     </div>
