@@ -64,10 +64,7 @@ export type PhaseCode =
   | 'sow-outdoors'
   | 'pot-on'
   | 'plant-out'
-  | 'prune'
-  | 'thin'
-  | 'divide'
-  | 'feed'
+  | 'flowers'
   | 'harvest'
 
 /** One phase over a set of months (1 = Jan … 12 = Dec). Contiguous or not. */

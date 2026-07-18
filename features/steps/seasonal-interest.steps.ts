@@ -19,8 +19,8 @@ const FIXTURE = {
       category: 'fruit',
       commonName: 'Apple',
       calendar: [
-        { code: 'prune', months: [1, 2] },
-        { code: 'thin', months: [6] },
+        { code: 'plant-out', months: [5] },
+        { code: 'flowers', months: [5, 6] },
         { code: 'harvest', months: [9, 10] },
       ],
       seasonalInterest: {

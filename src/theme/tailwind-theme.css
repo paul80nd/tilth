@@ -47,10 +47,7 @@
   --color-phase-sow-outdoors: var(--tl-phase-sow-outdoors);
   --color-phase-pot-on:       var(--tl-phase-pot-on);
   --color-phase-plant-out:    var(--tl-phase-plant-out);
-  --color-phase-prune:        var(--tl-phase-prune);
-  --color-phase-thin:         var(--tl-phase-thin);
-  --color-phase-divide:       var(--tl-phase-divide);
-  --color-phase-feed:         var(--tl-phase-feed);
+  --color-phase-flowers:      var(--tl-phase-flowers);
   --color-phase-harvest:      var(--tl-phase-harvest);
   --color-phase-flower:       var(--tl-phase-flower);
   --color-phase-foliage:      var(--tl-phase-foliage);

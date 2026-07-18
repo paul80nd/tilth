@@ -18,10 +18,7 @@ export const PHASE_ORDER: PhaseCode[] = [
   'sow-outdoors',
   'pot-on',
   'plant-out',
-  'thin',
-  'prune',
-  'divide',
-  'feed',
+  'flowers',
   'harvest',
 ]
 
@@ -30,10 +27,7 @@ export const PHASE_META: Record<PhaseCode, PhaseMeta> = {
   'sow-outdoors': { label: 'Sow outdoors', token: 'sow-outdoors' },
   'pot-on': { label: 'Pot on', token: 'pot-on' },
   'plant-out': { label: 'Plant out', token: 'plant-out' },
-  thin: { label: 'Thin', token: 'thin' },
-  prune: { label: 'Prune', token: 'prune' },
-  divide: { label: 'Divide', token: 'divide' },
-  feed: { label: 'Feed', token: 'feed' },
+  flowers: { label: 'Flowers', token: 'flowers' },
   harvest: { label: 'Harvest', token: 'harvest' },
 }
 

@@ -17,7 +17,7 @@ const FIXTURE = {
       category: 'fruit',
       commonName: 'Apple',
       calendar: [
-        { code: 'prune', months: [1, 2] },
+        { code: 'plant-out', months: [1, 2] },
         { code: 'harvest', months: [8] },
       ],
     },
@@ -88,7 +88,7 @@ describeFeature(feature, ({ Background, Scenario }) => {
   Scenario("Clearing a cultivar's calendar override re-inherits from the species", ({ When, Then, And }) => {
     When('I give node {string} its own calendar then clear it', async (_, id: string) => {
       const { node: found } = await getLineage(id)
-      await updateNode(found!, { calendar: [{ code: 'prune', months: [3] }] })
+      await updateNode(found!, { calendar: [{ code: 'flowers', months: [3] }] })
       await clearNodeField(id, 'calendar')
     })
     Then('node {string} has no own calendar', async (_, id: string) => {

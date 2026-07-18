@@ -5,8 +5,8 @@ import { toCalendarDraft, fromCalendarDraft } from './calendarEdit'
 describe('toCalendarDraft', () => {
   it('gives every phase code a row, off by default', () => {
     const draft = toCalendarDraft(undefined)
-    expect(draft['prune'].months).toEqual(Array(12).fill(false))
-    expect(draft['prune'].note).toBe('')
+    expect(draft['flowers'].months).toEqual(Array(12).fill(false))
+    expect(draft['flowers'].note).toBe('')
     // A code with no spans is present but empty.
     expect(Object.keys(draft)).toContain('harvest')
   })
@@ -53,9 +53,9 @@ describe('fromCalendarDraft', () => {
 
   it('carries a note when present', () => {
     const draft = toCalendarDraft(undefined)
-    draft['prune'].months[2] = true
-    draft['prune'].note = 'after flowering'
-    expect(fromCalendarDraft(draft)).toEqual([{ code: 'prune', months: [3], note: 'after flowering' }])
+    draft['flowers'].months[2] = true
+    draft['flowers'].note = 'first blooms'
+    expect(fromCalendarDraft(draft)).toEqual([{ code: 'flowers', months: [3], note: 'first blooms' }])
   })
 
   it('round-trips a calendar through draft and back', () => {

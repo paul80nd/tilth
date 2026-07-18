@@ -22,7 +22,7 @@
         { "code": "sow-indoors", "months": [3, 4], "note": "under glass" },
         { "code": "pot-on", "months": [5] },
         { "code": "plant-out", "months": [6] },
-        { "code": "feed", "months": [6, 7, 8], "note": "weekly once flowering" },
+        { "code": "flowers", "months": [6, 7] },
         { "code": "harvest", "months": [8, 9] }
       ],
       "seasonalInterest": {
@@ -73,6 +73,7 @@
       "calendar": [
         { "code": "sow-indoors", "months": [3, 4] },
         { "code": "plant-out", "months": [5] },
+        { "code": "flowers", "months": [7, 8, 9] },
         { "code": "harvest", "months": [9, 10], "note": "seed heads" }
       ],
       "seasonalInterest": {
@@ -140,7 +141,7 @@
       "uses": ["containers", "edging", "ground cover"],
       "calendar": [
         { "code": "plant-out", "months": [3, 9] },
-        { "code": "feed", "months": [4], "note": "high-potash" },
+        { "code": "flowers", "months": [5] },
         { "code": "harvest", "months": [6, 7] }
       ],
       "seasonalInterest": {
@@ -177,8 +178,7 @@
       "wildlife": ["attracts pollinators", "blossom for early bees"],
       "uses": ["orchard", "trained forms", "wildlife garden"],
       "calendar": [
-        { "code": "prune", "months": [1, 2], "note": "winter, when dormant" },
-        { "code": "thin", "months": [6], "note": "after natural drop" },
+        { "code": "flowers", "months": [4, 5], "note": "blossom" },
         { "code": "harvest", "months": [9, 10] }
       ],
       "seasonalInterest": {

@@ -91,15 +91,12 @@
      filled cell reads on both light and dark cards (yellow rides higher, as it
      must to look yellow rather than olive).
      ====================================================================== */
-  --tl-phase-sow-indoors:  oklch(63% 0.170 25);   /* red          */
-  --tl-phase-sow-outdoors: oklch(62% 0.140 245);  /* blue         */
-  --tl-phase-pot-on:       oklch(70% 0.100 190);  /* teal         */
-  --tl-phase-plant-out:    oklch(64% 0.140 150);  /* green        */
-  --tl-phase-prune:        oklch(66% 0.130 320);  /* magenta      */
-  --tl-phase-thin:         oklch(66% 0.120 288);  /* purple       */
-  --tl-phase-divide:       oklch(64% 0.120 266);  /* indigo       */
-  --tl-phase-feed:         oklch(68% 0.150 55);   /* orange       */
-  --tl-phase-harvest:      oklch(84% 0.155 98);   /* yellow       */
+  --tl-phase-sow-indoors:  oklch(63% 0.170 25);   /* red             */
+  --tl-phase-sow-outdoors: oklch(62% 0.140 245);  /* blue            */
+  --tl-phase-pot-on:       oklch(70% 0.100 190);  /* teal            */
+  --tl-phase-plant-out:    oklch(64% 0.140 150);  /* green           */
+  --tl-phase-flowers:      oklch(84% 0.155 98);   /* yellow (= harvest) */
+  --tl-phase-harvest:      oklch(84% 0.155 98);   /* yellow          */
   --tl-phase-flower:       oklch(80% 0.060 350);  /* pink (state) */
   --tl-phase-foliage:      oklch(82% 0.050 150);  /* green (state)*/
   --tl-phase-fruit:        oklch(78% 0.070 25);   /* red (state)  */
