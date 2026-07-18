@@ -33,14 +33,53 @@ describe('mergeNode', () => {
     expect(merged.provenance?.facts?.source).toBe('seed-packet')
   })
 
-  it('replaces array/object fields wholesale rather than unioning', () => {
+  it('replaces array fields wholesale rather than unioning (a source supplies its full set)', () => {
     const existing: PlantNode = {
       id: 'x',
       rank: 'species',
       conditions: { soil: ['loam', 'sand'], hardiness: 'H7' },
     }
     const merged = mergeNode(existing, { id: 'x', conditions: { soil: ['chalk'] } }, DB)
-    // The whole `conditions` object is replaced — the old hardiness does not survive.
+    // The `soil` array is replaced (not unioned)…
+    expect(merged.conditions?.soil).toEqual(['chalk'])
+    // …but the sibling `hardiness` another source set survives — the object deep-merges.
+    expect(merged.conditions?.hardiness).toBe('H7')
+  })
+
+  it('deep-merges nested objects so two sources fill different facets', () => {
+    const existing: PlantNode = { id: 'x', rank: 'species', facts: { harvest: 'July' } }
+    // A seed packet adds a sowing chip; the earlier harvest chip must not be clobbered.
+    const merged = mergeNode(existing, { id: 'x', facts: { 'sowing depth': '0.5cm' } }, PACKET)
+    expect(merged.facts).toEqual({ harvest: 'July', 'sowing depth': '0.5cm' })
+    // Provenance stays field-level: the whole `facts` field is stamped with the latest source.
+    expect(merged.provenance?.facts?.source).toBe('seed-packet')
+  })
+
+  it('recurses into deeply nested objects (season × part), replacing only leaf arrays', () => {
+    const existing: PlantNode = {
+      id: 'x',
+      rank: 'species',
+      seasonalInterest: { spring: { foliage: ['green'] } },
+    }
+    const merged = mergeNode(
+      existing,
+      { id: 'x', seasonalInterest: { summer: { fruit: ['red'] }, spring: { flower: ['blue'] } } },
+      DB,
+    )
+    expect(merged.seasonalInterest).toEqual({
+      spring: { foliage: ['green'], flower: ['blue'] },
+      summer: { fruit: ['red'] },
+    })
+  })
+
+  it('replaces the whole object under objects:"replace" (the hand-edit path)', () => {
+    const existing: PlantNode = {
+      id: 'x',
+      rank: 'species',
+      conditions: { soil: ['loam'], hardiness: 'H7' },
+    }
+    // The editor submits the whole object; dropping `hardiness` must remove it.
+    const merged = mergeNode(existing, { id: 'x', conditions: { soil: ['chalk'] } }, { ...DB, objects: 'replace' })
     expect(merged.conditions).toEqual({ soil: ['chalk'] })
   })
 

@@ -90,7 +90,7 @@ function normaliseNode(raw: unknown, index: number): NodeFragment | string {
     const value = raw[key]
     if (value === undefined || value === null) continue
     // Trim scalar strings; arrays/objects (calendar, conditions, size, facts) pass through
-    // as whole fields — the merge replaces them wholesale, so we don't reshape them here.
+    // intact — the merge handles them (arrays replace, objects deep-merge), no reshaping here.
     if (typeof value === 'string') {
       const s = asString(value)
       if (s !== undefined) (node as Record<string, unknown>)[key] = s

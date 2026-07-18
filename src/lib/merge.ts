@@ -1,17 +1,51 @@
 // The defining capability, as a pure function: overlay a partial import fragment onto an
 // existing plant node. Property-level merge — present fields overwrite, absent fields are
-// left alone, arrays/objects are whole fields (replace, not union). Every overwritten data
-// field is stamped with provenance. See docs/decisions.md → "Property-level merge imports".
-// Pure + side-effect-free so it's exhaustively unit-testable; the Dexie write lives in the
-// app layer.
+// left alone. A nested OBJECT field (`conditions`, `size`, `seasonalInterest`, `facts`)
+// deep-merges key-by-key so two sources can fill different facets of it without clobbering
+// each other; ARRAYS and scalars are leaves — the incoming value replaces (a source supplies
+// its complete set). Every overwritten data field is stamped with provenance. The hand-edit
+// path opts into `objects: 'replace'` (the editor submits the whole object, and omitting a
+// facet must remove it). See docs/decisions.md → "Property-level merge imports" + "Deep-merge
+// nested objects". Pure + side-effect-free; the Dexie write lives in the app layer.
 
 import type { FieldSource, PlantNode, Rank } from '../schema/plant'
+
+/** How object-valued fields combine. `deep` (default): overlay a source's partial object onto
+ *  the existing one, so absent keys survive — how multi-source imports accrete. `replace`: swap
+ *  the whole object, which the hand-edit path needs so removing a facet by omission removes it.
+ *  Arrays and scalars always replace regardless of this. */
+export type ObjectMerge = 'deep' | 'replace'
 
 /** Where this fragment's fields came from, applied to every field it sets. */
 export interface MergeMeta {
   source: string
   url?: string
   importedAt?: string
+  /** Object-field strategy (default `deep`). A strategy hint, not provenance. */
+  objects?: ObjectMerge
+}
+
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/**
+ * Overlay `incoming` onto `existing` for a single field. Plain objects merge recursively — a
+ * key the incoming side omits is left as-is, so different sources fill different facets; arrays
+ * and scalars are leaves and `incoming` replaces (a source supplies its complete set, and
+ * unioning would accumulate stale values with no way to correct them). Pure: returns fresh
+ * objects and never mutates either input. Never deletes a key (absent ⇒ leave alone).
+ */
+export function mergeField(existing: unknown, incoming: unknown): unknown {
+  if (isPlainObject(existing) && isPlainObject(incoming)) {
+    const out: Record<string, unknown> = { ...existing }
+    for (const [k, v] of Object.entries(incoming)) {
+      if (v === undefined) continue
+      out[k] = mergeField(existing[k], v)
+    }
+    return out
+  }
+  return incoming
 }
 
 // Structural fields — they place the node in the taxonomy, they aren't sourced botanical
@@ -38,10 +72,15 @@ export function mergeNode(
   const stamp: FieldSource = { source: meta.source }
   if (meta.url) stamp.url = meta.url
   if (meta.importedAt) stamp.importedAt = meta.importedAt
+  const deep = (meta.objects ?? 'deep') === 'deep'
 
+  const bag = base as unknown as Record<string, unknown>
   for (const [key, value] of Object.entries(fragment)) {
     if (value === undefined || key === 'id' || key === 'provenance') continue
-    ;(base as unknown as Record<string, unknown>)[key] = value
+    // Deep-merge object fields so sources accrete; `replace` (the edit path) and array/scalar
+    // leaves both just take the incoming value. Provenance stays field-level — a deep-merged
+    // object is stamped with its latest contributor, not per sub-key.
+    bag[key] = deep ? mergeField(bag[key], value) : value
     if (!STRUCTURAL.has(key)) provenance[key] = stamp
   }
 

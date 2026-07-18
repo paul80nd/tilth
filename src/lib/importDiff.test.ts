@@ -15,13 +15,32 @@ describe('diffNode', () => {
       id: 'delphinium-magic-fountains',
       commonName: 'Delphinium', // same
       botanicalName: 'Delphinium Magic Fountains Series', // new
-      conditions: { soil: ['chalk', 'loam', 'sand'], hardiness: 'H5' }, // changed (whole field)
+      conditions: { soil: ['chalk', 'loam', 'sand'], hardiness: 'H5' }, // changed (soil differs)
     })
     expect(isNew).toBe(false)
     expect(changes).toContainEqual({ field: 'commonName', status: 'same', existing: 'Delphinium', incoming: 'Delphinium' })
     expect(changes).toContainEqual({ field: 'botanicalName', status: 'new', existing: undefined, incoming: 'Delphinium Magic Fountains Series' })
     const cond = changes.find((c) => c.field === 'conditions')!
     expect(cond.status).toBe('changed')
+  })
+
+  it('previews an object field as the deep-merge that will land, not a bare replace', () => {
+    // The fragment adds a sibling facet; the existing soil/hardiness must show through.
+    const { changes } = diffNode(existing, {
+      id: 'delphinium-magic-fountains',
+      conditions: { sun: ['full-sun'] },
+    })
+    const cond = changes.find((c) => c.field === 'conditions')!
+    expect(cond.status).toBe('changed')
+    expect(cond.incoming).toEqual({ soil: ['loam'], hardiness: 'H5', sun: ['full-sun'] })
+  })
+
+  it('reads a re-asserted object key as same (deep-merge is a no-op)', () => {
+    const diff = diffNode(existing, {
+      id: 'delphinium-magic-fountains',
+      conditions: { soil: ['loam'] }, // already present and equal
+    })
+    expect(hasChanges(diff)).toBe(false)
   })
 
   it('marks every field new when the node does not exist yet', () => {

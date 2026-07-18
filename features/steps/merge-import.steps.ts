@@ -33,6 +33,13 @@ async function importSoil(source: string, id: string, soil: string): Promise<voi
   )
 }
 
+async function importSun(source: string, id: string, sun: string): Promise<void> {
+  await importFragment(
+    { nodes: [{ id, conditions: { sun: sun.split(',').map((s) => s.trim()) as never } }] },
+    { source },
+  )
+}
+
 async function importLifecycle(source: string, id: string, lifecycle: string): Promise<void> {
   await importFragment(
     { nodes: [{ id, lifecycle: lifecycle.split(',').map((s) => s.trim()) as never }] },
@@ -109,6 +116,36 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     Then('node {string} soil is {string}', async (_, id: string, expected: string) => {
       expect((await db.nodes.get(id))?.conditions?.soil).toEqual(expected.split(',').map((s) => s.trim()))
+    })
+  })
+
+  Scenario('Two sources fill different facets of the same conditions object (deep-merge)', ({ Given, When, Then, And }) => {
+    Given('I import from {string} a node {string} with soil {string}', async (_, source: string, id: string, soil: string) => {
+      await importSoil(source, id, soil)
+    })
+    When('I import from {string} a node {string} with sun {string}', async (_, source: string, id: string, sun: string) => {
+      await importSun(source, id, sun)
+    })
+    Then('node {string} soil is {string}', async (_, id: string, expected: string) => {
+      expect((await db.nodes.get(id))?.conditions?.soil).toEqual(expected.split(',').map((s) => s.trim()))
+    })
+    And('node {string} sun is {string}', async (_, id: string, expected: string) => {
+      expect((await db.nodes.get(id))?.conditions?.sun).toEqual(expected.split(',').map((s) => s.trim()))
+    })
+  })
+
+  Scenario('A later source adds a fact without clobbering the earlier facts (deep-merge)', ({ Given, When, Then, And }) => {
+    Given('I import from {string} a node {string} with:', async (_, source: string, id: string, rows: Row[]) => {
+      await importNode(source, id, rows[0])
+    })
+    When('I import from {string} a node {string} with:', async (_, source: string, id: string, rows: Row[]) => {
+      await importNode(source, id, rows[0])
+    })
+    Then('node {string} fact {string} is {string}', async (_, id: string, key: string, value: string) => {
+      expect((await db.nodes.get(id))?.facts?.[key]).toBe(value)
+    })
+    And('node {string} fact {string} is {string}', async (_, id: string, key: string, value: string) => {
+      expect((await db.nodes.get(id))?.facts?.[key]).toBe(value)
     })
   })
 

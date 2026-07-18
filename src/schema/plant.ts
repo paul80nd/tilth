@@ -86,7 +86,8 @@ export type InterestPart = 'stem' | 'flower' | 'foliage' | 'fruit'
  *  swatches in the UI (lib/colour), and several at once are allowed (a bloom flowering
  *  blue/purple/white together). Deliberately season-granular — the source asserts seasons,
  *  not months — and kept SEPARATE from the `calendar` (which is jobs only): the two are
- *  different things. Whole field (replace, not union) like the other closed-vocab shapes. */
+ *  different things. A nested object: deep-merges on import (a source fills the seasons/parts
+ *  it knows), only the leaf colour arrays replace. See merge.ts. */
 export type SeasonalInterest = Partial<Record<Season, Partial<Record<InterestPart, string[]>>>>
 
 /** Soil / position facets, kept as small closed vocabularies so the cheatsheet can render
@@ -116,8 +117,8 @@ export interface Size {
 
 /** A reference plant node — the merge-imported record behind the cheatsheet one-pager.
  *  Every field except `id`/`rank` is optional: a node accretes detail from many imports.
- *  Arrays and nested objects are treated as whole fields by the merge (replace, not
- *  union) — see docs/decisions.md ADR "Property-level merge". */
+ *  Arrays are whole fields (replace, not union); nested objects deep-merge per key so sources
+ *  accrete — see docs/decisions.md ADRs "Property-level merge" + "Deep-merge nested objects". */
 export interface PlantNode {
   /** Stable identifier; typically a slug of the botanical name. */
   id: string

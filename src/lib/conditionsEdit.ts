@@ -1,7 +1,8 @@
 // Pure helpers for the Conditions editor (soil · moisture · pH). These three facets live on the
 // shared `conditions` field alongside the Position card's light/aspect/exposure/hardiness — and the
-// merge replaces `conditions` as a whole field — so editing Conditions must carry the position
-// siblings through untouched. Mirrors positionEdit (the opposite half of the same field).
+// edit path merges with `objects: 'replace'` (so dropping a facet removes it) — so editing
+// Conditions must carry the position siblings through untouched. Mirrors positionEdit (the opposite
+// half of the same field).
 
 import type { Conditions } from '../schema/plant'
 import {

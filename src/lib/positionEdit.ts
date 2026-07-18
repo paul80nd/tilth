@@ -1,7 +1,7 @@
 // Pure helpers for the Position editor (light · aspect · exposure · hardiness). These four facets
 // live on the shared `conditions` field alongside the Conditions card's soil/moisture/ph — and the
-// merge replaces `conditions` as a whole field — so editing Position must carry the sibling
-// soil/moisture/ph through untouched. `toPositionDraft` normalises the stored (possibly free-text)
+// edit path merges with `objects: 'replace'` (so dropping a facet removes it) — so editing Position
+// must carry the sibling soil/moisture/ph through untouched. `toPositionDraft` normalises the stored (possibly free-text)
 // values to the canonical vocab for the toggle controls; `applyPosition` folds a draft back onto a
 // base `Conditions`, dropping empties. Side-effect-free; the Dexie write goes through `updateNode`.
 

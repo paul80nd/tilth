@@ -7,6 +7,7 @@
 import type { NodeFragment } from './dataset'
 import type { PlantNode } from '../schema/plant'
 import { deepEqual } from './equal'
+import { mergeField } from './merge'
 
 export type ChangeStatus = 'new' | 'changed' | 'same'
 
@@ -31,17 +32,20 @@ const SKIP = new Set(['id', 'provenance'])
 
 /**
  * Classify each field a fragment supplies against the existing node: `new` (the node lacks it),
- * `changed` (present but different — whole-field, arrays/objects compared structurally), or
- * `same` (identical, so applying it is a no-op).
+ * `changed`, or `same` (identical, so applying it is a no-op). `incoming` is previewed as the
+ * value that will actually land — the deep-merge of the existing object with the fragment's —
+ * so an object field that only adds a sibling key shows the merged result, not a bare replace,
+ * and status is judged against that (a fragment re-asserting existing keys reads as `same`).
  */
 export function diffNode(existing: PlantNode | undefined, fragment: NodeFragment): NodeDiff {
   const changes: FieldChange[] = []
   for (const [field, incoming] of Object.entries(fragment)) {
     if (SKIP.has(field) || incoming === undefined) continue
     const current = existing ? (existing as unknown as Record<string, unknown>)[field] : undefined
+    const result = current === undefined ? incoming : mergeField(current, incoming)
     const status: ChangeStatus =
-      current === undefined ? 'new' : deepEqual(current, incoming) ? 'same' : 'changed'
-    changes.push({ field, status, existing: current, incoming })
+      current === undefined ? 'new' : deepEqual(current, result) ? 'same' : 'changed'
+    changes.push({ field, status, existing: current, incoming: result })
   }
   return { id: fragment.id, isNew: !existing, changes }
 }

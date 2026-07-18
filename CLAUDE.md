@@ -93,7 +93,8 @@ that schema. The SPA only ever sees our schema, never raw source payloads.
   Guidance and jobs attach at a rank and **aggregate down** to the specific things you grow.
 - **Merge + provenance.** Import is a **property-level overlay**: provided fields overwrite,
   absent fields are left alone, and each top-level field records which `source` set it.
-  Arrays/nested objects are whole fields (replace, not union). See `src/schema/plant.ts` +
+  Arrays are whole fields (replace, not union); nested objects (`conditions`, `facts`, …)
+  deep-merge per key on import, so sources accrete — the hand-edit path replaces instead. See `src/schema/plant.ts` +
   docs/decisions.md.
 - **Calendar.** Per-month `PhaseSpan`s stored as source-neutral **shortcodes**; the UI maps
   a code → colour + legend (seed brands colour differently, so colour is never stored).

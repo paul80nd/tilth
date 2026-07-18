@@ -23,7 +23,9 @@ export async function createNode(node: NodeFragment): Promise<void> {
   if (await db.nodes.get(node.id)) {
     throw new Error(`A plant with id "${node.id}" already exists.`)
   }
-  await importFragment({ nodes: [node] }, { source: MANUAL_SOURCE })
+  // `replace`: the editor submits the whole object for a field, so omitting a facet (soil,
+  // hardiness, …) must remove it — deep-merge would leave the dropped facet behind.
+  await importFragment({ nodes: [node] }, { source: MANUAL_SOURCE, objects: 'replace' })
 }
 
 /**
@@ -34,7 +36,9 @@ export async function createNode(node: NodeFragment): Promise<void> {
 export async function updateNode(existing: PlantNode, patch: Partial<PlantNode>): Promise<void> {
   const fragment = nodeDiff(existing, patch)
   if (isEmptyDiff(fragment)) return
-  await importFragment({ nodes: [fragment] }, { source: MANUAL_SOURCE })
+  // `replace` (see createNode): a hand edit is authoritative for the fields it touches, so the
+  // whole object it submits replaces — otherwise removing a facet by omission wouldn't stick.
+  await importFragment({ nodes: [fragment] }, { source: MANUAL_SOURCE, objects: 'replace' })
 }
 
 /**

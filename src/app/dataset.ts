@@ -45,6 +45,7 @@ export async function importFragment(
     importedAt: meta.importedAt ?? new Date().toISOString(),
   }
   if (meta.url) stamp.url = meta.url
+  if (meta.objects) stamp.objects = meta.objects
   const guideStamp: FieldSource = { source: stamp.source, importedAt: stamp.importedAt }
   if (stamp.url) guideStamp.url = stamp.url
 

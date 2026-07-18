@@ -42,6 +42,22 @@ Feature: Merge-import plant fragments
     When I import from "seed-packet" a node "rose" with soil "sand"
     Then node "rose" soil is "sand"
 
+  Scenario: Two sources fill different facets of the same conditions object (deep-merge)
+    Given I import from "plant-db" a node "rose" with soil "clay"
+    When I import from "seed-packet" a node "rose" with sun "full-sun"
+    Then node "rose" soil is "clay"
+    And node "rose" sun is "full-sun"
+
+  Scenario: A later source adds a fact without clobbering the earlier facts (deep-merge)
+    Given I import from "plant-db" a node "rose" with:
+      | facts.harvest |
+      | July          |
+    When I import from "seed-packet" a node "rose" with:
+      | facts.sowing depth |
+      | 1cm                |
+    Then node "rose" fact "harvest" is "July"
+    And node "rose" fact "sowing depth" is "1cm"
+
   Scenario: A multi-valued life cycle imports whole and a later partial import leaves it alone
     Given I import from "plant-db" a node "tomato" with lifecycle "annual, perennial"
     When I import from "seed-packet" a node "tomato" with:

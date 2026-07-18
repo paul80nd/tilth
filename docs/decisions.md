@@ -7,6 +7,29 @@ feature spec; private rationale (the real sources, personal curation rules) stay
 
 Each entry: the decision, *why*, and what it superseded if anything.
 
+## 2026-07-18 — Deep-merge nested objects on import; the hand-edit path replaces
+
+Refines *Property-level merge imports*. A nested **object** field (`conditions`, `size`,
+`seasonalInterest`, `facts`) now **deep-merges key-by-key** instead of replacing wholesale:
+present keys win, absent keys survive, and arrays/scalars are still leaves (replace). *Why:*
+these objects are bags of independent facets filled by different sources over time — a seed
+packet supplies `conditions.sun`, a botanical DB `conditions.hardiness`; `facts` accretes
+`spacing`/`germination`/`harvest` chips one source at a time. Whole-object replace made each
+new source silently wipe the others' facets (the concrete bite: a sowing-facts import erased an
+existing `harvest`/`heat`). Deep-merge is [RFC 7386](https://datatracker.ietf.org/doc/html/rfc7386)
+JSON-Merge-Patch semantics minus the null-delete (we never delete on import: absent ⇒ leave
+alone). Arrays stay replace for the same reason as before — a source supplies its *complete* set.
+
+*The exception is the hand-edit path* (`src/app/editNode.ts` → `objects: 'replace'`). The
+Position/Conditions editors submit the **whole** object, so removing a facet by omission must
+remove it — deep-merge would leave the dropped facet behind. So: **imports accrete, edits are
+authoritative.** Both still obey top-level present ⇒ overwrite / absent ⇒ leave-alone.
+
+**Known limit:** provenance stays *field-level*. A deep-merged object is stamped with its
+latest contributing source, so per-sub-key provenance isn't tracked (`conditions` filled by two
+sources shows only the most recent in its footer). Acceptable for MVP; a fuller model would key
+provenance by leaf path. Implemented as `mergeField` in `src/lib/merge.ts`.
+
 ## 2026-07-14 — Founding: Tilth is built on the Forkast chassis
 
 Tilth reuses Forkast's architecture wholesale — local-first, browser-only (IndexedDB via
@@ -22,12 +45,13 @@ as the readable template. What Tilth deliberately changes is captured in the ADR
 Reference plant data is assembled from several sources over time, so an import is a **partial
 overlay**, not a whole-record replace (Forkast's model). For each record a fragment touches:
 present fields overwrite, absent fields are left untouched. A field is a whole top-level
-property — arrays (`soil`, `calendar`) and nested objects (`conditions`, `size`) **replace
-wholesale, they do not union**. *Why property-level:* it matches how the data actually
-arrives — botanical facts from one source, sowing depths from a seed packet — letting lookups
-be piecemeal without clobbering each other. *Why replace-not-union for arrays:* a source that
-supplies `soil` supplies the *complete* set it knows; unioning would silently accumulate stale
-values with no way to correct them. *Supersedes* Forkast's `bulkPut` whole-record upsert.
+property — arrays (`soil`, `calendar`) **replace wholesale, they do not union**. *Why
+property-level:* it matches how the data actually arrives — botanical facts from one source,
+sowing depths from a seed packet — letting lookups be piecemeal without clobbering each other.
+*Why replace-not-union for arrays:* a source that supplies `soil` supplies the *complete* set
+it knows; unioning would silently accumulate stale values with no way to correct them.
+*Supersedes* Forkast's `bulkPut` whole-record upsert. *Refined 2026-07-18* — nested **objects**
+deep-merge rather than replacing wholesale (see below).
 
 ## 2026-07-14 — Per-field provenance
 
