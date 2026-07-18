@@ -63,6 +63,11 @@ export function listBeds(): Promise<Bed[]> {
   return db.beds.toArray()
 }
 
+/** Every holding — the page derives placed vs unplaced (and the held-node set) from this. */
+export function listHoldings(): Promise<Holding[]> {
+  return db.holdings.toArray()
+}
+
 export function holdingsInBed(bedId: string): Promise<Holding[]> {
   return db.holdings.where('bedId').equals(bedId).toArray()
 }

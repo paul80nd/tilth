@@ -62,7 +62,7 @@ export default function App() {
           <Route path="/add" element={<Padded><PlantFormPage /></Padded>} />
           <Route path="/plant/:id" element={<Padded><CheatsheetPage /></Padded>} />
           <Route path="/plant/:id/edit" element={<Padded><PlantFormPage /></Padded>} />
-          <Route path="/garden" element={<Padded><GardenPage /></Padded>} />
+          <Route path="/garden" element={<GardenPage />} />
           <Route path="/taxonomy" element={<TaxonomyPage />} />
           <Route path="/data" element={<Padded><DataPage /></Padded>} />
         </Routes>
