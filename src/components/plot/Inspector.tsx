@@ -107,6 +107,14 @@ export default function Inspector({ bed, placement, node, snapStep, onBedChange,
         </Field>
         {shape === 'area' && (
           <>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Width (m)">
+                <SizeInput value={region.width} min={0.1} step={0.1} onCommit={(w) => onPlacementResize({ ...region, width: w })} />
+              </Field>
+              <Field label="Height (m)">
+                <SizeInput value={region.height} min={0.1} step={0.1} onCommit={(h) => onPlacementResize({ ...region, height: h })} />
+              </Field>
+            </div>
             <p className="text-xs text-muted">
               Footprint {((placement.footprint ?? 0.3) * 100).toFixed(0)} cm · fits {count} at this size
             </p>
