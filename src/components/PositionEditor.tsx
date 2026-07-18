@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Conditions, PlantNode } from '../schema/plant'
-import { updateNode } from '../app/editNode'
+import { updateNode, clearNodeField } from '../app/editNode'
 import { deepEqual } from '../lib/equal'
 import {
   CARDINALS,
@@ -10,9 +10,9 @@ import {
   LIGHT_LEVELS,
   conditionLabel,
 } from '../lib/conditions'
-import { applyPosition, toPositionDraft, type PositionDraft } from '../lib/positionEdit'
+import { applyPosition, toPositionDraft, withoutPosition, type PositionDraft } from '../lib/positionEdit'
 import PositionCard from './PositionCard'
-import { Row, Toggle } from './EditorControls'
+import { Row, Toggle, EditorFooter } from './EditorControls'
 
 // A modal for editing the Position facets (light · aspect · exposure · hardiness) with a live
 // preview of the exact card the cheatsheet shows. These share the `conditions` field with the
@@ -64,6 +64,12 @@ export function PositionEditor({
     })
   }
 
+  // Clearing Position drops the node's own light/aspect/exposure/hardiness but keeps its own
+  // soil/moisture/ph (the Conditions half) — if nothing's left, the whole field goes and Position
+  // inherits from a parent again. Only enabled when the node asserts a position facet itself.
+  const own = node.conditions
+  const canClear = !!(own && (own.sun?.length || own.aspect?.length || own.exposure?.length || own.hardiness))
+
   async function onSave() {
     if (!dirty) return onClose()
     setSaving(true)
@@ -73,6 +79,18 @@ export function PositionEditor({
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save.')
+      setSaving(false)
+    }
+  }
+
+  async function onClear() {
+    setSaving(true)
+    setError(null)
+    try {
+      await clearNodeField(node.id, 'conditions', withoutPosition(own))
+      onClose()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not clear.')
       setSaving(false)
     }
   }
@@ -150,23 +168,7 @@ export function PositionEditor({
 
         {error && <p className="mt-3 text-sm text-accent-ink">{error}</p>}
 
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving || !dirty}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+        <EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />
       </div>
     </div>,
     document.body,

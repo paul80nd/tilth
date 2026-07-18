@@ -9,7 +9,7 @@ import { db } from '../db/db'
 import { importFragment } from './dataset'
 import { nodeDiff, isEmptyDiff } from '../lib/editNode'
 import type { NodeFragment } from '../lib/dataset'
-import type { PlantNode } from '../schema/plant'
+import type { FieldSource, PlantNode } from '../schema/plant'
 
 /** Provenance key for hand-entered fields. Opaque (like every source key) — no firewall issue. */
 export const MANUAL_SOURCE = 'manual'
@@ -35,6 +35,38 @@ export async function updateNode(existing: PlantNode, patch: Partial<PlantNode>)
   const fragment = nodeDiff(existing, patch)
   if (isEmptyDiff(fragment)) return
   await importFragment({ nodes: [fragment] }, { source: MANUAL_SOURCE })
+}
+
+/**
+ * Clear a node's OWN value for a field so that card inherits it from an ancestor again (or falls
+ * back to the empty placeholder when no ancestor has it). The merge only ever overlays present
+ * fields (absent = leave alone), so a field can't be removed through `importFragment` — this writes
+ * the store directly, dropping the field and its provenance, and marks the store user-owned.
+ *
+ * `replacement` covers the shared `conditions` field: clearing one half (Position or Conditions)
+ * keeps the other, so the caller passes the reduced object — an empty or undefined replacement
+ * removes the field outright, which is what the single-field cards (calendar/size/…) always want.
+ */
+export async function clearNodeField(id: string, field: keyof PlantNode, replacement?: unknown): Promise<void> {
+  const keep =
+    replacement !== undefined &&
+    !(typeof replacement === 'object' && replacement !== null && Object.keys(replacement).length === 0)
+  await db.transaction('rw', db.nodes, db.settings, async () => {
+    const node = await db.nodes.get(id)
+    if (!node) return
+    const provenance: Record<string, FieldSource> = { ...(node.provenance ?? {}) }
+    const bag = node as unknown as Record<string, unknown>
+    if (keep) {
+      bag[field] = replacement
+      provenance[field] = { source: MANUAL_SOURCE }
+    } else {
+      delete bag[field]
+      delete provenance[field]
+    }
+    node.provenance = provenance
+    await db.nodes.put(node)
+    await db.settings.put({ key: 'dataSource', value: 'user' })
+  })
 }
 
 /**

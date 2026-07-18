@@ -40,6 +40,18 @@ export function toPositionDraft(conditions: Conditions | undefined): PositionDra
   }
 }
 
+/** Drop the Position facets (light/aspect/exposure/hardiness) from a node's own conditions,
+ *  keeping the Conditions half (soil/moisture/ph). Used when clearing the Position card: the
+ *  result is written back (or, when empty, the whole `conditions` field is removed so Position
+ *  inherits from a parent again). */
+export function withoutPosition(conditions: Conditions | undefined): Conditions {
+  const out: Conditions = {}
+  if (conditions?.soil) out.soil = conditions.soil
+  if (conditions?.moisture) out.moisture = conditions.moisture
+  if (conditions?.ph) out.ph = conditions.ph
+  return out
+}
+
 /** Fold a Position draft onto a base `Conditions`, preserving soil/moisture/ph and omitting any
  *  empty facet so the stored object stays minimal. */
 export function applyPosition(base: Conditions | undefined, draft: PositionDraft): Conditions {

@@ -5,8 +5,9 @@ import { importFragment } from '../../src/app/dataset'
 import { updateNode } from '../../src/app/editNode'
 import { getLineage } from '../../src/app/plants'
 import { resolveInherited } from '../../src/lib/taxonomy'
-import { applyConditions, toConditionsDraft } from '../../src/lib/conditionsEdit'
+import { applyConditions, toConditionsDraft, withoutConditions } from '../../src/lib/conditionsEdit'
 import { soilSet, phSet, type SoilType, type PhLevel } from '../../src/lib/conditions'
+import { clearNodeField } from '../../src/app/editNode'
 
 const feature = await loadFeature('features/edit-conditions.feature')
 
@@ -84,6 +85,26 @@ describeFeature(feature, ({ Background, Scenario }) => {
     And('node {string} has soil {string}', async (_, id: string, soil: string) => {
       const saved = await db.nodes.get(id)
       expect(soilSet(saved!.conditions?.soil).has(soil as SoilType)).toBe(true)
+    })
+    And('node {string} still has hardiness {string}', async (_, id: string, hardiness: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.conditions?.hardiness).toBe(hardiness)
+    })
+    And('node {string} conditions are sourced from {string}', async (_, id: string, source: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.provenance?.conditions?.source).toBe(source)
+    })
+  })
+
+  Scenario('Clearing conditions drops soil and pH but keeps the position half', ({ When, Then, And }) => {
+    When('I clear node {string} conditions', async (_, id: string) => {
+      const found = await db.nodes.get(id)
+      await clearNodeField(id, 'conditions', withoutConditions(found!.conditions))
+    })
+    Then('node {string} has no soil recorded', async (_, id: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.conditions?.soil).toBeUndefined()
+      expect(saved!.conditions?.ph).toBeUndefined()
     })
     And('node {string} still has hardiness {string}', async (_, id: string, hardiness: string) => {
       const saved = await db.nodes.get(id)

@@ -16,3 +16,8 @@ Feature: Edit a plant's 12-month calendar
     Then node "malus-crimson" has its own calendar
     And node "malus-crimson" has harvest in months "8"
     And node "malus-crimson" calendar is sourced from "manual"
+
+  Scenario: Clearing a cultivar's calendar override re-inherits from the species
+    When I give node "malus-crimson" its own calendar then clear it
+    Then node "malus-crimson" has no own calendar
+    And node "malus-crimson" resolves harvest in months "8" from the species

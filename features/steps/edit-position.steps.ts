@@ -5,7 +5,8 @@ import { importFragment } from '../../src/app/dataset'
 import { updateNode } from '../../src/app/editNode'
 import { getLineage } from '../../src/app/plants'
 import { resolveInherited } from '../../src/lib/taxonomy'
-import { applyPosition, toPositionDraft } from '../../src/lib/positionEdit'
+import { applyPosition, toPositionDraft, withoutPosition } from '../../src/lib/positionEdit'
+import { clearNodeField } from '../../src/app/editNode'
 import { lightSet, type LightLevel } from '../../src/lib/conditions'
 import type { SoilType } from '../../src/lib/conditions'
 
@@ -85,6 +86,26 @@ describeFeature(feature, ({ Background, Scenario }) => {
     And('node {string} light is {string}', async (_, id: string, light: string) => {
       const saved = await db.nodes.get(id)
       expect(lightSet(saved!.conditions?.sun).has(light as LightLevel)).toBe(true)
+    })
+    And('node {string} still has soil {string}', async (_, id: string, soil: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.conditions?.soil).toContain(soil as SoilType)
+    })
+    And('node {string} conditions are sourced from {string}', async (_, id: string, source: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.provenance?.conditions?.source).toBe(source)
+    })
+  })
+
+  Scenario('Clearing position drops light and hardiness but keeps the soil half', ({ When, Then, And }) => {
+    When('I clear node {string} position', async (_, id: string) => {
+      const found = await db.nodes.get(id)
+      await clearNodeField(id, 'conditions', withoutPosition(found!.conditions))
+    })
+    Then('node {string} has no light recorded', async (_, id: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.conditions?.sun).toBeUndefined()
+      expect(saved!.conditions?.hardiness).toBeUndefined()
     })
     And('node {string} still has soil {string}', async (_, id: string, soil: string) => {
       const saved = await db.nodes.get(id)

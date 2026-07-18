@@ -1,6 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { toPositionDraft, applyPosition } from './positionEdit'
+import { toPositionDraft, applyPosition, withoutPosition } from './positionEdit'
 import type { Conditions } from '../schema/plant'
+
+describe('withoutPosition', () => {
+  it('keeps the soil half and drops the position facets', () => {
+    const c: Conditions = { soil: ['loam'], moisture: ['moist'], ph: ['neutral'], sun: ['full-sun'], aspect: ['south'], exposure: ['sheltered'], hardiness: 'H5' }
+    expect(withoutPosition(c)).toEqual({ soil: ['loam'], moisture: ['moist'], ph: ['neutral'] })
+  })
+
+  it('returns {} when there is no soil half to keep (caller then removes the field)', () => {
+    expect(withoutPosition({ sun: ['full-sun'], hardiness: 'H5' })).toEqual({})
+    expect(withoutPosition(undefined)).toEqual({})
+  })
+})
 
 describe('toPositionDraft', () => {
   it('normalises free-text position values to the canonical vocab, in order', () => {

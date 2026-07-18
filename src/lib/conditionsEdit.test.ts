@@ -1,6 +1,18 @@
 import { describe, it, expect } from 'vitest'
-import { toConditionsDraft, applyConditions } from './conditionsEdit'
+import { toConditionsDraft, applyConditions, withoutConditions } from './conditionsEdit'
 import type { Conditions } from '../schema/plant'
+
+describe('withoutConditions', () => {
+  it('keeps the position half and drops the soil facets', () => {
+    const c: Conditions = { soil: ['loam'], moisture: ['moist'], ph: ['neutral'], sun: ['full-sun'], aspect: ['south'], exposure: ['sheltered'], hardiness: 'H5' }
+    expect(withoutConditions(c)).toEqual({ sun: ['full-sun'], aspect: ['south'], exposure: ['sheltered'], hardiness: 'H5' })
+  })
+
+  it('returns {} when there is no position half to keep (caller then removes the field)', () => {
+    expect(withoutConditions({ soil: ['loam'], ph: ['neutral'] })).toEqual({})
+    expect(withoutConditions(undefined)).toEqual({})
+  })
+})
 
 describe('toConditionsDraft', () => {
   it('normalises free-text soil/moisture/pH to the canonical vocab, in order', () => {

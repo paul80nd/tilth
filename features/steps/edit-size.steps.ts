@@ -2,7 +2,7 @@ import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 import { db } from '../../src/db/db'
 import { importFragment } from '../../src/app/dataset'
-import { updateNode } from '../../src/app/editNode'
+import { updateNode, clearNodeField } from '../../src/app/editNode'
 import { getLineage } from '../../src/app/plants'
 import { resolveInherited } from '../../src/lib/taxonomy'
 import { fromSizeDraft, toSizeDraft } from '../../src/lib/sizeEdit'
@@ -69,6 +69,23 @@ describeFeature(feature, ({ Background, Scenario }) => {
     And('node {string} size is sourced from {string}', async (_, id: string, source: string) => {
       const saved = await db.nodes.get(id)
       expect(saved!.provenance?.size?.source).toBe(source)
+    })
+  })
+
+  Scenario("Clearing a cultivar's size override re-inherits from the species", ({ When, Then, And }) => {
+    When('I give node {string} its own size then clear it', async (_, id: string) => {
+      const { node: found } = await getLineage(id)
+      await updateNode(found!, { size: { height: '9m' } })
+      await clearNodeField(id, 'size')
+    })
+    Then('node {string} has no own size', async (_, id: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.size).toBeUndefined()
+    })
+    And('node {string} resolves height {string} from the species', async (_, id: string, height: string) => {
+      const { node: found, ancestors } = await getLineage(id)
+      const resolved = resolveInherited(found!, ancestors)
+      expect(resolved.node.size?.height).toBe(height)
     })
   })
 })

@@ -33,3 +33,8 @@ Feature: Seasonal interest
     When I edit node "red-falstaff" seasonal interest to show "flower" coloured "blue" in "spring"
     Then node "red-falstaff" has its own seasonal interest
     And node "red-falstaff" seasonal interest is sourced from "manual"
+
+  Scenario: Clearing a cultivar's seasonal-interest override re-inherits from the species
+    When I give node "red-falstaff" its own seasonal interest then clear it
+    Then node "red-falstaff" has no own seasonal interest
+    And node "red-falstaff" resolves seasonal interest from "malus-domestica"

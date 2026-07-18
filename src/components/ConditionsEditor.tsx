@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Conditions, PlantNode } from '../schema/plant'
-import { updateNode } from '../app/editNode'
+import { updateNode, clearNodeField } from '../app/editNode'
 import { deepEqual } from '../lib/equal'
 import {
   MOISTURE_LEVELS,
@@ -9,9 +9,9 @@ import {
   SOIL_TYPES,
   conditionLabel,
 } from '../lib/conditions'
-import { applyConditions, toConditionsDraft, type ConditionsDraft } from '../lib/conditionsEdit'
+import { applyConditions, toConditionsDraft, withoutConditions, type ConditionsDraft } from '../lib/conditionsEdit'
 import ConditionsCard from './ConditionsCard'
-import { Row, Toggle } from './EditorControls'
+import { Row, Toggle, EditorFooter } from './EditorControls'
 
 // A modal for editing the growing-condition facets (soil · moisture · pH) with a live preview of
 // the exact card the cheatsheet shows. These share the `conditions` field with the Position card
@@ -59,6 +59,12 @@ export function ConditionsEditor({
     })
   }
 
+  // Clearing Conditions drops the node's own soil/moisture/ph but keeps its own position facets
+  // (light/aspect/exposure/hardiness) — if nothing's left, the whole field goes and Conditions
+  // inherits from a parent again. Only enabled when the node asserts a soil facet itself.
+  const own = node.conditions
+  const canClear = !!(own && (own.soil?.length || own.moisture?.length || own.ph?.length))
+
   async function onSave() {
     if (!dirty) return onClose()
     setSaving(true)
@@ -68,6 +74,18 @@ export function ConditionsEditor({
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save.')
+      setSaving(false)
+    }
+  }
+
+  async function onClear() {
+    setSaving(true)
+    setError(null)
+    try {
+      await clearNodeField(node.id, 'conditions', withoutConditions(own))
+      onClose()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not clear.')
       setSaving(false)
     }
   }
@@ -132,23 +150,7 @@ export function ConditionsEditor({
 
         {error && <p className="mt-3 text-sm text-accent-ink">{error}</p>}
 
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving || !dirty}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+        <EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />
       </div>
     </div>,
     document.body,

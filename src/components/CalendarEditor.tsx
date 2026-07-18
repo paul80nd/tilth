@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { PlantNode, PhaseSpan } from '../schema/plant'
-import { updateNode } from '../app/editNode'
+import { updateNode, clearNodeField } from '../app/editNode'
 import { deepEqual } from '../lib/equal'
 import { MONTH_INITIALS, MONTH_NAMES, PHASE_META, PHASE_ORDER } from '../lib/calendar'
 import { toCalendarDraft, fromCalendarDraft, type CalendarDraft } from '../lib/calendarEdit'
 import CalendarBar from './CalendarBar'
+import { EditorFooter } from './EditorControls'
 
 // A modal for editing the 12-month activity calendar — a row per phase code (sow, prune,
 // harvest…) with a tick per month it happens and an optional note — alongside a LIVE preview of
@@ -68,6 +69,9 @@ export function CalendarEditor({
     setDraft((d) => ({ ...d, [code]: { ...d[code], note } }))
   }
 
+  // Only the node's OWN calendar can be cleared; an inherited one has nothing to remove here.
+  const canClear = node.calendar !== undefined
+
   async function onSave() {
     if (!dirty) return onClose()
     setSaving(true)
@@ -77,6 +81,18 @@ export function CalendarEditor({
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save.')
+      setSaving(false)
+    }
+  }
+
+  async function onClear() {
+    setSaving(true)
+    setError(null)
+    try {
+      await clearNodeField(node.id, 'calendar')
+      onClose()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not clear.')
       setSaving(false)
     }
   }
@@ -168,23 +184,7 @@ export function CalendarEditor({
 
         {error && <p className="mt-3 text-sm text-accent-ink">{error}</p>}
 
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving || !dirty}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+        <EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />
       </div>
     </div>,
     document.body,

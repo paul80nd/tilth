@@ -2,7 +2,7 @@ import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 import { db } from '../../src/db/db'
 import { importFragment } from '../../src/app/dataset'
-import { updateNode } from '../../src/app/editNode'
+import { updateNode, clearNodeField } from '../../src/app/editNode'
 import { getLineage } from '../../src/app/plants'
 import { resolveInherited } from '../../src/lib/taxonomy'
 import { toCalendarDraft, fromCalendarDraft } from '../../src/lib/calendarEdit'
@@ -82,6 +82,23 @@ describeFeature(feature, ({ Background, Scenario }) => {
     And('node {string} calendar is sourced from {string}', async (_, id: string, source: string) => {
       const saved = await db.nodes.get(id)
       expect(saved!.provenance?.calendar?.source).toBe(source)
+    })
+  })
+
+  Scenario("Clearing a cultivar's calendar override re-inherits from the species", ({ When, Then, And }) => {
+    When('I give node {string} its own calendar then clear it', async (_, id: string) => {
+      const { node: found } = await getLineage(id)
+      await updateNode(found!, { calendar: [{ code: 'prune', months: [3] }] })
+      await clearNodeField(id, 'calendar')
+    })
+    Then('node {string} has no own calendar', async (_, id: string) => {
+      const saved = await db.nodes.get(id)
+      expect(saved!.calendar).toBeUndefined()
+    })
+    And('node {string} resolves harvest in months {string} from the species', async (_, id: string, monthList: string) => {
+      const { node: found, ancestors } = await getLineage(id)
+      const resolved = resolveInherited(found!, ancestors)
+      expect(resolved.node.calendar?.find((s) => s.code === 'harvest')?.months).toEqual(months(monthList))
     })
   })
 })

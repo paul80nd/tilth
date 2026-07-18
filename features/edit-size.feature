@@ -17,3 +17,8 @@ Feature: Edit a plant's ultimate size
     Then node "malus-crimson" has its own size
     And node "malus-crimson" height is "2m"
     And node "malus-crimson" size is sourced from "manual"
+
+  Scenario: Clearing a cultivar's size override re-inherits from the species
+    When I give node "malus-crimson" its own size then clear it
+    Then node "malus-crimson" has no own size
+    And node "malus-crimson" resolves height "2-4m" from the species

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { PlantNode, SeasonalInterest } from '../schema/plant'
-import { updateNode } from '../app/editNode'
+import { updateNode, clearNodeField } from '../app/editNode'
 import { seasonalInterest } from '../lib/calendar'
 import { deepEqual } from '../lib/equal'
 import { COLOUR_WORDS } from '../lib/colour'
@@ -15,6 +15,7 @@ import {
 import { INTEREST_META } from '../lib/calendar'
 import { SeasonalIcon } from './icons'
 import SeasonStrip from './SeasonStrip'
+import { EditorFooter } from './EditorControls'
 
 // A modal for editing a plant's seasonal-interest grid — a cell per season × part (foliage ·
 // flower · fruit · stem) with an on-show tick and a comma-separated colour field — alongside a
@@ -55,6 +56,7 @@ export function SeasonalInterestEditor({
   const next = useMemo(() => fromDraft(draft), [draft])
   const preview = useMemo(() => seasonalInterest(next), [next])
   const dirty = !deepEqual(next, initial ?? {})
+  const canClear = node.seasonalInterest !== undefined
 
   function setCell(season: (typeof EDIT_SEASONS)[number], part: (typeof EDIT_PARTS)[number], patch: Partial<InterestDraft[typeof season][typeof part]>) {
     setDraft((d) => ({
@@ -72,6 +74,18 @@ export function SeasonalInterestEditor({
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save.')
+      setSaving(false)
+    }
+  }
+
+  async function onClear() {
+    setSaving(true)
+    setError(null)
+    try {
+      await clearNodeField(node.id, 'seasonalInterest')
+      onClose()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not clear.')
       setSaving(false)
     }
   }
@@ -163,23 +177,7 @@ export function SeasonalInterestEditor({
 
         {error && <p className="mt-3 text-sm text-accent-ink">{error}</p>}
 
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving || !dirty}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+        <EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />
       </div>
     </div>,
     document.body,

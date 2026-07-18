@@ -20,3 +20,9 @@ Feature: Edit a plant's growing conditions
     And node "rosa-crimson" has soil "clay"
     And node "rosa-crimson" still has hardiness "H4"
     And node "rosa-crimson" conditions are sourced from "manual"
+
+  Scenario: Clearing conditions drops soil and pH but keeps the position half
+    When I clear node "rosa" conditions
+    Then node "rosa" has no soil recorded
+    And node "rosa" still has hardiness "H4"
+    And node "rosa" conditions are sourced from "manual"

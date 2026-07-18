@@ -35,6 +35,19 @@ export function toConditionsDraft(conditions: Conditions | undefined): Condition
   }
 }
 
+/** Drop the Conditions facets (soil/moisture/ph) from a node's own conditions, keeping the
+ *  Position half (light/aspect/exposure/hardiness). Used when clearing the Conditions card: the
+ *  result is written back (or, when empty, the whole `conditions` field is removed so Conditions
+ *  inherits from a parent again). */
+export function withoutConditions(conditions: Conditions | undefined): Conditions {
+  const out: Conditions = {}
+  if (conditions?.sun) out.sun = conditions.sun
+  if (conditions?.aspect) out.aspect = conditions.aspect
+  if (conditions?.exposure) out.exposure = conditions.exposure
+  if (conditions?.hardiness) out.hardiness = conditions.hardiness
+  return out
+}
+
 /** Fold a Conditions draft onto a base `Conditions`, preserving the Position facets
  *  (light/aspect/exposure/hardiness) and omitting any empty facet. */
 export function applyConditions(base: Conditions | undefined, draft: ConditionsDraft): Conditions {

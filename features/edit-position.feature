@@ -20,3 +20,9 @@ Feature: Edit a plant's position
     And node "rosa-crimson" light is "partial-shade"
     And node "rosa-crimson" still has soil "loam"
     And node "rosa-crimson" conditions are sourced from "manual"
+
+  Scenario: Clearing position drops light and hardiness but keeps the soil half
+    When I clear node "rosa" position
+    Then node "rosa" has no light recorded
+    And node "rosa" still has soil "loam"
+    And node "rosa" conditions are sourced from "manual"
