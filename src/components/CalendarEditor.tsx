@@ -60,6 +60,10 @@ export function CalendarEditor({
     })
   }
 
+  function setAllMonths(code: (typeof PHASE_ORDER)[number], on: boolean) {
+    setDraft((d) => ({ ...d, [code]: { ...d[code], months: Array(12).fill(on) } }))
+  }
+
   function setNote(code: (typeof PHASE_ORDER)[number], note: string) {
     setDraft((d) => ({ ...d, [code]: { ...d[code], note } }))
   }
@@ -113,7 +117,7 @@ export function CalendarEditor({
 
         {/* The grid of controls: a row per phase code, a checkbox per month, then a note. */}
         <div className="overflow-x-auto">
-          <div className="grid min-w-[44rem] grid-cols-[8.5rem_repeat(12,minmax(0,1fr))_9rem] items-center gap-x-1 gap-y-1">
+          <div className="grid min-w-[46rem] grid-cols-[10.5rem_repeat(12,minmax(0,1fr))_9rem] items-center gap-x-1 gap-y-1">
             <div />
             {MONTH_INITIALS.map((initial, i) => (
               <div key={i} className="text-center text-[0.65rem] font-semibold uppercase tracking-wide text-subtle" title={MONTH_NAMES[i]}>
@@ -122,11 +126,21 @@ export function CalendarEditor({
             ))}
             <div className="pl-2 text-[0.65rem] font-semibold uppercase tracking-wide text-subtle">Note</div>
 
-            {PHASE_ORDER.map((code) => (
+            {PHASE_ORDER.map((code) => {
+              const allOn = draft[code].months.every(Boolean)
+              return (
               <div key={code} className="contents">
                 <div className="flex items-center gap-1.5 pr-2 text-sm text-muted">
                   <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ backgroundColor: tokenColour(code) }} aria-hidden="true" />
-                  <span className="truncate">{PHASE_META[code].label}</span>
+                  <span className="min-w-0 flex-1 truncate">{PHASE_META[code].label}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAllMonths(code, !allOn)}
+                    className="flex-none text-[0.6rem] font-medium uppercase tracking-wide text-brand-ink hover:underline"
+                    title={allOn ? 'Clear every month' : 'Select every month'}
+                  >
+                    {allOn ? 'None' : 'All'}
+                  </button>
                 </div>
                 {draft[code].months.map((on, i) => (
                   <div key={i} className="flex justify-center">
@@ -147,7 +161,8 @@ export function CalendarEditor({
                   className="ml-2 w-full rounded-md border border-line bg-card px-2 py-1 text-sm placeholder:text-subtle"
                 />
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
