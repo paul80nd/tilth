@@ -17,6 +17,8 @@ import { PositionEditor } from './PositionEditor'
 import { ConditionsEditor } from './ConditionsEditor'
 import { SizeEditor } from './SizeEditor'
 import { CalendarEditor } from './CalendarEditor'
+import { EdibilityEditor } from './EdibilityEditor'
+import { FactsEditor } from './FactsEditor'
 import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -47,6 +49,8 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
   const [editingPosition, setEditingPosition] = useState(false)
   const [editingConditions, setEditingConditions] = useState(false)
   const [editingSize, setEditingSize] = useState(false)
+  const [editingEdibility, setEditingEdibility] = useState(false)
+  const [editingFacts, setEditingFacts] = useState(false)
   const { node: resolved, inheritedFrom } = resolveInherited(node, ancestors)
   const { plant, variety } = displayName(node)
   const botanical = botanicalLabel(resolved)
@@ -226,7 +230,20 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
         </div>
 
         <div className="lg:col-span-2">
-          <Tile title="Edibility" note={inheritedNote('edible') ?? inheritedNote('toxicity')} fill>
+          <Tile
+            title="Edibility"
+            note={inheritedNote('edible') ?? inheritedNote('toxicity')}
+            action={
+              <button
+                type="button"
+                onClick={() => setEditingEdibility(true)}
+                className="text-xs font-medium text-brand-ink hover:underline"
+              >
+                Edit
+              </button>
+            }
+            fill
+          >
             <EdibilityFacts edible={resolved.edible} toxicity={resolved.toxicity} />
           </Tile>
         </div>
@@ -261,7 +278,20 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
         </div>
 
         <div className="lg:col-span-2">
-          <Tile title="More facts" note={hasFacts ? inheritedNote('facts') : undefined} fill>
+          <Tile
+            title="More facts"
+            note={hasFacts ? inheritedNote('facts') : undefined}
+            action={
+              <button
+                type="button"
+                onClick={() => setEditingFacts(true)}
+                className="text-xs font-medium text-brand-ink hover:underline"
+              >
+                Edit
+              </button>
+            }
+            fill
+          >
             {hasFacts ? (
               <div className="flex flex-wrap gap-2">
                 {Object.entries(resolved.facts!).map(([key, value]) => (
@@ -370,6 +400,19 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
 
       {editingSize && (
         <SizeEditor node={node} size={resolved.size} onClose={() => setEditingSize(false)} />
+      )}
+
+      {editingEdibility && (
+        <EdibilityEditor
+          node={node}
+          edible={resolved.edible}
+          toxicity={resolved.toxicity}
+          onClose={() => setEditingEdibility(false)}
+        />
+      )}
+
+      {editingFacts && (
+        <FactsEditor node={node} facts={resolved.facts} onClose={() => setEditingFacts(false)} />
       )}
     </>
   )

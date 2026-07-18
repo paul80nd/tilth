@@ -74,6 +74,28 @@ export async function clearNodeField(id: string, field: keyof PlantNode, replace
 }
 
 /**
+ * Clear several of a node's OWN fields at once so a multi-field card (e.g. Edibility, which owns
+ * both `edible` and `toxicity`) re-inherits from an ancestor. Like `clearNodeField` but for a set,
+ * in one transaction: drops each field and its provenance, and marks the store user-owned. A field
+ * the node doesn't own is a no-op.
+ */
+export async function clearNodeFields(id: string, fields: Array<keyof PlantNode>): Promise<void> {
+  await db.transaction('rw', db.nodes, db.settings, async () => {
+    const node = await db.nodes.get(id)
+    if (!node) return
+    const provenance: Record<string, FieldSource> = { ...(node.provenance ?? {}) }
+    const bag = node as unknown as Record<string, unknown>
+    for (const field of fields) {
+      delete bag[field]
+      delete provenance[field]
+    }
+    node.provenance = provenance
+    await db.nodes.put(node)
+    await db.settings.put({ key: 'dataSource', value: 'user' })
+  })
+}
+
+/**
  * Delete a node and mark the store user-owned so a demo re-seed can't resurrect it. Children
  * are left untouched (their `parentId` dangles) — the caller should confirm via `childrenOf`
  * first. Not routed through the merge: deletion has no provenance.
