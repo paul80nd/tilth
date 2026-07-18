@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Bed, Holding, Rect } from '../schema/userData'
 import type { PlantNode } from '../schema/plant'
@@ -20,7 +20,7 @@ import {
 } from '../app/garden'
 import { displayLabel } from '../lib/naming'
 import { clampRect } from '../lib/plot'
-import PlotCanvas, { type Selection } from '../components/plot/PlotCanvas'
+import PlotCanvas, { type Selection, type PlotCanvasHandle } from '../components/plot/PlotCanvas'
 import Palette from '../components/plot/Palette'
 import Inspector from '../components/plot/Inspector'
 import { PlotSizeModal } from '../components/plot/PlotSizeModal'
@@ -41,6 +41,7 @@ export default function GardenPage() {
   const [brushNodeId, setBrushNodeId] = useState<string | null>(null)
   const [snap, setSnap] = useState(true)
   const [plotModalOpen, setPlotModalOpen] = useState(false)
+  const canvasRef = useRef<PlotCanvasHandle>(null)
 
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const placements = useMemo(() => holdings.filter((h) => h.bedId && h.region), [holdings])
@@ -64,9 +65,13 @@ export default function GardenPage() {
   }, [placements])
 
   async function handleAddBed() {
-    // Drop a fresh 2×1 m bed near the top-left, offset per existing bed so they don't stack exactly.
+    // Drop a fresh 2×1 m bed centred on the current view (falls back to the plot centre before the
+    // canvas has mounted, e.g. the first bed from the empty state).
     const n = beds.length
-    const rect = clampRect({ x: 0.5 + (n % 4) * 0.4, y: 0.5 + n * 1.4, width: 2, height: 1 }, plot.width, plot.height)
+    const width = 2
+    const height = 1
+    const c = canvasRef.current?.viewCentre() ?? { x: plot.width / 2, y: plot.height / 2 }
+    const rect = clampRect({ x: c.x - width / 2, y: c.y - height / 2, width, height }, plot.width, plot.height)
     const bed = await addBed({ name: `Bed ${n + 1}`, kind: 'raised-bed', spacing: 'free', ...rect })
     setSelection({ type: 'bed', id: bed.id })
   }
@@ -132,6 +137,7 @@ export default function GardenPage() {
         ) : (
           <div className="min-h-0 flex-1">
             <PlotCanvas
+              ref={canvasRef}
               beds={beds}
               placements={placements}
               nodesById={nodesById}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type { Bed, Holding, Rect } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
@@ -37,6 +37,13 @@ const DEFAULT_COLOR = '#94a3b8'
 
 export type Selection = { type: 'bed' | 'placement'; id: string } | null
 
+/** Imperative handle so the page can drop a new bed at the middle of what's on screen. */
+export interface PlotCanvasHandle {
+  /** The plot-metre point at the centre of the visible canvas (falls back to the plot centre
+   *  before the canvas has mounted). */
+  viewCentre: () => { x: number; y: number }
+}
+
 export interface PlotCanvasProps {
   beds: Bed[]
   /** Placed holdings (those with a `bedId` + `region`). */
@@ -74,20 +81,23 @@ interface Drag {
 const catColor = (node?: PlantNode) => (node?.category && CAT_COLOR[node.category]) || DEFAULT_COLOR
 const footprintOf = (h: Holding) => h.footprint ?? 0.3
 
-export default function PlotCanvas({
-  beds,
-  placements,
-  nodesById,
-  plotW,
-  plotH,
-  snap,
-  selection,
-  brushNodeId,
-  onSelect,
-  onMoveBed,
-  onMovePlacement,
-  onPlace,
-}: PlotCanvasProps) {
+function PlotCanvas(
+  {
+    beds,
+    placements,
+    nodesById,
+    plotW,
+    plotH,
+    snap,
+    selection,
+    brushNodeId,
+    onSelect,
+    onMoveBed,
+    onMovePlacement,
+    onPlace,
+  }: PlotCanvasProps,
+  ref: React.Ref<PlotCanvasHandle>,
+) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [z, setZ] = useState(readZoom)
   const [pan, setPan] = useState({ x: 40, y: 40 })
@@ -105,6 +115,15 @@ export default function PlotCanvas({
   const ppm = BASE_PPM * z
   const toPx = (mx: number, my: number) => ({ x: pan.x + mx * ppm, y: pan.y + my * ppm })
   const len = (m: number) => m * ppm
+
+  useImperativeHandle(ref, () => ({
+    viewCentre: () => {
+      const el = svgRef.current
+      if (!el) return { x: plotW / 2, y: plotH / 2 }
+      const r = el.getBoundingClientRect()
+      return { x: (r.width / 2 - pan.x) / ppm, y: (r.height / 2 - pan.y) / ppm }
+    },
+  }))
 
   /** Pointer client coords → plot-space metres. */
   function toMetres(e: React.PointerEvent): { mx: number; my: number } {
@@ -390,3 +409,5 @@ export default function PlotCanvas({
     </div>
   )
 }
+
+export default forwardRef(PlotCanvas)
