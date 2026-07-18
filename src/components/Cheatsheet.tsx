@@ -16,6 +16,7 @@ import { SeasonalInterestEditor } from './SeasonalInterestEditor'
 import { PositionEditor } from './PositionEditor'
 import { ConditionsEditor } from './ConditionsEditor'
 import { SizeEditor } from './SizeEditor'
+import { CalendarEditor } from './CalendarEditor'
 import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -41,6 +42,7 @@ export function usePlantDetail(id: string): PlantDetail | undefined {
  *  tile-grid of facets, and the sources footer. Chrome (back / edit / delete / close) lives with
  *  the caller (the page or the modal) so this stays purely presentational. */
 export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[] }) {
+  const [editingCalendar, setEditingCalendar] = useState(false)
   const [editingSeasonal, setEditingSeasonal] = useState(false)
   const [editingPosition, setEditingPosition] = useState(false)
   const [editingConditions, setEditingConditions] = useState(false)
@@ -116,7 +118,18 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
         </header>
 
         <div className="lg:col-span-4">
-          <Tile bleed={!!resolved.calendar}>
+          <Tile
+            action={
+              <button
+                type="button"
+                onClick={() => setEditingCalendar(true)}
+                className="text-xs font-medium text-brand-ink hover:underline"
+              >
+                Edit
+              </button>
+            }
+            bleed={!!resolved.calendar}
+          >
             {resolved.calendar ? (
               <CalendarBar calendar={resolved.calendar} month={CURRENT_MONTH} note={inheritedNote('calendar')} />
             ) : (
@@ -321,6 +334,14 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
             })}
           </div>
         </footer>
+      )}
+
+      {editingCalendar && (
+        <CalendarEditor
+          node={node}
+          calendar={resolved.calendar}
+          onClose={() => setEditingCalendar(false)}
+        />
       )}
 
       {editingSeasonal && (
