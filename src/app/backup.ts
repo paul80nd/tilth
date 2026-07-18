@@ -15,21 +15,22 @@ import type { BackupSnapshot } from '../schema/userData'
 export async function exportBackup(
   exportedAt: string = new Date().toISOString(),
 ): Promise<BackupSnapshot> {
-  const [nodes, guides, tasks, holdings, jobLog, settings] = await db.transaction(
+  const [nodes, guides, tasks, holdings, beds, jobLog, settings] = await db.transaction(
     'r',
-    [db.nodes, db.guides, db.tasks, db.holdings, db.jobLog, db.settings],
+    [db.nodes, db.guides, db.tasks, db.holdings, db.beds, db.jobLog, db.settings],
     () =>
       Promise.all([
         db.nodes.toArray(),
         db.guides.toArray(),
         db.tasks.toArray(),
         db.holdings.toArray(),
+        db.beds.toArray(),
         db.jobLog.toArray(),
         db.settings.toArray(),
       ]),
   )
 
-  return { version: BACKUP_VERSION, exportedAt, nodes, guides, tasks, holdings, jobLog, settings }
+  return { version: BACKUP_VERSION, exportedAt, nodes, guides, tasks, holdings, beds, jobLog, settings }
 }
 
 export interface RestoreResult {
@@ -51,13 +52,14 @@ export async function importBackup(input: unknown): Promise<RestoreResult> {
 
   await db.transaction(
     'rw',
-    [db.nodes, db.guides, db.tasks, db.holdings, db.jobLog, db.settings],
+    [db.nodes, db.guides, db.tasks, db.holdings, db.beds, db.jobLog, db.settings],
     async () => {
       await Promise.all([
         db.nodes.clear(),
         db.guides.clear(),
         db.tasks.clear(),
         db.holdings.clear(),
+        db.beds.clear(),
         db.jobLog.clear(),
         db.settings.clear(),
       ])
@@ -66,6 +68,7 @@ export async function importBackup(input: unknown): Promise<RestoreResult> {
         db.guides.bulkPut(snapshot.guides),
         db.tasks.bulkPut(snapshot.tasks),
         db.holdings.bulkPut(snapshot.holdings),
+        db.beds.bulkPut(snapshot.beds),
         db.jobLog.bulkPut(snapshot.jobLog),
         db.settings.bulkPut(snapshot.settings),
       ])

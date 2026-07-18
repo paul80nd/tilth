@@ -9,8 +9,13 @@
 
 import type { BackupSnapshot, Setting } from '../schema/userData'
 
-/** Current backup envelope version. Bump when the snapshot shape changes incompatibly. */
-export const BACKUP_VERSION = 1
+/** Current backup envelope version (what a fresh Save writes). Bump when the snapshot shape
+ *  changes. v2 added `beds`. */
+export const BACKUP_VERSION = 2
+
+/** Envelope versions the restore path accepts. Older files are read forward — an absent table
+ *  (e.g. `beds` in a v1 file) normalises to an empty array. */
+const SUPPORTED_VERSIONS = [1, 2]
 
 export interface BackupParseResult {
   /** The validated snapshot, ready to restore. */
@@ -56,8 +61,10 @@ export function parseBackup(input: unknown): BackupParseResult {
   }
 
   if (!isObject(data)) throw new Error('backup is not an object')
-  if (data.version !== BACKUP_VERSION) {
-    throw new Error(`unsupported backup version ${String(data.version)} (expected ${BACKUP_VERSION})`)
+  if (typeof data.version !== 'number' || !SUPPORTED_VERSIONS.includes(data.version)) {
+    throw new Error(
+      `unsupported backup version ${String(data.version)} (expected ${SUPPORTED_VERSIONS.join(' or ')})`,
+    )
   }
   // `nodes` is the signature table — its absence means this isn't our backup.
   if (!Array.isArray(data.nodes)) {
@@ -65,6 +72,7 @@ export function parseBackup(input: unknown): BackupParseResult {
   }
 
   const warnings: string[] = []
+  // Normalise every accepted version up to the current shape — a v1 file simply has no `beds`.
   const snapshot: BackupSnapshot = {
     version: BACKUP_VERSION,
     exportedAt: typeof data.exportedAt === 'string' ? data.exportedAt : '',
@@ -72,6 +80,7 @@ export function parseBackup(input: unknown): BackupParseResult {
     guides: keepRecords(data.guides, ['id', 'title', 'kind'], 'guide', warnings),
     tasks: keepRecords(data.tasks, ['id', 'action'], 'task', warnings),
     holdings: keepRecords(data.holdings, ['id', 'nodeId', 'status'], 'holding', warnings),
+    beds: keepRecords(data.beds, ['id', 'name', 'kind'], 'bed', warnings),
     jobLog: keepRecords(data.jobLog, ['id', 'jobKey', 'date'], 'job-log', warnings),
     settings: keepRecords<Setting>(data.settings, ['key'], 'setting', warnings),
   }

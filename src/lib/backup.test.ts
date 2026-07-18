@@ -3,7 +3,7 @@ import { parseBackup } from './backup'
 import type { BackupSnapshot } from '../schema/userData'
 
 const full: BackupSnapshot = {
-  version: 1,
+  version: 2,
   exportedAt: '2026-07-15T00:00:00.000Z',
   nodes: [
     {
@@ -16,6 +16,7 @@ const full: BackupSnapshot = {
   guides: [],
   tasks: [],
   holdings: [{ id: 'h1', nodeId: 'rhubarb', status: 'growing' }],
+  beds: [{ id: 'b1', name: 'Raised bed 1', kind: 'raised-bed', x: 0, y: 0, width: 2, height: 1, spacing: 'grid' }],
   jobLog: [],
   settings: [{ key: 'dataSource', value: 'user' }],
 }
@@ -41,6 +42,19 @@ describe('parseBackup', () => {
     expect(() => parseBackup(42)).toThrow(/not an object/)
   })
 
+  it('preserves beds', () => {
+    const { snapshot } = parseBackup(full)
+    expect(snapshot.beds[0].name).toBe('Raised bed 1')
+  })
+
+  it('reads a v1 file forward, defaulting beds to empty', () => {
+    const { version: _v, beds: _b, ...v1 } = full
+    const { snapshot } = parseBackup({ ...v1, version: 1 })
+    expect(snapshot.version).toBe(2)
+    expect(snapshot.beds).toEqual([])
+    expect(snapshot.nodes).toHaveLength(1)
+  })
+
   it('throws on an unsupported version', () => {
     expect(() => parseBackup({ ...full, version: 99 })).toThrow(/unsupported backup version 99/)
   })
@@ -60,9 +74,10 @@ describe('parseBackup', () => {
   })
 
   it('defaults absent optional tables to empty arrays', () => {
-    const { snapshot } = parseBackup({ version: 1, nodes: [] })
+    const { snapshot } = parseBackup({ version: 2, nodes: [] })
     expect(snapshot.guides).toEqual([])
     expect(snapshot.holdings).toEqual([])
+    expect(snapshot.beds).toEqual([])
     expect(snapshot.settings).toEqual([])
     expect(snapshot.exportedAt).toBe('')
   })

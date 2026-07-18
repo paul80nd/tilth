@@ -7,6 +7,30 @@ feature spec; private rationale (the real sources, personal curation rules) stay
 
 Each entry: the decision, *why*, and what it superseded if anything.
 
+## 2026-07-18 — The garden planner: a placement is a holding; beds support grid + free spacing
+
+"My garden" grows into a **visual garden planner** (a plot canvas of beds you drop plants onto
+at their spacing). Two calls shape the model — full write-up in
+[`docs/garden-planner-spec.md`](garden-planner-spec.md).
+
+**A placement _is_ a holding** (unify), not a separate per-year "plan" entity. Dropping a plant
+on a bed creates/updates a `Holding` that gains optional spatial fields (`bedId`, `region`,
+`footprint`, `year`). *Why:* a parallel Plan store would duplicate the holding and need constant
+sync (a placement and "the thing I'm growing" are the same fact); the planning dimension rides on
+a holding's `year` + `status` instead. An unplaced holding (no `bedId`) is exactly today's
+flat-list entry, so nothing regresses. Cost: "designing next year" and "what's in the ground now"
+share a store, disambiguated by `year`/`status` rather than by being separate things.
+
+**Beds carry a spacing model, chosen per bed** — a **square-foot grid** (fixed cells, N plants
+per cell by density) _or_ **free spacing** (a dropped block's area ÷ the plant's footprint gives
+the count). *Why:* grid suits tidy raised beds, free suits borders/rows/trees; a real garden
+mixes both, so it's a per-bed facet, not one global mode. Spacing/rotation/calendar all reuse
+data we already hold — rotation from botanical **family**, the calendar from the `PhaseSpan`s —
+so the only genuinely new layer is spatial (a `beds` store + placement fields on `Holding`).
+
+New store `beds` + Dexie `version(2)`; backup snapshot → `version: 2` (gains `beds`, tolerant of
+v1). Phased build (canvas → calendar/rotation → succession/companion → journal) in the spec.
+
 ## 2026-07-18 — Deep-merge nested objects on import; the hand-edit path replaces
 
 Refines *Property-level merge imports*. A nested **object** field (`conditions`, `size`,

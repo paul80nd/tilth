@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie'
 import type { PlantNode, Guide, TaskTemplate } from '../schema/plant'
-import type { Holding, JobLog, Setting } from '../schema/userData'
+import type { Bed, Holding, JobLog, Setting } from '../schema/userData'
 
 // IndexedDB working store. The demo seed is disposable (re-importable), but once a gardener
 // hand-authors or merge-imports plants, the reference data (nodes/guides/tasks) is their own
@@ -13,6 +13,7 @@ export class TilthDB extends Dexie {
   tasks!: Table<TaskTemplate, string>
   // User data (precious; durable backup is an exported JSON).
   holdings!: Table<Holding, string>
+  beds!: Table<Bed, string>
   jobLog!: Table<JobLog, string>
   settings!: Table<Setting, string>
 
@@ -27,6 +28,13 @@ export class TilthDB extends Dexie {
       holdings: 'id, nodeId, status',
       jobLog: 'id, jobKey, holdingId, nodeId',
       settings: 'key',
+    })
+    // v2 — the garden-planner layer: a `beds` store, and `bedId` on holdings so a bed's
+    // placements can be queried. The new Holding placement fields are non-indexed, so existing
+    // records need no migration (they simply lack them). See docs/garden-planner-spec.md.
+    this.version(2).stores({
+      holdings: 'id, nodeId, status, bedId',
+      beds: 'id',
     })
   }
 }
