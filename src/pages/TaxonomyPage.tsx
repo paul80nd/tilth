@@ -8,6 +8,7 @@ import { SeasonCell } from '../components/SeasonStrip'
 import { LightCell, AspectCell, ExposureCell, HardinessCell } from '../components/PositionCard'
 import { SoilCell, MoistureCell, PhCell } from '../components/ConditionsCard'
 import { SizeCell, SizeDims } from '../components/SizeCard'
+import { CalendarCell } from '../components/CalendarBar'
 import Chip from '../components/Chip'
 import { CheatsheetModal } from '../components/CheatsheetModal'
 import { FilterPopover } from '../components/FilterPopover'
@@ -41,14 +42,16 @@ const POSITION = ['Light', 'Aspect', 'Exposure', 'Hardiness']
 const CONDITIONS = ['Soil', 'Moist', 'pH'] // 'Moist' — 'Moisture' overflows the glyph cell
 const TAGW = 190 // the Tags column (chips wrap within the row); wider than a facet cell
 const SIZEW = 168 // the Size column: a to-scale glyph + height/spread/time stacked beside it
+const CALW = 176 // the Calendar column: a compact 6×2 month grid of stacked phase lanes
 
 // The optional column groups, toggled by the display-options control (persisted between visits).
 // Tags and Size are single-column groups (a header spanning both header rows, no sub-columns);
 // the facet groups (season/position/conditions) fan out into per-facet glyph sub-columns.
-type ColKey = 'tags' | 'season' | 'position' | 'conditions' | 'size'
-const SINGLE_COL: Partial<Record<ColKey, number>> = { tags: TAGW, size: SIZEW }
+type ColKey = 'tags' | 'calendar' | 'season' | 'position' | 'conditions' | 'size'
+const SINGLE_COL: Partial<Record<ColKey, number>> = { tags: TAGW, calendar: CALW, size: SIZEW }
 const SECTIONS: Array<{ key: ColKey; label: string; span: number }> = [
   { key: 'tags', label: 'Tags', span: 1 },
+  { key: 'calendar', label: 'Calendar', span: 1 },
   { key: 'season', label: 'Seasonal interest', span: SEASONS.length },
   { key: 'position', label: 'Position', span: POSITION.length },
   { key: 'conditions', label: 'Conditions', span: CONDITIONS.length },
@@ -56,7 +59,7 @@ const SECTIONS: Array<{ key: ColKey; label: string; span: number }> = [
 ]
 type ColVisibility = Record<ColKey, boolean>
 // All groups on by default — Tags carries category (the old frozen Cat column folded into it).
-const DEFAULT_COLS: ColVisibility = { tags: true, season: true, position: true, conditions: true, size: true }
+const DEFAULT_COLS: ColVisibility = { tags: true, calendar: true, season: true, position: true, conditions: true, size: true }
 
 /** Count the plants beneath a tree row for the "· N" tally on a section-marker banner — every
  *  descendant that is itself a plant, i.e. not a grouping banner. A genus-LEAF (a genus with
@@ -231,7 +234,7 @@ export default function TaxonomyPage() {
       {label}
     </th>
   )
-  const SECTION_COLS: Record<ColKey, string[]> = { tags: [], season: SEASONS, position: POSITION, conditions: CONDITIONS, size: [] }
+  const SECTION_COLS: Record<ColKey, string[]> = { tags: [], calendar: [], season: SEASONS, position: POSITION, conditions: CONDITIONS, size: [] }
   // Frozen identity header cells (sticky both top and left → corner, above everything).
   const frozenHead = (label: string, key: keyof typeof COLW, row: 0 | 1) => (
     <th
@@ -362,6 +365,8 @@ export default function TaxonomyPage() {
               const seasonFrom = ancLabel(inh.seasonalInterest)
               const condFrom = ancLabel(inh.conditions)
               const sizeFrom = ancLabel(inh.size)
+              const calFrom = ancLabel(inh.calendar)
+              const hasCal = !!(r.calendar && r.calendar.length)
               const hasSize = !!(r.size && (r.size.height || r.size.spread || r.size.timeToSize))
               return (
                 <tr key={node.id} className="hover:bg-sunken/40">
@@ -396,6 +401,19 @@ export default function TaxonomyPage() {
                   {cols.tags && (
                     <td className="border-b border-l border-divider px-2 py-1 align-middle" style={{ width: TAGW, minWidth: TAGW, maxWidth: TAGW }}>
                       <TagList node={r} inheritedFrom={inh} />
+                    </td>
+                  )}
+                  {cols.calendar && (
+                    <td
+                      className="border-b border-l border-divider px-2 align-middle"
+                      style={{ width: CALW, minWidth: CALW, maxWidth: CALW }}
+                      title={hasCal && calFrom ? `Inherited from ${calFrom}` : undefined}
+                    >
+                      {hasCal ? (
+                        <div className={calFrom ? 'opacity-40' : ''}>
+                          <CalendarCell calendar={r.calendar!} width={CALW - 16} />
+                        </div>
+                      ) : null}
                     </td>
                   )}
                   {cols.season &&
