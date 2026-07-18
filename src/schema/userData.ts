@@ -21,7 +21,7 @@ export interface Bed {
   name: string
   /** Display + (Phase 3) date behaviour — a greenhouse/coldframe shifts sow/harvest windows;
    *  a path/structure is a bed you don't plant in. */
-  kind: 'bed' | 'raised-bed' | 'container' | 'greenhouse' | 'coldframe' | 'border' | 'structure'
+  kind: 'bed' | 'raised-bed' | 'container' | 'patio' | 'greenhouse' | 'coldframe' | 'border' | 'structure'
   /** Placement + size on the plot canvas, metres (top-left origin, +x right / +y down). */
   x: number
   y: number

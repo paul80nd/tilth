@@ -20,7 +20,7 @@ export interface InspectorProps {
   onUnplace: () => void
 }
 
-const BED_KINDS: Bed['kind'][] = ['bed', 'raised-bed', 'container', 'greenhouse', 'coldframe', 'border', 'structure']
+const BED_KINDS: Bed['kind'][] = ['bed', 'raised-bed', 'container', 'patio', 'greenhouse', 'coldframe', 'border', 'structure']
 
 export default function Inspector({ bed, placement, node, snapStep, onBedChange, onRemoveBed, onQuantityChange, onUnplace }: InspectorProps) {
   if (bed) {
