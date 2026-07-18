@@ -35,6 +35,41 @@ const CAT_COLOR: Record<string, string> = {
 }
 const DEFAULT_COLOR = '#94a3b8'
 
+/** Placeholder per-kind colour — literal hexes behind a later brand pass, like CAT_COLOR. Each bed
+ *  kind gets a subtle diagonal hatch + matching border in its colour, so kinds read apart at a
+ *  glance. */
+const BED_KIND_COLOR: Record<Bed['kind'], string> = {
+  bed: '#a1774f', // soil brown
+  'raised-bed': '#b5793e', // timber
+  container: '#d08a5a', // terracotta
+  patio: '#8b93a1', // stone
+  greenhouse: '#4fae8b', // glasshouse green
+  coldframe: '#5f97c4', // cool blue
+  border: '#a385c9', // planting-border plum
+  structure: '#8a8f96', // slate
+}
+const bedColor = (kind: Bed['kind']) => BED_KIND_COLOR[kind] ?? DEFAULT_COLOR
+const BED_KINDS = Object.keys(BED_KIND_COLOR) as Bed['kind'][]
+
+/** The hatch texture for a bed kind: a tile size (px) + the marks drawn in the kind's colour over a
+ *  themed base. Different geometries per kind (dots / verticals / squares / cross-hatch / diagonal)
+ *  so kinds are distinguishable by texture, not colour alone. */
+function bedPatternTile(kind: Bed['kind'], c: string): { size: number; marks: React.ReactNode } {
+  switch (kind) {
+    case 'bed': // light dots
+    case 'raised-bed':
+      return { size: 10, marks: <circle cx={5} cy={5} r={1.1} fill={c} fillOpacity={0.22} /> }
+    case 'greenhouse': // vertical lines
+      return { size: 8, marks: <path d="M4 0 L4 8" stroke={c} strokeWidth={1} strokeOpacity={0.18} /> }
+    case 'patio': // wide squares
+      return { size: 16, marks: <rect x={0.5} y={0.5} width={15} height={15} fill="none" stroke={c} strokeWidth={1} strokeOpacity={0.2} /> }
+    case 'structure': // cross-hatch
+      return { size: 8, marks: <path d="M0 8 L8 0 M0 0 L8 8" stroke={c} strokeWidth={1} strokeOpacity={0.16} /> }
+    default: // diagonal hatch (container / coldframe / border)
+      return { size: 8, marks: <path d="M0 8 L8 0 M-2 2 L2 -2 M6 10 L10 6" stroke={c} strokeWidth={1} strokeOpacity={0.16} /> }
+  }
+}
+
 export type Selection = { type: 'bed' | 'placement'; id: string } | null
 
 /** Imperative handle so the page can drop a new bed at the middle of what's on screen. */
@@ -280,6 +315,21 @@ function PlotCanvas(
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
+        {/* per-kind hatch fills — a themed base + a subtle texture in the kind's colour; the tile is
+            a fixed px texture that pans with the plot (patternTransform) so it stays put under the
+            beds. Geometry varies per kind (see bedPatternTile). */}
+        <defs>
+          {BED_KINDS.map((kind) => {
+            const { size, marks } = bedPatternTile(kind, bedColor(kind))
+            return (
+              <pattern key={kind} id={`bedhatch-${kind}`} width={size} height={size} patternUnits="userSpaceOnUse" patternTransform={`translate(${pan.x % size} ${pan.y % size})`}>
+                <rect width={size} height={size} className="fill-inset" />
+                {marks}
+              </pattern>
+            )
+          })}
+        </defs>
+
         {/* plot extent + grid */}
         <rect x={pan.x} y={pan.y} width={plotW * ppm} height={plotH * ppm} className="fill-card stroke-line-strong" strokeWidth={1.5} />
         {gridLines}
@@ -298,7 +348,18 @@ function PlotCanvas(
           }
           return (
             <g key={b.id}>
-              <rect x={p.x} y={p.y} width={len(r.width)} height={len(r.height)} rx={4} className={['fill-inset', selected ? 'stroke-brand' : 'stroke-line-strong'].join(' ')} strokeWidth={selected ? 2 : 1.2} />
+              <rect
+                x={p.x}
+                y={p.y}
+                width={len(r.width)}
+                height={len(r.height)}
+                rx={4}
+                fill={`url(#bedhatch-${b.kind})`}
+                className={selected ? 'stroke-brand' : undefined}
+                stroke={selected ? undefined : bedColor(b.kind)}
+                strokeOpacity={selected ? 1 : 0.75}
+                strokeWidth={selected ? 2 : 1.2}
+              />
               {cells}
               <text x={p.x + 6} y={p.y + 16} className="fill-subtle" fontSize={11} fontWeight={600}>
                 {b.name} · {r.width.toFixed(1)}×{r.height.toFixed(1)}m
