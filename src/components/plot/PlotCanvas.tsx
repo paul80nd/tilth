@@ -3,7 +3,7 @@ import type { Bed, Holding, PlacementShape, Rect } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
 import { footprintOf as nodeFootprint, plantsInRegion } from '../../lib/spacing'
-import { snapRect, clampRect, bedGaps, type BedGap } from '../../lib/plot'
+import { snapRect, clampRect, bedGaps, type BedGap, type BedGaps } from '../../lib/plot'
 
 // The interactive plot canvas — beds drawn to metre scale, plants placed within them at their
 // spacing footprint. Everything is computed in PIXEL space (metres × pixels-per-metre + pan) so
@@ -327,6 +327,46 @@ function PlotCanvas(
     gridLines.push(<line key={`h${j}`} x1={pan.x} y1={y} x2={pan.x + plotW * ppm} y2={y} className="stroke-line" strokeWidth={j % 5 === 0 ? 1.2 : 0.6} />)
   }
 
+  // Clearance dimensions for a rect `r` inside its container, offset to plot coords by (ox,oy):
+  // a line out of each face labelled with the gap to the nearest neighbour (brand) or edge (muted).
+  // Used for a selected bed (in the plot) and a selected/drawing placement (in its bed).
+  function dimOverlay(r: Rect, g: BedGaps, ox: number, oy: number): React.ReactNode {
+    const midX = r.x + r.width / 2
+    const midY = r.y + r.height / 2
+    const dims: { gap: BedGap; x1: number; y1: number; x2: number; y2: number; horiz: boolean }[] = [
+      { gap: g.east, x1: r.x + r.width, y1: midY, x2: r.x + r.width + g.east.dist, y2: midY, horiz: true },
+      { gap: g.west, x1: r.x, y1: midY, x2: r.x - g.west.dist, y2: midY, horiz: true },
+      { gap: g.north, x1: midX, y1: r.y, x2: midX, y2: r.y - g.north.dist, horiz: false },
+      { gap: g.south, x1: midX, y1: r.y + r.height, x2: midX, y2: r.y + r.height + g.south.dist, horiz: false },
+    ]
+    const TICK = 4
+    return (
+      <g>
+        {dims.map((d, i) => {
+          if (d.gap.dist < 0.02) return null // flush — nothing to show
+          const p1 = toPx(ox + d.x1, oy + d.y1)
+          const p2 = toPx(ox + d.x2, oy + d.y2)
+          const mx = (p1.x + p2.x) / 2
+          const my = (p1.y + p2.y) / 2
+          const label = `${+d.gap.dist.toFixed(2)} m`
+          const strokeCls = d.gap.toEdge ? 'stroke-subtle' : 'stroke-brand'
+          const w = label.length * 6 + 6
+          return (
+            <g key={i}>
+              <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} className={strokeCls} strokeWidth={1} strokeDasharray="3 2" />
+              <line x1={p1.x - (d.horiz ? 0 : TICK)} y1={p1.y - (d.horiz ? TICK : 0)} x2={p1.x + (d.horiz ? 0 : TICK)} y2={p1.y + (d.horiz ? TICK : 0)} className={strokeCls} strokeWidth={1} />
+              <line x1={p2.x - (d.horiz ? 0 : TICK)} y1={p2.y - (d.horiz ? TICK : 0)} x2={p2.x + (d.horiz ? 0 : TICK)} y2={p2.y + (d.horiz ? TICK : 0)} className={strokeCls} strokeWidth={1} />
+              <rect x={mx - w / 2} y={my - 7} width={w} height={14} rx={2} className="fill-card" opacity={0.85} />
+              <text x={mx} y={my + 3.5} textAnchor="middle" fontSize={10} fontWeight={600} className={d.gap.toEdge ? 'fill-subtle' : 'fill-brand'}>
+                {label}
+              </text>
+            </g>
+          )
+        })}
+      </g>
+    )
+  }
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-sunken">
       <svg
@@ -472,41 +512,28 @@ function PlotCanvas(
             const b = beds.find((x) => x.id === selection.id)
             if (!b) return null
             const r = bedRect(b)
-            const g = bedGaps(r, beds.filter((x) => x.id !== b.id), plotW, plotH)
-            const midX = r.x + r.width / 2
-            const midY = r.y + r.height / 2
-            const dims: { gap: BedGap; x1: number; y1: number; x2: number; y2: number; horiz: boolean }[] = [
-              { gap: g.east, x1: r.x + r.width, y1: midY, x2: r.x + r.width + g.east.dist, y2: midY, horiz: true },
-              { gap: g.west, x1: r.x, y1: midY, x2: r.x - g.west.dist, y2: midY, horiz: true },
-              { gap: g.north, x1: midX, y1: r.y, x2: midX, y2: r.y - g.north.dist, horiz: false },
-              { gap: g.south, x1: midX, y1: r.y + r.height, x2: midX, y2: r.y + r.height + g.south.dist, horiz: false },
-            ]
-            const TICK = 4
-            return (
-              <g>
-                {dims.map((d, i) => {
-                  if (d.gap.dist < 0.02) return null // flush — nothing to show
-                  const p1 = toPx(d.x1, d.y1)
-                  const p2 = toPx(d.x2, d.y2)
-                  const mx = (p1.x + p2.x) / 2
-                  const my = (p1.y + p2.y) / 2
-                  const label = `${+d.gap.dist.toFixed(2)} m`
-                  const strokeCls = d.gap.toEdge ? 'stroke-subtle' : 'stroke-brand'
-                  const w = label.length * 6 + 6
-                  return (
-                    <g key={i}>
-                      <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} className={strokeCls} strokeWidth={1} strokeDasharray="3 2" />
-                      <line x1={p1.x - (d.horiz ? 0 : TICK)} y1={p1.y - (d.horiz ? TICK : 0)} x2={p1.x + (d.horiz ? 0 : TICK)} y2={p1.y + (d.horiz ? TICK : 0)} className={strokeCls} strokeWidth={1} />
-                      <line x1={p2.x - (d.horiz ? 0 : TICK)} y1={p2.y - (d.horiz ? TICK : 0)} x2={p2.x + (d.horiz ? 0 : TICK)} y2={p2.y + (d.horiz ? TICK : 0)} className={strokeCls} strokeWidth={1} />
-                      <rect x={mx - w / 2} y={my - 7} width={w} height={14} rx={2} className="fill-card" opacity={0.85} />
-                      <text x={mx} y={my + 3.5} textAnchor="middle" fontSize={10} fontWeight={600} className={d.gap.toEdge ? 'fill-subtle' : 'fill-brand'}>
-                        {label}
-                      </text>
-                    </g>
-                  )
-                })}
-              </g>
-            )
+            return dimOverlay(r, bedGaps(r, beds.filter((x) => x.id !== b.id), plotW, plotH), 0, 0)
+          })()}
+
+        {/* selected placement: clear distance to the nearest planting in the bed, or the bed edge */}
+        {selection?.type === 'placement' &&
+          (() => {
+            const h = placements.find((x) => x.id === selection.id)
+            if (!h || !h.region) return null
+            const bed = bedById(h.bedId)
+            if (!bed) return null
+            const region = placementRegion(h)
+            const others = placements.filter((x) => x.id !== h.id && x.bedId === bed.id && x.region).map((x) => placementRegion(x))
+            return dimOverlay(region, bedGaps(region, others, bed.width, bed.height), bed.x, bed.y)
+          })()}
+
+        {/* while drawing a new placement: live distances to the bed edges / nearest planting */}
+        {drawRect &&
+          (() => {
+            const bed = bedById(drawRect.bedId)
+            if (!bed || drawRect.region.width < 0.02 || drawRect.region.height < 0.02) return null
+            const others = placements.filter((x) => x.bedId === bed.id && x.region).map((x) => placementRegion(x))
+            return dimOverlay(drawRect.region, bedGaps(drawRect.region, others, bed.width, bed.height), bed.x, bed.y)
           })()}
 
         {/* rubber-band while drawing a new placement — a circle for a round brush, else a rect */}

@@ -27,7 +27,7 @@ const BED_KINDS: Bed['kind'][] = ['bed', 'raised-bed', 'container', 'patio', 'gr
 const PLACEMENT_TYPES: { shape: PlacementShape; label: string }[] = [
   { shape: 'area', label: 'Area' },
   { shape: 'round', label: 'Pot' },
-  { shape: 'rect', label: 'Espalier' },
+  { shape: 'rect', label: 'Single' },
 ]
 
 export default function Inspector({ bed, placement, node, snapStep, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onUnplace }: InspectorProps) {

@@ -22,7 +22,7 @@ export interface PaletteProps {
 const SHAPE_MODES: { shape: PlacementShape; label: string; glyph: string; hint: string }[] = [
   { shape: 'area', label: 'Area', glyph: '▦', hint: 'Drag a block — packed with plants at their spacing.' },
   { shape: 'round', label: 'Pot', glyph: '◯', hint: 'Click for one plant; drag out to set its radius.' },
-  { shape: 'rect', label: 'Espalier', glyph: '▭', hint: 'Drag a rectangle — one plant trained to fill it.' },
+  { shape: 'rect', label: 'Single', glyph: '▭', hint: 'Drag a rectangle — one plant filling a rectangular space (e.g. an espalier).' },
 ]
 
 export default function Palette({ plants, heldNodeIds, brushNodeId, brushShape, onArm, onShapeChange }: PaletteProps) {
