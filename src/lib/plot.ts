@@ -52,6 +52,61 @@ export function cellsAcross(lengthM: number, cellM: number): number {
   return Math.max(1, Math.round(lengthM / cellM))
 }
 
+/** Clear distance from one face of a bed to the nearest thing on that side. */
+export interface BedGap {
+  /** Metres from the bed's face to the neighbouring bed (or plot edge). */
+  dist: number
+  /** True when measured to the plot edge — no bed faces this side. */
+  toEdge: boolean
+}
+
+/** A bed's clear distance on each of the four sides. */
+export interface BedGaps {
+  north: BedGap
+  east: BedGap
+  south: BedGap
+  west: BedGap
+}
+
+/** Distance from `sel` to the nearest bed facing each side, or the plot edge when nothing faces
+ *  that side. A bed "faces" a side when it overlaps `sel`'s span on the perpendicular axis and
+ *  sits clear of it (a non-negative edge gap); overlapping or offset beds are ignored. All rects
+ *  share the plot origin (top-left, +x right / +y down); `others` must exclude `sel` itself. */
+export function bedGaps(sel: Rect, others: Rect[], plotW: number, plotH: number): BedGaps {
+  const left = sel.x
+  const right = sel.x + sel.width
+  const top = sel.y
+  const bottom = sel.y + sel.height
+
+  // Spans overlap on the axis perpendicular to the side being measured.
+  const spanX = (o: Rect) => o.x < right && left < o.x + o.width // shares horizontal extent → N/S
+  const spanY = (o: Rect) => o.y < bottom && top < o.y + o.height // shares vertical extent → E/W
+
+  const gap: BedGaps = {
+    north: { dist: top, toEdge: true },
+    east: { dist: plotW - right, toEdge: true },
+    south: { dist: plotH - bottom, toEdge: true },
+    west: { dist: left, toEdge: true },
+  }
+  const consider = (side: BedGap, d: number) => {
+    if (d >= 0 && d < side.dist) {
+      side.dist = d
+      side.toEdge = false
+    }
+  }
+  for (const o of others) {
+    if (spanY(o)) {
+      consider(gap.east, o.x - right)
+      consider(gap.west, left - (o.x + o.width))
+    }
+    if (spanX(o)) {
+      consider(gap.north, top - (o.y + o.height))
+      consider(gap.south, o.y - bottom)
+    }
+  }
+  return gap
+}
+
 /** Which corner of the plot stays put when it is resized. Space is added/removed on the two
  *  opposite sides, so beds keep their distance from the anchored corner. `NW` (the origin corner)
  *  is the natural default — beds don't move and the plot grows to the right and down. */

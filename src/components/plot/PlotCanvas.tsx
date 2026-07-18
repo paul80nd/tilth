@@ -3,7 +3,7 @@ import type { Bed, Holding, Rect } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
 import { plantsInRegion } from '../../lib/spacing'
-import { snapRect, clampRect } from '../../lib/plot'
+import { snapRect, clampRect, bedGaps, type BedGap } from '../../lib/plot'
 
 // The interactive plot canvas — beds drawn to metre scale, plants placed within them at their
 // spacing footprint. Everything is computed in PIXEL space (metres × pixels-per-metre + pan) so
@@ -326,6 +326,49 @@ export default function PlotCanvas({
             </g>
           )
         })}
+
+        {/* selected bed: clear distance to the nearest bed each way (or the plot edge) */}
+        {selection?.type === 'bed' &&
+          (() => {
+            const b = beds.find((x) => x.id === selection.id)
+            if (!b) return null
+            const r = bedRect(b)
+            const g = bedGaps(r, beds.filter((x) => x.id !== b.id), plotW, plotH)
+            const midX = r.x + r.width / 2
+            const midY = r.y + r.height / 2
+            const dims: { gap: BedGap; x1: number; y1: number; x2: number; y2: number; horiz: boolean }[] = [
+              { gap: g.east, x1: r.x + r.width, y1: midY, x2: r.x + r.width + g.east.dist, y2: midY, horiz: true },
+              { gap: g.west, x1: r.x, y1: midY, x2: r.x - g.west.dist, y2: midY, horiz: true },
+              { gap: g.north, x1: midX, y1: r.y, x2: midX, y2: r.y - g.north.dist, horiz: false },
+              { gap: g.south, x1: midX, y1: r.y + r.height, x2: midX, y2: r.y + r.height + g.south.dist, horiz: false },
+            ]
+            const TICK = 4
+            return (
+              <g>
+                {dims.map((d, i) => {
+                  if (d.gap.dist < 0.02) return null // flush — nothing to show
+                  const p1 = toPx(d.x1, d.y1)
+                  const p2 = toPx(d.x2, d.y2)
+                  const mx = (p1.x + p2.x) / 2
+                  const my = (p1.y + p2.y) / 2
+                  const label = `${+d.gap.dist.toFixed(2)} m`
+                  const strokeCls = d.gap.toEdge ? 'stroke-subtle' : 'stroke-brand'
+                  const w = label.length * 6 + 6
+                  return (
+                    <g key={i}>
+                      <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} className={strokeCls} strokeWidth={1} strokeDasharray="3 2" />
+                      <line x1={p1.x - (d.horiz ? 0 : TICK)} y1={p1.y - (d.horiz ? TICK : 0)} x2={p1.x + (d.horiz ? 0 : TICK)} y2={p1.y + (d.horiz ? TICK : 0)} className={strokeCls} strokeWidth={1} />
+                      <line x1={p2.x - (d.horiz ? 0 : TICK)} y1={p2.y - (d.horiz ? TICK : 0)} x2={p2.x + (d.horiz ? 0 : TICK)} y2={p2.y + (d.horiz ? TICK : 0)} className={strokeCls} strokeWidth={1} />
+                      <rect x={mx - w / 2} y={my - 7} width={w} height={14} rx={2} className="fill-card" opacity={0.85} />
+                      <text x={mx} y={my + 3.5} textAnchor="middle" fontSize={10} fontWeight={600} className={d.gap.toEdge ? 'fill-subtle' : 'fill-brand'}>
+                        {label}
+                      </text>
+                    </g>
+                  )
+                })}
+              </g>
+            )
+          })()}
 
         {/* rubber-band while drawing a new placement */}
         {drawRect &&

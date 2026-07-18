@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { snap, snapRect, clampRect, overlaps, cellsAcross, reanchorRects } from './plot'
+import { snap, snapRect, clampRect, overlaps, cellsAcross, reanchorRects, bedGaps } from './plot'
 
 describe('snap', () => {
   it('rounds to the nearest step', () => {
@@ -77,5 +77,47 @@ describe('reanchorRects', () => {
   it('clamps a rect that a shrink would push past the new edge', () => {
     // Anchored NW, shrink to 2×2: the bed sitting at x=1,w=2 no longer fits — pulled back to x=0.
     expect(reanchorRects([bed], 10, 10, 2, 2, 'NW')).toEqual([{ x: 0, y: 0, width: 2, height: 2 }])
+  })
+})
+
+describe('bedGaps', () => {
+  const sel = { x: 2, y: 3, width: 2, height: 2 } // right=4, bottom=5, in a 16×12 plot
+
+  it('measures to the plot edge when nothing is nearby', () => {
+    const g = bedGaps(sel, [], 16, 12)
+    expect(g).toEqual({
+      north: { dist: 3, toEdge: true },
+      east: { dist: 12, toEdge: true },
+      south: { dist: 7, toEdge: true },
+      west: { dist: 2, toEdge: true },
+    })
+  })
+
+  it('measures to a facing bed on that side', () => {
+    // A bed to the east, overlapping the vertical span → gap 3, not the edge.
+    const g = bedGaps(sel, [{ x: 7, y: 3, width: 2, height: 2 }], 16, 12)
+    expect(g.east).toEqual({ dist: 3, toEdge: false })
+    expect(g.west.toEdge).toBe(true) // unaffected on the other sides
+    expect(g.north.toEdge).toBe(true)
+  })
+
+  it('ignores a bed that does not overlap the perpendicular span', () => {
+    // To the east but far above → doesn't face; stays the plot edge.
+    const g = bedGaps(sel, [{ x: 7, y: 8, width: 2, height: 2 }], 16, 12)
+    expect(g.east).toEqual({ dist: 12, toEdge: true })
+  })
+
+  it('ignores an overlapping bed (negative gap) and keeps the nearest of several', () => {
+    const g = bedGaps(
+      sel,
+      [
+        { x: 3, y: 3, width: 2, height: 2 }, // overlaps sel → negative gap, ignored
+        { x: 9, y: 3, width: 1, height: 2 }, // east, gap 5
+        { x: 5, y: 3, width: 1, height: 2 }, // east, gap 1 — nearest wins
+      ],
+      16,
+      12,
+    )
+    expect(g.east).toEqual({ dist: 1, toEdge: false })
   })
 })
