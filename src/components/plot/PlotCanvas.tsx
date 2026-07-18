@@ -1,8 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import type { Bed, Holding, Rect } from '../../schema/userData'
+import type { Bed, Holding, PlacementShape, Rect } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
-import { plantsInRegion } from '../../lib/spacing'
+import { footprintOf as nodeFootprint, plantsInRegion } from '../../lib/spacing'
 import { snapRect, clampRect, bedGaps, type BedGap } from '../../lib/plot'
 
 // The interactive plot canvas — beds drawn to metre scale, plants placed within them at their
@@ -92,11 +92,14 @@ export interface PlotCanvasProps {
   selection: Selection
   /** The plant armed for placing (from the palette), or null. */
   brushNodeId: string | null
+  /** The placement shape the brush lays down — packed area, or a single round/rect plant. */
+  brushShape: PlacementShape
   onSelect: (sel: Selection) => void
   onMoveBed: (id: string, rect: Rect) => void
   onMovePlacement: (id: string, region: Rect) => void
-  /** Draw a new placement: the brush plant over `region` (bed-local metres) of `bedId`. */
-  onPlace: (bedId: string, nodeId: string, region: Rect) => void
+  /** Draw a new placement: the brush plant over `region` (bed-local metres) of `bedId`, occupied
+   *  as `shape`. */
+  onPlace: (bedId: string, nodeId: string, region: Rect, shape: PlacementShape) => void
 }
 
 interface Drag {
@@ -104,6 +107,7 @@ interface Drag {
   id?: string
   bedId?: string
   nodeId?: string
+  shape?: PlacementShape
   // Pointer-down anchor in metres, and the grabbed object's offset so it doesn't jump.
   mx0: number
   my0: number
@@ -126,6 +130,7 @@ function PlotCanvas(
     snap,
     selection,
     brushNodeId,
+    brushShape,
     onSelect,
     onMoveBed,
     onMovePlacement,
@@ -204,7 +209,7 @@ function PlotCanvas(
     // 1) Brush armed + inside a bed → start drawing a new placement block.
     const overBed = bedAt(mx, my)
     if (brushNodeId && overBed) {
-      setDrag({ kind: 'draw', bedId: overBed.id, nodeId: brushNodeId, mx0: mx, my0: my, grabDX: 0, grabDY: 0, ox0: 0, oy0: 0 })
+      setDrag({ kind: 'draw', bedId: overBed.id, nodeId: brushNodeId, shape: brushShape, mx0: mx, my0: my, grabDX: 0, grabDY: 0, ox0: 0, oy0: 0 })
       setDrawRect({ bedId: overBed.id, region: { x: mx - overBed.x, y: my - overBed.y, width: 0, height: 0 } })
       return
     }
@@ -257,11 +262,19 @@ function PlotCanvas(
       setDraftPlacement({ id: h.id, region })
     } else if (drag.kind === 'draw') {
       const bed = bedById(drag.bedId)!
-      const x = Math.min(drag.mx0, mx) - bed.x
-      const y = Math.min(drag.my0, my) - bed.y
-      const width = Math.abs(mx - drag.mx0)
-      const height = Math.abs(my - drag.my0)
-      setDrawRect({ bedId: bed.id, region: clampRect({ x, y, width, height }, bed.width, bed.height) })
+      if (drag.shape === 'round') {
+        // centre-out: the down point is the centre, the drag distance the radius.
+        const r = Math.hypot(mx - drag.mx0, my - drag.my0)
+        const region = clampRect({ x: drag.mx0 - r - bed.x, y: drag.my0 - r - bed.y, width: 2 * r, height: 2 * r }, bed.width, bed.height)
+        setDrawRect({ bedId: bed.id, region })
+      } else {
+        // area / rect: corner rubber-band from the down point.
+        const x = Math.min(drag.mx0, mx) - bed.x
+        const y = Math.min(drag.my0, my) - bed.y
+        const width = Math.abs(mx - drag.mx0)
+        const height = Math.abs(my - drag.my0)
+        setDrawRect({ bedId: bed.id, region: clampRect({ x, y, width, height }, bed.width, bed.height) })
+      }
     }
   }
 
@@ -274,12 +287,22 @@ function PlotCanvas(
         onMoveBed(draftBed.id, snapRect(draftBed.rect, stepOf(bed)))
       } else if (drag.kind === 'move-placement' && draftPlacement) {
         onMovePlacement(draftPlacement.id, snapRect(draftPlacement.region, stepOf(bed)))
-      } else if (drag.kind === 'draw' && drawRect && drag.nodeId) {
-        // Tiny drag (a click) → a single-footprint block at the point; else the drawn region.
-        // The real footprint/count is derived app-side (footprintOf the node) on placePlant.
+      } else if (drag.kind === 'draw' && drawRect && drag.nodeId && bed) {
+        // Tiny drag (a click) → a default block at the point: a single round/rect gets the plant's
+        // footprint, an area a 0.3 m starter square. The count is derived app-side on placePlant.
+        const shape = drag.shape ?? 'area'
         const r = drawRect.region
-        const region = r.width < 0.05 || r.height < 0.05 ? { x: r.x, y: r.y, width: 0.3, height: 0.3 } : r
-        onPlace(drawRect.bedId, drag.nodeId, snapRect(region, stepOf(bed)))
+        let region = r
+        if (r.width < 0.05 || r.height < 0.05) {
+          const side = shape === 'area' ? 0.3 : nodeFootprint(nodesById.get(drag.nodeId))
+          // a clicked round centres on the down point; area/rect anchor at the point.
+          region =
+            shape === 'round'
+              ? { x: drag.mx0 - bed.x - side / 2, y: drag.my0 - bed.y - side / 2, width: side, height: side }
+              : { x: r.x, y: r.y, width: side, height: side }
+          region = clampRect(region, bed.width, bed.height)
+        }
+        onPlace(drawRect.bedId, drag.nodeId, snapRect(region, stepOf(bed)), shape)
       }
     }
     setDrag(null)
@@ -378,30 +401,66 @@ function PlotCanvas(
           const node = nodesById.get(h.nodeId)
           const color = catColor(node)
           const selected = selection?.type === 'placement' && selection.id === h.id
+          const shape = h.shape ?? 'area'
           const fp = footprintOf(h)
-          // The stored quantity is the source of truth (never < 1, hand-overridable); the raw
-          // packing count can be 0 when the plant is bigger than the drawn block.
-          const count = h.quantity ?? Math.max(1, plantsInRegion(fp, region))
-          // plant dots (square packing), capped. A plant bigger than its block still draws one
-          // dot, sized to the block rather than ballooning past it.
-          const dots: React.ReactNode[] = []
-          const cols = Math.max(1, Math.floor(region.width / fp + 1e-9))
-          const rows = Math.max(1, Math.floor(region.height / fp + 1e-9))
-          const minSidePx = Math.min(len(region.width), len(region.height))
-          const rDot = Math.max(2, Math.min(len(fp) * 0.32, minSidePx * 0.42))
-          let drawn = 0
-          for (let cy = 0; cy < rows && drawn < DOT_CAP; cy++) {
-            for (let cx = 0; cx < cols && drawn < DOT_CAP; cx++) {
-              dots.push(<circle key={`${cx}-${cy}`} cx={p.x + len((cx + 0.5) * fp)} cy={p.y + len((cy + 0.5) * fp)} r={rDot} fill={color} />)
-              drawn++
+          const wPx = len(region.width)
+          const hPx = len(region.height)
+          const strokeW = selected ? 2.5 : 1.2
+          const strokeO = selected ? 1 : 0.6
+          const label = node ? displayLabel(node) : h.nodeId
+
+          // The stored quantity is the source of truth (never < 1); a single round/rect is one plant.
+          const count = h.quantity ?? (shape === 'area' ? Math.max(1, plantsInRegion(fp, region)) : 1)
+
+          let body: React.ReactNode
+          if (shape === 'round') {
+            // one plant in a circle inscribed in the (square) region
+            const cx = p.x + wPx / 2
+            const cy = p.y + hPx / 2
+            const rad = Math.min(wPx, hPx) / 2
+            body = (
+              <>
+                <circle cx={cx} cy={cy} r={rad} fill={color} fillOpacity={0.14} stroke={color} strokeWidth={strokeW} strokeOpacity={strokeO} />
+                <circle cx={cx} cy={cy} r={Math.max(2, rad * 0.34)} fill={color} />
+              </>
+            )
+          } else if (shape === 'rect') {
+            // one plant occupying a rectangle (e.g. an espalier)
+            const cx = p.x + wPx / 2
+            const cy = p.y + hPx / 2
+            body = (
+              <>
+                <rect x={p.x} y={p.y} width={wPx} height={hPx} rx={3} fill={color} fillOpacity={0.14} stroke={color} strokeWidth={strokeW} strokeOpacity={strokeO} />
+                <circle cx={cx} cy={cy} r={Math.max(2, Math.min(wPx, hPx) * 0.18)} fill={color} />
+              </>
+            )
+          } else {
+            // area: square-packed plant dots, capped; a plant bigger than its block draws one dot.
+            const dots: React.ReactNode[] = []
+            const cols = Math.max(1, Math.floor(region.width / fp + 1e-9))
+            const rows = Math.max(1, Math.floor(region.height / fp + 1e-9))
+            const minSidePx = Math.min(wPx, hPx)
+            const rDot = Math.max(2, Math.min(len(fp) * 0.32, minSidePx * 0.42))
+            let drawn = 0
+            for (let cy = 0; cy < rows && drawn < DOT_CAP; cy++) {
+              for (let cx = 0; cx < cols && drawn < DOT_CAP; cx++) {
+                dots.push(<circle key={`${cx}-${cy}`} cx={p.x + len((cx + 0.5) * fp)} cy={p.y + len((cy + 0.5) * fp)} r={rDot} fill={color} />)
+                drawn++
+              }
             }
+            body = (
+              <>
+                <rect x={p.x} y={p.y} width={wPx} height={hPx} rx={3} fill={color} fillOpacity={0.14} stroke={color} strokeWidth={strokeW} strokeOpacity={strokeO} />
+                {dots}
+              </>
+            )
           }
+
           return (
             <g key={h.id}>
-              <rect x={p.x} y={p.y} width={len(region.width)} height={len(region.height)} rx={3} fill={color} fillOpacity={0.14} stroke={color} strokeWidth={selected ? 2.5 : 1.2} strokeOpacity={selected ? 1 : 0.6} />
-              {dots}
+              {body}
               <text x={p.x + 4} y={p.y + 13} fontSize={10.5} fontWeight={700} className="fill-ink">
-                {node ? displayLabel(node) : h.nodeId} ×{count}
+                {label} {shape === 'area' ? `×${count}` : ''}
               </text>
             </g>
           )
@@ -450,12 +509,18 @@ function PlotCanvas(
             )
           })()}
 
-        {/* rubber-band while drawing a new placement */}
+        {/* rubber-band while drawing a new placement — a circle for a round brush, else a rect */}
         {drawRect &&
           (() => {
             const bed = bedById(drawRect.bedId)!
-            const p = toPx(bed.x + drawRect.region.x, bed.y + drawRect.region.y)
-            return <rect x={p.x} y={p.y} width={len(drawRect.region.width)} height={len(drawRect.region.height)} rx={3} className="fill-brand stroke-brand" fillOpacity={0.15} strokeWidth={1.5} strokeDasharray="4 3" />
+            const reg = drawRect.region
+            const p = toPx(bed.x + reg.x, bed.y + reg.y)
+            const w = len(reg.width)
+            const hh = len(reg.height)
+            if (drag?.shape === 'round') {
+              return <circle cx={p.x + w / 2} cy={p.y + hh / 2} r={Math.min(w, hh) / 2} className="fill-brand stroke-brand" fillOpacity={0.15} strokeWidth={1.5} strokeDasharray="4 3" />
+            }
+            return <rect x={p.x} y={p.y} width={w} height={hh} rx={3} className="fill-brand stroke-brand" fillOpacity={0.15} strokeWidth={1.5} strokeDasharray="4 3" />
           })()}
       </svg>
 

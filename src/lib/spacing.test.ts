@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { footprintOf, plantsInRegion, plantsPerCell, DEFAULT_FOOTPRINT } from './spacing'
+import { footprintOf, plantsInRegion, plantsPerCell, placementCount, DEFAULT_FOOTPRINT } from './spacing'
 
 describe('footprintOf', () => {
   it('prefers an explicit spacing fact', () => {
@@ -18,6 +18,21 @@ describe('footprintOf', () => {
     expect(footprintOf(undefined)).toBe(DEFAULT_FOOTPRINT)
     expect(footprintOf({})).toBe(DEFAULT_FOOTPRINT)
     expect(footprintOf({ facts: { note: 'no number here' } })).toBe(DEFAULT_FOOTPRINT)
+  })
+})
+
+describe('placementCount', () => {
+  const region = { width: 1.2, height: 0.6 }
+
+  it('packs an area placement at its footprint (at least one)', () => {
+    expect(placementCount('area', 0.3, region)).toBe(8)
+    expect(placementCount(undefined, 0.3, region)).toBe(8) // absent shape ⇒ area
+    expect(placementCount('area', 5, region)).toBe(1) // plant bigger than the block still counts one
+  })
+
+  it('is always one plant for a single round or rect placement', () => {
+    expect(placementCount('round', 0.3, region)).toBe(1)
+    expect(placementCount('rect', 0.3, region)).toBe(1)
   })
 })
 

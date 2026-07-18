@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import type { Bed, Holding, Rect } from '../schema/userData'
+import type { Bed, Holding, PlacementShape, Rect } from '../schema/userData'
 import type { PlantNode } from '../schema/plant'
 import { listNodes } from '../app/plants'
 import {
@@ -12,6 +12,7 @@ import {
   placePlant,
   movePlacement,
   setQuantity,
+  setPlacementShape,
   unplace,
   getPlotSize,
   setPlotSize,
@@ -39,6 +40,7 @@ export default function GardenPage() {
 
   const [selection, setSelection] = useState<Selection>(null)
   const [brushNodeId, setBrushNodeId] = useState<string | null>(null)
+  const [brushShape, setBrushShape] = useState<PlacementShape>('area')
   const [snap, setSnap] = useState(true)
   const [plotModalOpen, setPlotModalOpen] = useState(false)
   const canvasRef = useRef<PlotCanvasHandle>(null)
@@ -101,7 +103,7 @@ export default function GardenPage() {
     <div className="flex h-full min-h-0">
       {/* palette */}
       <aside className="w-56 flex-none border-r border-line bg-card">
-        <Palette plants={plants} heldNodeIds={heldNodeIds} brushNodeId={brushNodeId} onArm={setBrushNodeId} />
+        <Palette plants={plants} heldNodeIds={heldNodeIds} brushNodeId={brushNodeId} brushShape={brushShape} onArm={setBrushNodeId} onShapeChange={setBrushShape} />
       </aside>
 
       {/* canvas + toolbar */}
@@ -146,10 +148,11 @@ export default function GardenPage() {
               snap={snap}
               selection={selection}
               brushNodeId={brushNodeId}
+              brushShape={brushShape}
               onSelect={setSelection}
               onMoveBed={(id, rect: Rect) => void updateBed(id, rect)}
               onMovePlacement={(id, region: Rect) => void movePlacement(id, region)}
-              onPlace={(bedId, nodeId, region) => void placePlant({ nodeId, bedId, region, status: 'growing' })}
+              onPlace={(bedId, nodeId, region, shape) => void placePlant({ nodeId, bedId, region, shape, status: 'growing' })}
             />
           </div>
         )}
@@ -171,6 +174,13 @@ export default function GardenPage() {
               }
             }}
             onQuantityChange={(qty) => selectedPlacement && void setQuantity(selectedPlacement.id, qty)}
+            onPlacementShapeChange={(shape) => selectedPlacement && void setPlacementShape(selectedPlacement.id, shape)}
+            onPlacementResize={(region) => {
+              if (!selectedPlacement) return
+              const bed = beds.find((b) => b.id === selectedPlacement.bedId)
+              const clamped = bed ? clampRect(region, bed.width, bed.height) : region
+              void movePlacement(selectedPlacement.id, clamped)
+            }}
             onUnplace={() => {
               if (selectedPlacement) {
                 void unplace(selectedPlacement.id)

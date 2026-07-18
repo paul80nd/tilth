@@ -8,6 +8,7 @@
 // if counts feel low.
 
 import type { PlantNode } from '../schema/plant'
+import type { PlacementShape } from '../schema/userData'
 import { parseLength } from './size'
 
 /** Fallback footprint (metres) when a plant tells us nothing about its spacing. A sensible
@@ -52,6 +53,13 @@ export function plantsInRegion(footprintM: number, region: Region): number {
   const cols = Math.floor(region.width / footprintM + FLOOR_EPS)
   const rows = Math.floor(region.height / footprintM + FLOOR_EPS)
   return Math.max(0, cols * rows)
+}
+
+/** How many plants a placement holds. An `area` packs its region at the footprint (at least one
+ *  for a real placement); a single `round`/`rect` placement is always exactly one plant. */
+export function placementCount(shape: PlacementShape | undefined, footprintM: number, region: Region): number {
+  if (shape === 'round' || shape === 'rect') return 1
+  return Math.max(1, plantsInRegion(footprintM, region))
 }
 
 /** Plants per square-foot grid cell for a crop — the SFG density label. A cell holds

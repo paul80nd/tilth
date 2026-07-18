@@ -8,8 +8,8 @@
 // a real garden.
 
 import { db } from '../db/db'
-import type { Bed, Holding, Rect } from '../schema/userData'
-import { footprintOf, plantsInRegion } from '../lib/spacing'
+import type { Bed, Holding, PlacementShape, Rect } from '../schema/userData'
+import { footprintOf, placementCount } from '../lib/spacing'
 import { reanchorRects, type PlotAnchor } from '../lib/plot'
 
 /** Fresh id for a hand-created bed/holding. `crypto.randomUUID` is available in every target
@@ -133,6 +133,8 @@ export interface PlacePlantInput {
   bedId: string
   /** The block occupied within the bed (bed-local metres). Defaults to a single footprint. */
   region?: Rect
+  /** How the region is occupied — packed `area` (default), or a single `round`/`rect` plant. */
+  shape?: PlacementShape
   /** Reuse an existing holding (e.g. placing a wishlist entry) instead of creating one. */
   holdingId?: string
   status?: Holding['status']
@@ -140,15 +142,16 @@ export interface PlacePlantInput {
 }
 
 /** Place a plant on a bed: create (or update) a holding with a derived footprint + count. The
- *  footprint comes from the reference node; the count is square-packed over the region. */
+ *  footprint comes from the reference node; the count is one for a single round/rect placement,
+ *  else square-packed over the region. */
 export async function placePlant(input: PlacePlantInput): Promise<Holding> {
-  const { nodeId, bedId, holdingId, status = 'planned', year } = input
+  const { nodeId, bedId, holdingId, status = 'planned', year, shape = 'area' } = input
   let placed!: Holding
   await db.transaction('rw', db.holdings, db.nodes, db.settings, async () => {
     const node = await db.nodes.get(nodeId)
     const footprint = footprintOf(node)
     const region = input.region ?? { x: 0, y: 0, width: footprint, height: footprint }
-    const quantity = Math.max(1, plantsInRegion(footprint, region))
+    const quantity = placementCount(shape, footprint, region)
     const base = holdingId ? await db.holdings.get(holdingId) : undefined
     placed = {
       ...(base ?? { id: holdingId ?? newId(), nodeId, status }),
@@ -156,6 +159,7 @@ export async function placePlant(input: PlacePlantInput): Promise<Holding> {
       status: base?.status ?? status,
       bedId,
       region,
+      shape,
       footprint,
       quantity,
       ...(year !== undefined ? { year } : {}),
@@ -166,14 +170,27 @@ export async function placePlant(input: PlacePlantInput): Promise<Holding> {
   return placed
 }
 
-/** Move/resize a placement to a new region, recomputing the count from its footprint. */
+/** Move/resize a placement to a new region, recomputing the count for its shape. */
 export async function movePlacement(holdingId: string, region: Rect): Promise<void> {
   await db.transaction('rw', db.holdings, db.settings, async () => {
     const h = await db.holdings.get(holdingId)
     if (!h) return
     const footprint = h.footprint ?? region.width
-    const quantity = Math.max(1, plantsInRegion(footprint, region))
+    const quantity = placementCount(h.shape, footprint, region)
     await db.holdings.put({ ...h, region, quantity })
+    await markUser()
+  })
+}
+
+/** Switch a placement between area / round / rect, recomputing its count (a single plant for
+ *  round/rect, packed for area). The region is unchanged — the shape only reinterprets it. */
+export async function setPlacementShape(holdingId: string, shape: PlacementShape): Promise<void> {
+  await db.transaction('rw', db.holdings, db.settings, async () => {
+    const h = await db.holdings.get(holdingId)
+    if (!h || !h.region) return
+    const footprint = h.footprint ?? h.region.width
+    const quantity = placementCount(shape, footprint, h.region)
+    await db.holdings.put({ ...h, shape, quantity })
     await markUser()
   })
 }

@@ -1,4 +1,4 @@
-import type { Bed, Holding } from '../../schema/userData'
+import type { Bed, Holding, PlacementShape, Rect } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
 import { plantsInRegion } from '../../lib/spacing'
@@ -17,12 +17,20 @@ export interface InspectorProps {
   onBedChange: (patch: Partial<Bed>) => void
   onRemoveBed: () => void
   onQuantityChange: (qty: number) => void
+  onPlacementShapeChange: (shape: PlacementShape) => void
+  onPlacementResize: (region: Rect) => void
   onUnplace: () => void
 }
 
 const BED_KINDS: Bed['kind'][] = ['bed', 'raised-bed', 'container', 'patio', 'greenhouse', 'coldframe', 'border', 'structure']
 
-export default function Inspector({ bed, placement, node, snapStep, onBedChange, onRemoveBed, onQuantityChange, onUnplace }: InspectorProps) {
+const PLACEMENT_TYPES: { shape: PlacementShape; label: string }[] = [
+  { shape: 'area', label: 'Area' },
+  { shape: 'round', label: 'Pot' },
+  { shape: 'rect', label: 'Espalier' },
+]
+
+export default function Inspector({ bed, placement, node, snapStep, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onUnplace }: InspectorProps) {
   if (bed) {
     return (
       <div className="flex flex-col gap-3 p-3">
@@ -73,17 +81,55 @@ export default function Inspector({ bed, placement, node, snapStep, onBedChange,
   }
 
   if (placement && placement.region) {
-    const count = plantsInRegion(placement.footprint ?? 0.3, placement.region)
+    const region = placement.region
+    const shape = placement.shape ?? 'area'
+    const count = plantsInRegion(placement.footprint ?? 0.3, region)
+    const radius = Math.min(region.width, region.height) / 2
+    const cx = region.x + region.width / 2
+    const cy = region.y + region.height / 2
     return (
       <div className="flex flex-col gap-3 p-3">
         <h2 className="text-sm font-semibold text-ink">Planting</h2>
         <p className="text-sm font-medium text-ink">{node ? displayLabel(node) : placement.nodeId}</p>
-        <p className="text-xs text-muted">
-          Footprint {((placement.footprint ?? 0.3) * 100).toFixed(0)} cm · fits {count} at this size
-        </p>
-        <Field label="Quantity">
-          <input type="number" min="0" className={inputCls} value={placement.quantity ?? count} onChange={(e) => onQuantityChange(Math.max(0, parseInt(e.target.value) || 0))} />
+        <Field label="Type">
+          <div className="flex gap-1">
+            {PLACEMENT_TYPES.map((t) => (
+              <button
+                key={t.shape}
+                type="button"
+                onClick={() => onPlacementShapeChange(t.shape)}
+                className={['flex-1 rounded-md px-2 py-1.5 text-sm font-medium', shape === t.shape ? 'bg-brand text-onbrand' : 'bg-sunken text-muted hover:text-ink'].join(' ')}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </Field>
+        {shape === 'area' && (
+          <>
+            <p className="text-xs text-muted">
+              Footprint {((placement.footprint ?? 0.3) * 100).toFixed(0)} cm · fits {count} at this size
+            </p>
+            <Field label="Quantity">
+              <input type="number" min="0" className={inputCls} value={placement.quantity ?? count} onChange={(e) => onQuantityChange(Math.max(0, parseInt(e.target.value) || 0))} />
+            </Field>
+          </>
+        )}
+        {shape === 'round' && (
+          <Field label="Radius (m)">
+            <SizeInput value={radius} min={0.05} step={0.05} onCommit={(r) => onPlacementResize({ x: cx - r, y: cy - r, width: 2 * r, height: 2 * r })} />
+          </Field>
+        )}
+        {shape === 'rect' && (
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Width (m)">
+              <SizeInput value={region.width} min={0.1} step={0.1} onCommit={(w) => onPlacementResize({ ...region, width: w })} />
+            </Field>
+            <Field label="Height (m)">
+              <SizeInput value={region.height} min={0.1} step={0.1} onCommit={(h) => onPlacementResize({ ...region, height: h })} />
+            </Field>
+          </div>
+        )}
         <button type="button" onClick={onUnplace} className="mt-1 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink">
           Take off the plot
         </button>

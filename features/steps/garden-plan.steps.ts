@@ -7,6 +7,7 @@ import {
   placePlant,
   movePlacement,
   setQuantity,
+  setPlacementShape,
   removeBed,
   holdingsInBed,
   listBeds,
@@ -14,7 +15,7 @@ import {
   getPlotSize,
   setPlotSize,
 } from '../../src/app/garden'
-import type { Bed, Holding } from '../../src/schema/userData'
+import type { Bed, Holding, PlacementShape } from '../../src/schema/userData'
 
 const feature = await loadFeature('features/garden-plan.feature')
 
@@ -48,11 +49,11 @@ async function addFreeBed(id: string, w: string, h: string): Promise<Bed> {
   return lastBed
 }
 
-/** Place a plant over the full area of the current bed. */
-async function placeWholeBed(nodeId: string, bedId: string): Promise<Holding> {
+/** Place a plant over the full area of the current bed (optionally as a round/rect single). */
+async function placeWholeBed(nodeId: string, bedId: string, shape?: PlacementShape): Promise<Holding> {
   const bed = await db.beds.get(bedId)
   const region = { x: 0, y: 0, width: bed!.width, height: bed!.height }
-  lastPlacement = await placePlant({ nodeId, bedId, region, status: 'growing' })
+  lastPlacement = await placePlant({ nodeId, bedId, region, shape, status: 'growing' })
   return lastPlacement
 }
 
@@ -93,6 +94,51 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     And('that planting records its footprint {string}', async (_, f: string) => {
       expect((await reloadPlacement()).footprint).toBeCloseTo(parseFloat(f))
+    })
+  })
+
+  Scenario('A pot holds a single plant whatever its size', ({ Given, When, Then }) => {
+    Given('a {string} bed {string} measuring {string} by {string}', async (_, _mode: string, id: string, w: string, h: string) => {
+      await addFreeBed(id, w, h)
+    })
+    When('I place {string} on {string} as a {string} over the whole bed', async (_, node: string, bed: string, shape: string) => {
+      await placeWholeBed(node, bed, shape as PlacementShape)
+    })
+    Then('that planting is a {string} holding with quantity {int}', async (_, shape: string, qty: number) => {
+      const h = await reloadPlacement()
+      expect(h.shape).toBe(shape)
+      expect(h.quantity).toBe(qty)
+    })
+  })
+
+  Scenario('An espalier holds a single plant over a rectangle', ({ Given, When, Then }) => {
+    Given('a {string} bed {string} measuring {string} by {string}', async (_, _mode: string, id: string, w: string, h: string) => {
+      await addFreeBed(id, w, h)
+    })
+    When('I place {string} on {string} as a {string} over the whole bed', async (_, node: string, bed: string, shape: string) => {
+      await placeWholeBed(node, bed, shape as PlacementShape)
+    })
+    Then('that planting is a {string} holding with quantity {int}', async (_, shape: string, qty: number) => {
+      const h = await reloadPlacement()
+      expect(h.shape).toBe(shape)
+      expect(h.quantity).toBe(qty)
+    })
+  })
+
+  Scenario('Converting an area block to a pot drops it to one plant', ({ Given, And, When, Then }) => {
+    Given('a {string} bed {string} measuring {string} by {string}', async (_, _mode: string, id: string, w: string, h: string) => {
+      await addFreeBed(id, w, h)
+    })
+    And('I have placed {string} on {string} over the whole bed', async (_, node: string, bed: string) => {
+      await placeWholeBed(node, bed)
+    })
+    When('I change that planting to a {string}', async (_, shape: string) => {
+      await setPlacementShape(lastPlacement!.id, shape as PlacementShape)
+    })
+    Then('that planting is a {string} holding with quantity {int}', async (_, shape: string, qty: number) => {
+      const h = await reloadPlacement()
+      expect(h.shape).toBe(shape)
+      expect(h.quantity).toBe(qty)
     })
   })
 

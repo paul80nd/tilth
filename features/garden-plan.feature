@@ -15,6 +15,22 @@ Feature: Plan the garden on a plot of beds
     And that planting is a holding of "tomato" with quantity 2
     And that planting records its footprint "0.6"
 
+  Scenario: A pot holds a single plant whatever its size
+    Given a "free" bed "bed1" measuring "1.2" by "0.6"
+    When I place "tomato" on "bed1" as a "round" over the whole bed
+    Then that planting is a "round" holding with quantity 1
+
+  Scenario: An espalier holds a single plant over a rectangle
+    Given a "free" bed "bed1" measuring "2" by "0.4"
+    When I place "tomato" on "bed1" as a "rect" over the whole bed
+    Then that planting is a "rect" holding with quantity 1
+
+  Scenario: Converting an area block to a pot drops it to one plant
+    Given a "free" bed "bed1" measuring "1.2" by "0.6"
+    And I have placed "tomato" on "bed1" over the whole bed
+    When I change that planting to a "round"
+    Then that planting is a "round" holding with quantity 1
+
   Scenario: A denser plant yields a higher count over the same area
     Given a "free" bed "bed1" measuring "1.2" by "0.6"
     When I place "carrot" on "bed1" over the whole bed

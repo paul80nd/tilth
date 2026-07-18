@@ -36,6 +36,13 @@ export interface Bed {
   notes?: string
 }
 
+/** How a placement occupies its region on the plot:
+ *  - `area`  — a rectangle packed with many plants at their spacing (the default; veg blocks).
+ *  - `round` — one plant occupying a circle of a set radius (pots / planters).
+ *  - `rect`  — one plant occupying a rectangle (e.g. an espalier trained along a wall).
+ *  Absent ⇒ `area` (back-compat with placements made before this field existed). */
+export type PlacementShape = 'area' | 'round' | 'rect'
+
 /** Something the user grows (or plans to). An *individual planting* — two apple trees are
  *  two holdings — so notes/photos/location attach per-instance, while the jobs they imply
  *  aggregate up the taxonomy into one de-duplicated list. A holding is also the garden-planner
@@ -63,9 +70,12 @@ export interface Holding {
   // --- Garden-planner placement (all optional; absent = an unplaced/list holding) ---
   /** The `Bed` this planting sits in. Absent = unplaced. */
   bedId?: string
-  /** The block it occupies within the bed (bed-local metres). The crop fills this region;
-   *  `quantity` is derived from `footprint` vs the region area (grid beds snap to whole cells). */
+  /** The block it occupies within the bed (bed-local metres). An `area` crop fills this region and
+   *  its `quantity` is packed from `footprint`; a single `round`/`rect` placement occupies the
+   *  region as one plant (a `round` circle is inscribed in the region). */
   region?: Rect
+  /** How the region is occupied — packed area (default) vs a single round/rect plant. */
+  shape?: PlacementShape
   /** Spacing footprint (diameter, metres) — default derived from the node, hand-overridable. */
   footprint?: number
   /** The plan year this placement belongs to (crop rotation + follow-on). Absent = current. */

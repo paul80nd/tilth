@@ -7,6 +7,24 @@ feature spec; private rationale (the real sources, personal curation rules) stay
 
 Each entry: the decision, *why*, and what it superseded if anything.
 
+## 2026-07-18 — Three placement shapes: packed area, single round, single rect
+
+A placement's `region` can be occupied three ways, held in one field `Holding.shape: 'area' |
+'round' | 'rect'` (absent ⇒ `area`, so pre-existing placements are unaffected):
+- **`area`** — a block packed with many plants at their footprint (veg); count derived.
+- **`round`** — one plant in a circle of a set radius (pots / planters).
+- **`rect`** — one plant filling a rectangle (an espalier along a wall).
+
+*Why one field, not two booleans:* the three are the only meaningful combinations (a packed
+circle isn't a thing), so a single 3-value discriminator is tighter than orthogonal `mode` +
+`shape` flags and rules out invalid states. *Why reuse `region` rather than store a centre +
+radius for round:* keeping one universal spatial field (a rect) means move/clamp/snap/backup all
+work unchanged — a `round` is just rendered as the inscribed circle and always counts one. The
+pure rule is `placementCount(shape, footprint, region)` in `src/lib/spacing.ts`; the palette's
+brush mode picks the shape at placing time (area drags a block, round drops/drags a radius, rect
+drags a rectangle) and the inspector can convert an existing placement. No schema version bump —
+the field is additive on `Holding` (non-indexed), like the other placement fields.
+
 ## 2026-07-18 — The garden planner: a placement is a holding; beds support grid + free spacing
 
 "My garden" grows into a **visual garden planner** (a plot canvas of beds you drop plants onto

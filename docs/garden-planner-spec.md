@@ -71,14 +71,24 @@ interface Holding {
   // ...existing: id, nodeId, label?, location?, plantedOn?, quantity?, status, notes?, photos?
   bedId?: string                     // which bed it sits in; absent = unplaced
   region?: { x: number; y: number; width: number; height: number }  // bed-local metres
+  shape?: 'area' | 'round' | 'rect'  // how the region is occupied; absent = area
   footprint?: number                 // spacing diameter (m); default from the node, overridable
   year?: number                      // plan year (rotation + follow-on); absent = current
 }
 ```
 
-A placement is a **block**: the crop fills `region`, and `quantity` is derived from `footprint`
-vs the region area (grid beds snap `region` to whole cells). A single plant is just a
-footprint-sized region. `quantity` is stored (survives, and can be hand-overridden).
+A placement occupies its `region` one of three ways (`shape`):
+- **`area`** (default) — a block packed with many plants at their `footprint`; `quantity` derived
+  (grid beds snap `region` to whole cells). Suits veg.
+- **`round`** — one plant in a **circle** inscribed in the (square) region; a set radius. Suits
+  pots / planters.
+- **`rect`** — one plant filling a **rectangle** (e.g. an espalier trained along a wall).
+
+`quantity` is stored (survives, hand-overridable) and is exactly `1` for a single round/rect.
+`placementCount(shape, footprint, region)` in `src/lib/spacing.ts` is the pure count rule. The
+brush mode in the palette picks the shape when placing; the inspector can switch an existing
+placement's type. Absent `shape` on older placements reads as `area`, so nothing pre-dating this
+changes.
 
 `location` (existing free text) stays as a fallback label for unplaced holdings; a placed
 holding shows its bed name instead.
