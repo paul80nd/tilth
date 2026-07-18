@@ -29,53 +29,46 @@ function noteFor(calendar: PhaseSpan[], code: PhaseCode, month: number): string 
   return calendar.find((s) => s.code === code && s.months.includes(month) && s.note)?.note
 }
 
-// The height of one month-line's coloured band strip in the compact CalendarCell.
-const CAL_LANE = 18
-
 /**
  * A compact calendar for the Taxonomy table — the 12 months on two lines of six (Jan–Jun above
- * Jul–Dec), each month a small box of stacked phase lanes: one lane per job the plant has, filled
- * in its legend colour for the months it happens. Reads like a seed-packet sow/grow/harvest strip.
- * Lanes are in PHASE_ORDER so a job keeps the same vertical position across every month, and the
- * eye can track a band left-to-right. Renders nothing when there's no calendar.
+ * Jul–Dec), each month a small box of stacked phase lanes: one lane per job happening that month,
+ * splitting the box equally with no gaps and kept in PHASE_ORDER so a band tracks left-to-right.
+ * Reads like a seed-packet sow/grow/harvest strip. The month initial sits inside its box — knocked
+ * out in the card colour over a coloured month, muted over an empty one. Fills its cell edge-to-
+ * edge (the table cell supplies the border + height). Renders nothing when there's no calendar.
  */
-export function CalendarCell({ calendar, width = 160 }: { calendar: PhaseSpan[]; width?: number }) {
+export function CalendarCell({ calendar }: { calendar: PhaseSpan[] }) {
   const codes = phasesPresent(calendar)
   if (codes.length === 0) return null
 
-  const line = (months: number[], labels: string[]) => (
-    <div>
-      <div className="grid grid-cols-6">
-        {labels.map((l, i) => (
-          <div key={i} className="text-center text-[0.5rem] font-medium leading-none text-subtle">
-            {l}
+  const line = (months: number[], labels: string[], topDivider: boolean) => (
+    <div className={`grid flex-1 grid-cols-6 ${topDivider ? 'border-t border-divider' : ''}`}>
+      {months.map((m, i) => {
+        const active = codes.filter((code) => isActive(calendar, code, m))
+        const title = active.length
+          ? `${MONTH_NAMES[m - 1]}: ${active.map((c) => PHASE_META[c].label).join(', ')}`
+          : MONTH_NAMES[m - 1]
+        return (
+          <div key={m} className={`relative flex flex-col ${i > 0 ? 'border-l border-divider' : ''}`} title={title}>
+            {active.map((code) => (
+              <div key={code} className="flex-1" style={{ backgroundColor: tokenColour(code) }} />
+            ))}
+            <span
+              className={`pointer-events-none absolute inset-0 grid place-items-center text-[0.55rem] font-semibold leading-none ${active.length ? '' : 'text-subtle'}`}
+              style={active.length ? { color: 'var(--color-card)' } : undefined}
+            >
+              {labels[i]}
+            </span>
           </div>
-        ))}
-      </div>
-      <div className="mt-0.5 grid grid-cols-6 overflow-hidden rounded-sm border border-divider">
-        {months.map((m, i) => (
-          <div key={m} className={`flex flex-col ${i > 0 ? 'border-l border-divider' : ''}`} style={{ height: CAL_LANE }}>
-            {codes.map((code) => {
-              const active = isActive(calendar, code, m)
-              return (
-                <div
-                  key={code}
-                  className="flex-1"
-                  style={active ? { backgroundColor: tokenColour(code) } : undefined}
-                  title={active ? `${PHASE_META[code].label} — ${MONTH_NAMES[m - 1]}` : undefined}
-                />
-              )
-            })}
-          </div>
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 
   return (
-    <div style={{ width }} className="flex flex-col gap-1">
-      {line(MONTHS_H1, MONTH_INITIALS.slice(0, 6))}
-      {line(MONTHS_H2, MONTH_INITIALS.slice(6))}
+    <div className="flex h-full w-full flex-col">
+      {line(MONTHS_H1, MONTH_INITIALS.slice(0, 6), false)}
+      {line(MONTHS_H2, MONTH_INITIALS.slice(6), true)}
     </div>
   )
 }

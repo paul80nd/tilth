@@ -405,13 +405,13 @@ export default function TaxonomyPage() {
                   )}
                   {cols.calendar && (
                     <td
-                      className="border-b border-l border-divider px-2 align-middle"
+                      className="border-b border-l border-divider p-0 align-middle"
                       style={{ width: CALW, minWidth: CALW, maxWidth: CALW }}
                       title={hasCal && calFrom ? `Inherited from ${calFrom}` : undefined}
                     >
                       {hasCal ? (
-                        <div className={calFrom ? 'opacity-40' : ''}>
-                          <CalendarCell calendar={r.calendar!} width={CALW - 16} />
+                        <div className={`flex flex-col ${calFrom ? 'opacity-40' : ''}`} style={{ height: CELL }}>
+                          <CalendarCell calendar={r.calendar!} />
                         </div>
                       ) : null}
                     </td>
