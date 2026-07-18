@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Bed, Holding, Rect } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
@@ -10,12 +10,17 @@ import { snapRect, clampRect } from '../../lib/plot'
 // SVG strokes and text don't scale with zoom; the maths (packing, snap, clamp) stays in the pure
 // libs. Pointer-events based (no HTML5 drag-and-drop) so it behaves the same in every browser.
 
-/** The working extent of the plot, in metres. Beds are clamped inside it. */
-export const PLOT_W = 16
-export const PLOT_H = 12
 const BASE_PPM = 64 // pixels per metre at zoom 1
 const MIN_Z = 0.4
-const MAX_Z = 2.4
+const MAX_Z = 6 // zoom in hard for narrow gardens / cm-scale spacing
+
+// Zoom is a viewport preference (like the theme), so it persists in localStorage — not in the
+// garden data / backup. Restored (clamped) on mount so a plot opens at the zoom you left it.
+const ZOOM_KEY = 'tilth-plot-zoom'
+function readZoom(): number {
+  const v = parseFloat(localStorage.getItem(ZOOM_KEY) ?? '')
+  return Number.isFinite(v) ? Math.min(MAX_Z, Math.max(MIN_Z, v)) : 1
+}
 const HANDLE_PX = 14 // resize-handle hit radius
 const DOT_CAP = 400 // don't draw more plant dots than this (a dense bed stays readable)
 
@@ -37,6 +42,11 @@ export interface PlotCanvasProps {
   /** Placed holdings (those with a `bedId` + `region`). */
   placements: Holding[]
   nodesById: Map<string, PlantNode>
+  /** The plot extent (metres); beds are clamped inside it. */
+  plotW: number
+  plotH: number
+  /** Snap bed drag/resize to the grid (grid beds → cell, free beds → 0.1 m); off = continuous. */
+  snap: boolean
   selection: Selection
   /** The plant armed for placing (from the palette), or null. */
   brushNodeId: string | null
@@ -68,6 +78,9 @@ export default function PlotCanvas({
   beds,
   placements,
   nodesById,
+  plotW,
+  plotH,
+  snap,
   selection,
   brushNodeId,
   onSelect,
@@ -76,8 +89,13 @@ export default function PlotCanvas({
   onPlace,
 }: PlotCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const [z, setZ] = useState(1)
+  const [z, setZ] = useState(readZoom)
   const [pan, setPan] = useState({ x: 40, y: 40 })
+
+  // Remember the zoom between visits.
+  useEffect(() => {
+    localStorage.setItem(ZOOM_KEY, String(z))
+  }, [z])
   const [drag, setDrag] = useState<Drag | null>(null)
   // Live drag previews (avoid hitting Dexie every pointermove; commit on pointer-up).
   const [draftBed, setDraftBed] = useState<{ id: string; rect: Rect } | null>(null)
@@ -95,8 +113,9 @@ export default function PlotCanvas({
   }
 
   const bedById = (id?: string) => beds.find((b) => b.id === id)
-  /** The step a bed snaps to: its grid cell, else a 10 cm nudge. */
-  const stepOf = (bed?: Bed) => (bed?.spacing === 'grid' ? bed.cellSize ?? 0.3 : 0.1)
+  /** The step a bed snaps to when snapping is on: its grid cell, else a 10 cm nudge. Snap off ⇒ 0
+   *  (continuous). */
+  const stepOf = (bed?: Bed) => (!snap ? 0 : bed?.spacing === 'grid' ? bed.cellSize ?? 0.3 : 0.1)
 
   function bedAt(mx: number, my: number): Bed | undefined {
     // topmost last-drawn wins
@@ -171,11 +190,11 @@ export default function PlotCanvas({
     const { mx, my } = toMetres(e)
     if (drag.kind === 'move-bed') {
       const bed = bedById(drag.id)!
-      const rect = clampRect({ x: mx - drag.grabDX, y: my - drag.grabDY, width: bed.width, height: bed.height }, PLOT_W, PLOT_H)
+      const rect = clampRect({ x: mx - drag.grabDX, y: my - drag.grabDY, width: bed.width, height: bed.height }, plotW, plotH)
       setDraftBed({ id: bed.id, rect })
     } else if (drag.kind === 'resize-bed') {
       const bed = bedById(drag.id)!
-      const rect = clampRect({ x: bed.x, y: bed.y, width: Math.max(0.3, mx - bed.x), height: Math.max(0.3, my - bed.y) }, PLOT_W, PLOT_H)
+      const rect = clampRect({ x: bed.x, y: bed.y, width: Math.max(0.3, mx - bed.x), height: Math.max(0.3, my - bed.y) }, plotW, plotH)
       setDraftBed({ id: bed.id, rect })
     } else if (drag.kind === 'move-placement') {
       const bed = bedById(drag.bedId)!
@@ -220,14 +239,15 @@ export default function PlotCanvas({
   const placementRegion = (h: Holding): Rect =>
     draftPlacement?.id === h.id ? draftPlacement.region : h.region!
 
+  // Metre gridlines up to the (possibly fractional) plot extent; the extent rect draws the border.
   const gridLines: React.ReactNode[] = []
-  for (let i = 0; i <= PLOT_W; i++) {
+  for (let i = 1; i < plotW; i++) {
     const x = pan.x + i * ppm
-    gridLines.push(<line key={`v${i}`} x1={x} y1={pan.y} x2={x} y2={pan.y + PLOT_H * ppm} className="stroke-line" strokeWidth={i % 5 === 0 ? 1.2 : 0.6} />)
+    gridLines.push(<line key={`v${i}`} x1={x} y1={pan.y} x2={x} y2={pan.y + plotH * ppm} className="stroke-line" strokeWidth={i % 5 === 0 ? 1.2 : 0.6} />)
   }
-  for (let j = 0; j <= PLOT_H; j++) {
+  for (let j = 1; j < plotH; j++) {
     const y = pan.y + j * ppm
-    gridLines.push(<line key={`h${j}`} x1={pan.x} y1={y} x2={pan.x + PLOT_W * ppm} y2={y} className="stroke-line" strokeWidth={j % 5 === 0 ? 1.2 : 0.6} />)
+    gridLines.push(<line key={`h${j}`} x1={pan.x} y1={y} x2={pan.x + plotW * ppm} y2={y} className="stroke-line" strokeWidth={j % 5 === 0 ? 1.2 : 0.6} />)
   }
 
   return (
@@ -242,7 +262,7 @@ export default function PlotCanvas({
         onPointerCancel={onPointerUp}
       >
         {/* plot extent + grid */}
-        <rect x={pan.x} y={pan.y} width={PLOT_W * ppm} height={PLOT_H * ppm} className="fill-card" />
+        <rect x={pan.x} y={pan.y} width={plotW * ppm} height={plotH * ppm} className="fill-card stroke-line-strong" strokeWidth={1.5} />
         {gridLines}
 
         {/* beds */}
@@ -319,6 +339,9 @@ export default function PlotCanvas({
       {/* zoom controls */}
       <div className="absolute bottom-3 right-3 flex flex-col overflow-hidden rounded-md border border-line bg-card shadow-sm">
         <button type="button" className="px-2.5 py-1.5 text-sm text-muted hover:bg-sunken hover:text-ink" onClick={() => setZ((v) => Math.min(MAX_Z, +(v + 0.2).toFixed(2)))} aria-label="Zoom in">＋</button>
+        <button type="button" className="border-t border-line px-1.5 py-1 text-[0.7rem] tabular-nums text-muted hover:bg-sunken hover:text-ink" onClick={() => setZ(1)} aria-label="Reset zoom to 100%" title="Reset zoom">
+          {Math.round(z * 100)}%
+        </button>
         <button type="button" className="border-t border-line px-2.5 py-1.5 text-sm text-muted hover:bg-sunken hover:text-ink" onClick={() => setZ((v) => Math.max(MIN_Z, +(v - 0.2).toFixed(2)))} aria-label="Zoom out">－</button>
       </div>
     </div>

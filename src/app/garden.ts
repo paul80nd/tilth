@@ -10,6 +10,7 @@
 import { db } from '../db/db'
 import type { Bed, Holding, Rect } from '../schema/userData'
 import { footprintOf, plantsInRegion } from '../lib/spacing'
+import { reanchorRects, type PlotAnchor } from '../lib/plot'
 
 /** Fresh id for a hand-created bed/holding. `crypto.randomUUID` is available in every target
  *  (evergreen browsers, Node ≥22, the test env). */
@@ -21,6 +22,59 @@ function newId(): string {
  *  re-seed, exactly as the import/backup paths do. */
 async function markUser(): Promise<void> {
   await db.settings.put({ key: 'dataSource', value: 'user' })
+}
+
+// --- Plot extent ----------------------------------------------------------------------------
+
+/** The working extent of the plot (metres). Beds live inside it; it grows/shrinks on demand. */
+export const DEFAULT_PLOT_W = 16
+export const DEFAULT_PLOT_H = 12
+const MIN_PLOT = 1
+const MAX_PLOT = 100
+
+export interface PlotSize {
+  width: number
+  height: number
+}
+
+/** Keep a plot dimension sane (finite, within [MIN_PLOT, MAX_PLOT]); fall back if it isn't. */
+function clampPlot(value: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.min(MAX_PLOT, Math.max(MIN_PLOT, value))
+}
+
+/** The plot's current size, read from settings (persists + travels in the backup). Defaults to
+ *  {@link DEFAULT_PLOT_W}×{@link DEFAULT_PLOT_H} until the user resizes it. */
+export async function getPlotSize(): Promise<PlotSize> {
+  const s = await db.settings.get('plot')
+  const v = (s?.value ?? {}) as Partial<PlotSize>
+  return {
+    width: clampPlot(v.width ?? DEFAULT_PLOT_W, DEFAULT_PLOT_W),
+    height: clampPlot(v.height ?? DEFAULT_PLOT_H, DEFAULT_PLOT_H),
+  }
+}
+
+/** Resize the plot, keeping the `anchor` corner fixed: beds shift so they hold their place against
+ *  that corner, then clamp inside the new extent (a shrink can leave a bed outside). Persists the
+ *  size to settings and marks the store user-owned. */
+export async function setPlotSize(size: Partial<PlotSize>, anchor: PlotAnchor = 'NW'): Promise<PlotSize> {
+  let next!: PlotSize
+  await db.transaction('rw', db.beds, db.settings, async () => {
+    const cur = await getPlotSize()
+    next = {
+      width: clampPlot(size.width ?? cur.width, cur.width),
+      height: clampPlot(size.height ?? cur.height, cur.height),
+    }
+    const beds = await db.beds.toArray()
+    const moved = reanchorRects(beds, cur.width, cur.height, next.width, next.height, anchor)
+    for (let i = 0; i < beds.length; i++) {
+      const m = moved[i]
+      await db.beds.put({ ...beds[i], x: m.x, y: m.y, width: m.width, height: m.height })
+    }
+    await db.settings.put({ key: 'plot', value: next })
+    await markUser()
+  })
+  return next
 }
 
 // --- Beds -----------------------------------------------------------------------------------

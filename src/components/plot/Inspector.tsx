@@ -2,14 +2,18 @@ import type { Bed, Holding } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
 import { plantsInRegion } from '../../lib/spacing'
+import { Field, SizeInput, inputCls } from './fields'
 
 // The inspector: edit the currently-selected bed or placement. A thin shell over the garden seam —
-// every change is persisted by the callbacks the page wires to src/app/garden.ts.
+// every change is persisted by the callbacks the page wires to src/app/garden.ts. (Plot size is
+// edited in its own modal — see PlotSizeModal.)
 
 export interface InspectorProps {
   bed?: Bed
   placement?: Holding
   node?: PlantNode
+  /** Snap increment (m) for typed bed sizes; 0 when snapping is off (a 0.1 spinner step is used). */
+  snapStep: number
   onBedChange: (patch: Partial<Bed>) => void
   onRemoveBed: () => void
   onQuantityChange: (qty: number) => void
@@ -18,18 +22,7 @@ export interface InspectorProps {
 
 const BED_KINDS: Bed['kind'][] = ['bed', 'raised-bed', 'container', 'greenhouse', 'coldframe', 'border', 'structure']
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-xs font-medium text-muted">{label}</span>
-      {children}
-    </label>
-  )
-}
-
-const inputCls = 'rounded-md border border-line bg-card px-2 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring'
-
-export default function Inspector({ bed, placement, node, onBedChange, onRemoveBed, onQuantityChange, onUnplace }: InspectorProps) {
+export default function Inspector({ bed, placement, node, snapStep, onBedChange, onRemoveBed, onQuantityChange, onUnplace }: InspectorProps) {
   if (bed) {
     return (
       <div className="flex flex-col gap-3 p-3">
@@ -44,6 +37,14 @@ export default function Inspector({ bed, placement, node, onBedChange, onRemoveB
             ))}
           </select>
         </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Width (m)">
+            <SizeInput value={bed.width} min={0.3} step={snapStep || 0.1} onCommit={(w) => onBedChange({ width: w })} />
+          </Field>
+          <Field label="Height (m)">
+            <SizeInput value={bed.height} min={0.3} step={snapStep || 0.1} onCommit={(h) => onBedChange({ height: h })} />
+          </Field>
+        </div>
         <Field label="Spacing">
           <div className="flex gap-1">
             {(['free', 'grid'] as const).map((m) => (
@@ -63,7 +64,7 @@ export default function Inspector({ bed, placement, node, onBedChange, onRemoveB
             <input type="number" step="0.05" min="0.1" className={inputCls} value={bed.cellSize ?? 0.3} onChange={(e) => onBedChange({ cellSize: Math.max(0.1, parseFloat(e.target.value) || 0.3) })} />
           </Field>
         )}
-        <p className="text-xs text-subtle">{bed.width.toFixed(1)} × {bed.height.toFixed(1)} m — drag the corner handle to resize.</p>
+        <p className="text-xs text-subtle">Or drag the corner handle to resize.</p>
         <button type="button" onClick={onRemoveBed} className="mt-1 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink">
           Remove bed
         </button>

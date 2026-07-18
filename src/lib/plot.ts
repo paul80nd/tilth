@@ -51,3 +51,25 @@ export function cellsAcross(lengthM: number, cellM: number): number {
   if (cellM <= 0) return 0
   return Math.max(1, Math.round(lengthM / cellM))
 }
+
+/** Which corner of the plot stays put when it is resized. Space is added/removed on the two
+ *  opposite sides, so beds keep their distance from the anchored corner. `NW` (the origin corner)
+ *  is the natural default — beds don't move and the plot grows to the right and down. */
+export type PlotAnchor = 'NW' | 'NE' | 'SW' | 'SE'
+
+/** Reposition rects when their container is resized from a fixed `anchor` corner, then clamp each
+ *  inside the new bounds. Anchoring an east corner shifts rects by the width delta (so the right
+ *  edge stays put); a south corner shifts them by the height delta. A shrink can push a rect past
+ *  the new edge — the clamp pulls it back in. */
+export function reanchorRects(
+  rects: Rect[],
+  oldW: number,
+  oldH: number,
+  newW: number,
+  newH: number,
+  anchor: PlotAnchor,
+): Rect[] {
+  const dx = anchor === 'NE' || anchor === 'SE' ? newW - oldW : 0
+  const dy = anchor === 'SW' || anchor === 'SE' ? newH - oldH : 0
+  return rects.map((r) => clampRect({ x: r.x + dx, y: r.y + dy, width: r.width, height: r.height }, newW, newH))
+}

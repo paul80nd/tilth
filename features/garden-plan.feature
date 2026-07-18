@@ -40,6 +40,13 @@ Feature: Plan the garden on a plot of beds
     And the store still has the "tomato" holding
     And that holding is no longer placed
 
+  Scenario: Resizing the plot from a fixed corner carries the beds with it
+    Given a "free" bed "bed1" measuring "2" by "2"
+    And bed "bed1" starts at "5" "3"
+    When I resize the plot to "12" wide anchored "SE"
+    Then the plot is "12" by "12"
+    And bed "bed1" is now at "1" "3"
+
   Scenario: The shopping list totals plants across the plot
     Given a "free" bed "bed1" measuring "1.2" by "0.6"
     And a "free" bed "bed2" measuring "1.2" by "0.6"

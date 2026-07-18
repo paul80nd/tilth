@@ -3,6 +3,7 @@ import { expect } from 'vitest'
 import { db } from '../../src/db/db'
 import {
   addBed,
+  updateBed,
   placePlant,
   movePlacement,
   setQuantity,
@@ -10,6 +11,8 @@ import {
   holdingsInBed,
   listBeds,
   plotSummary,
+  getPlotSize,
+  setPlotSize,
 } from '../../src/app/garden'
 import type { Bed, Holding } from '../../src/schema/userData'
 
@@ -158,6 +161,28 @@ describeFeature(feature, ({ Background, Scenario }) => {
       const h = await reloadPlacement()
       expect(h.bedId).toBeUndefined()
       expect(h.region).toBeUndefined()
+    })
+  })
+
+  Scenario('Resizing the plot from a fixed corner carries the beds with it', ({ Given, And, When, Then }) => {
+    Given('a {string} bed {string} measuring {string} by {string}', async (_, _mode: string, id: string, w: string, h: string) => {
+      await addFreeBed(id, w, h)
+    })
+    And('bed {string} starts at {string} {string}', async (_, id: string, x: string, y: string) => {
+      await updateBed(id, { x: parseFloat(x), y: parseFloat(y) })
+    })
+    When('I resize the plot to {string} wide anchored {string}', async (_, w: string, anchor: string) => {
+      await setPlotSize({ width: parseFloat(w) }, anchor as 'NW' | 'NE' | 'SW' | 'SE')
+    })
+    Then('the plot is {string} by {string}', async (_, w: string, h: string) => {
+      const p = await getPlotSize()
+      expect(p.width).toBeCloseTo(parseFloat(w))
+      expect(p.height).toBeCloseTo(parseFloat(h))
+    })
+    And('bed {string} is now at {string} {string}', async (_, id: string, x: string, y: string) => {
+      const bed = await db.beds.get(id)
+      expect(bed!.x).toBeCloseTo(parseFloat(x))
+      expect(bed!.y).toBeCloseTo(parseFloat(y))
     })
   })
 

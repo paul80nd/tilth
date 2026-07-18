@@ -13,12 +13,17 @@ import {
   movePlacement,
   setQuantity,
   unplace,
+  getPlotSize,
+  setPlotSize,
+  DEFAULT_PLOT_W,
+  DEFAULT_PLOT_H,
 } from '../app/garden'
 import { displayLabel } from '../lib/naming'
 import { clampRect } from '../lib/plot'
-import PlotCanvas, { PLOT_W, PLOT_H, type Selection } from '../components/plot/PlotCanvas'
+import PlotCanvas, { type Selection } from '../components/plot/PlotCanvas'
 import Palette from '../components/plot/Palette'
 import Inspector from '../components/plot/Inspector'
+import { PlotSizeModal } from '../components/plot/PlotSizeModal'
 
 // "My garden" — the visual garden planner. A plot of beds you draw plants onto at their spacing;
 // each placement is a holding (see docs/decisions.md), so what you lay out here IS what you grow.
@@ -30,9 +35,12 @@ export default function GardenPage() {
   const beds = useLiveQuery(listBeds, [], [] as Bed[])
   const holdings = useLiveQuery(listHoldings, [], [] as Holding[])
   const nodes = useLiveQuery(listNodes, [], [] as PlantNode[])
+  const plot = useLiveQuery(getPlotSize, [], { width: DEFAULT_PLOT_W, height: DEFAULT_PLOT_H })
 
   const [selection, setSelection] = useState<Selection>(null)
   const [brushNodeId, setBrushNodeId] = useState<string | null>(null)
+  const [snap, setSnap] = useState(true)
+  const [plotModalOpen, setPlotModalOpen] = useState(false)
 
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
   const placements = useMemo(() => holdings.filter((h) => h.bedId && h.region), [holdings])
@@ -42,6 +50,11 @@ export default function GardenPage() {
   const selectedBed = selection?.type === 'bed' ? beds.find((b) => b.id === selection.id) : undefined
   const selectedPlacement =
     selection?.type === 'placement' ? placements.find((h) => h.id === selection.id) : undefined
+
+  // The snap increment for the selected bed's typed sizes: 0 when snapping is off, else its grid
+  // cell (grid beds) or a 10 cm nudge (free beds).
+  const bedStep = selectedBed?.spacing === 'grid' ? selectedBed.cellSize ?? 0.3 : 0.1
+  const snapStep = snap ? bedStep : 0
 
   // Shopping list — plant totals across the plot (grouped by node).
   const shopping = useMemo(() => {
@@ -53,9 +66,30 @@ export default function GardenPage() {
   async function handleAddBed() {
     // Drop a fresh 2×1 m bed near the top-left, offset per existing bed so they don't stack exactly.
     const n = beds.length
-    const rect = clampRect({ x: 0.5 + (n % 4) * 0.4, y: 0.5 + n * 1.4, width: 2, height: 1 }, PLOT_W, PLOT_H)
+    const rect = clampRect({ x: 0.5 + (n % 4) * 0.4, y: 0.5 + n * 1.4, width: 2, height: 1 }, plot.width, plot.height)
     const bed = await addBed({ name: `Bed ${n + 1}`, kind: 'raised-bed', spacing: 'free', ...rect })
     setSelection({ type: 'bed', id: bed.id })
+  }
+
+  // A bed's own fields. Geometry (width/height typed in the inspector) is clamped to the plot; a
+  // typed size is taken as exact (only drag-resize snaps, per the toggle). Other fields pass through.
+  function handleBedChange(patch: Partial<Bed>) {
+    if (!selectedBed) return
+    if (patch.width !== undefined || patch.height !== undefined) {
+      const rect = clampRect(
+        {
+          x: selectedBed.x,
+          y: selectedBed.y,
+          width: Math.max(0.3, patch.width ?? selectedBed.width),
+          height: Math.max(0.3, patch.height ?? selectedBed.height),
+        },
+        plot.width,
+        plot.height,
+      )
+      void updateBed(selectedBed.id, { x: rect.x, y: rect.y, width: rect.width, height: rect.height })
+    } else {
+      void updateBed(selectedBed.id, patch)
+    }
   }
 
   return (
@@ -70,12 +104,24 @@ export default function GardenPage() {
         <div className="flex flex-none items-center gap-3 border-b border-line bg-card px-4 py-2.5">
           <h1 className="font-display text-h2 font-semibold">My garden</h1>
           <span className="text-xs text-muted">
-            {beds.length} {beds.length === 1 ? 'bed' : 'beds'} · {placements.length} plantings
+            {beds.length} {beds.length === 1 ? 'bed' : 'beds'} · {placements.length} plantings ·{' '}
+            {plot.width.toFixed(1)}×{plot.height.toFixed(1)} m
           </span>
+          <label className="ml-auto flex cursor-pointer select-none items-center gap-1.5 text-xs text-muted">
+            <input type="checkbox" checked={snap} onChange={(e) => setSnap(e.target.checked)} className="accent-brand" />
+            Snap to grid
+          </label>
+          <button
+            type="button"
+            onClick={() => setPlotModalOpen(true)}
+            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
+          >
+            Plot size…
+          </button>
           <button
             type="button"
             onClick={handleAddBed}
-            className="ml-auto rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90"
+            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90"
           >
             + Add bed
           </button>
@@ -89,6 +135,9 @@ export default function GardenPage() {
               beds={beds}
               placements={placements}
               nodesById={nodesById}
+              plotW={plot.width}
+              plotH={plot.height}
+              snap={snap}
               selection={selection}
               brushNodeId={brushNodeId}
               onSelect={setSelection}
@@ -107,7 +156,8 @@ export default function GardenPage() {
             bed={selectedBed}
             placement={selectedPlacement}
             node={selectedPlacement ? nodesById.get(selectedPlacement.nodeId) : undefined}
-            onBedChange={(patch) => selectedBed && void updateBed(selectedBed.id, patch)}
+            snapStep={snapStep}
+            onBedChange={handleBedChange}
             onRemoveBed={() => {
               if (selectedBed) {
                 void removeBed(selectedBed.id)
@@ -140,6 +190,14 @@ export default function GardenPage() {
           </div>
         )}
       </aside>
+
+      {plotModalOpen && (
+        <PlotSizeModal
+          plot={plot}
+          onResize={(size, anchor) => void setPlotSize(size, anchor)}
+          onClose={() => setPlotModalOpen(false)}
+        />
+      )}
     </div>
   )
 }
