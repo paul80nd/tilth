@@ -163,8 +163,10 @@ export default function TaxonomyPage() {
   const resolved = useMemo(() => (nodes ? resolveAll(nodes) : new Map()), [nodes])
   const byId = useMemo(() => new Map((nodes ?? []).map((n) => [n.id, n])), [nodes])
   const linkedCount = useMemo(() => (nodes ?? []).filter((n) => n.sourceLinks?.length).length, [nodes])
-  // `null` means "all expanded" (the default); a Set once the gardener starts collapsing.
-  const [expanded, setExpanded] = useState<Set<string> | null>(null)
+  // The set of open group rows. Starts EMPTY so the tree opens collapsed (top-level family
+  // banners only) — that's the scanning starting point, and gardeners were collapsing it first
+  // every time. "Expand all" fills it from the forest; "Collapse all" empties it again.
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   // Group by the family→genus tree, or a flat A–Z list of plants (to reconcile against a
   // spreadsheet sorted by plant name) — persisted so the choice survives a revisit.
   const [mode, setMode] = usePersistentState<'tree' | 'flat'>('tilth.taxonomy.mode', 'tree')
@@ -181,7 +183,7 @@ export default function TaxonomyPage() {
     return { ...cur, [key]: !cur[key] }
   })
 
-  const openSet = useMemo(() => expanded ?? new Set(allIds(forest)), [expanded, forest])
+  const openSet = expanded
   const rows = useMemo(
     () =>
       mode === 'flat'
@@ -192,7 +194,7 @@ export default function TaxonomyPage() {
 
   function toggle(id: string) {
     setExpanded((prev) => {
-      const base = new Set(prev ?? allIds(forest))
+      const base = new Set(prev)
       base.has(id) ? base.delete(id) : base.add(id)
       return base
     })
