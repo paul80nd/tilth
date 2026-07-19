@@ -6,7 +6,7 @@ import { deepEqual } from '../lib/equal'
 import {
   CARDINALS,
   EXPOSURE_LEVELS,
-  HARDINESS_MAX,
+  HARDINESS_RATINGS,
   LIGHT_LEVELS,
   conditionLabel,
 } from '../lib/conditions'
@@ -21,7 +21,7 @@ import { Row, Toggle, EditorFooter } from './EditorControls'
 // Saving writes the node's own conditions via the normal merge seam (stamped `manual`); an
 // unchanged edit writes nothing.
 
-const HARDINESS = Array.from({ length: HARDINESS_MAX }, (_, i) => `H${i + 1}`)
+const HARDINESS = HARDINESS_RATINGS
 
 export function PositionEditor({
   node,

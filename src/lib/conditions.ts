@@ -116,15 +116,23 @@ export function exposureLevel(set: Set<Exposure>): 'sheltered' | 'exposed' | und
   return undefined
 }
 
-// The generic hardiness scale (H1 tender → H7 very hardy). H1 is sometimes subdivided (H1a/b/c);
+// The generic hardiness scale (H1 tender → H7 very hardy). H1 is subdivided (H1a/b/c);
 // we key the graphic off the leading number and keep the source's exact label for display.
 export const HARDINESS_MAX = 7
 
+/** Selectable hardiness ratings, tender → hardy — the editor's pick-list. H1 is split into
+ *  H1a/H1b/H1c (the standard subdivision); H2–H7 are whole. Matches the canonical display form
+ *  from {@link hardiness} (lowercase subdivision letter). The graphic keys off the leading number,
+ *  so the letters only refine the label. */
+export const HARDINESS_RATINGS = ['H1a', 'H1b', 'H1c', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7'] as const
+
 export function hardiness(rating?: string): { label: string; rank: number } | undefined {
   if (!rating) return undefined
-  const m = rating.match(/H\s*([1-7])/i)
+  const m = rating.match(/H\s*([1-7])([a-c])?/i)
   if (!m) return undefined
-  return { label: rating.trim().toUpperCase(), rank: Number(m[1]) }
+  // Canonical form: "H" + number, with any subdivision letter lowercased (H1a/H1b/H1c).
+  const label = `H${m[1]}${m[2] ? m[2].toLowerCase() : ''}`
+  return { label, rank: Number(m[1]) }
 }
 
 /** Human label for a condition token: "well-drained" → "Well drained". */

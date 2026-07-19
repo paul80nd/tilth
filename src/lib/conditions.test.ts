@@ -92,9 +92,10 @@ describe('exposureSet / exposureLevel', () => {
 })
 
 describe('hardiness', () => {
-  it('reads the leading number, keeping the exact label', () => {
+  it('reads the leading number and canonicalises the label (lowercase subdivision letter)', () => {
     expect(hardiness('H5')).toEqual({ label: 'H5', rank: 5 })
-    expect(hardiness('h1a')).toEqual({ label: 'H1A', rank: 1 })
+    expect(hardiness('h1a')).toEqual({ label: 'H1a', rank: 1 })
+    expect(hardiness('H1C')).toEqual({ label: 'H1c', rank: 1 }) // stored uppercase → shown lowercase
     expect(hardiness('H7')).toEqual({ label: 'H7', rank: 7 })
   })
 

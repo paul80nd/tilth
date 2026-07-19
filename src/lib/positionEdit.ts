@@ -12,6 +12,7 @@ import {
   LIGHT_LEVELS,
   aspectSet,
   exposureSet,
+  hardiness,
   lightSet,
   type Cardinal,
   type Exposure,
@@ -36,7 +37,9 @@ export function toPositionDraft(conditions: Conditions | undefined): PositionDra
     sun: LIGHT_LEVELS.filter((l) => sun.has(l)),
     aspect: CARDINALS.filter((c) => aspect.has(c)),
     exposure: EXPOSURE_LEVELS.filter((e) => exposure.has(e)),
-    hardiness: conditions?.hardiness?.trim() ?? '',
+    // Normalise to the canonical label (e.g. "H1C" → "H1c") so it matches the toggle vocab; keep
+    // any unrecognised free-text as-is rather than dropping it.
+    hardiness: hardiness(conditions?.hardiness)?.label ?? conditions?.hardiness?.trim() ?? '',
   }
 }
 
