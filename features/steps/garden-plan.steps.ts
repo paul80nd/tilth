@@ -8,6 +8,7 @@ import {
   movePlacement,
   setQuantity,
   setPlacementShape,
+  setPlacementColor,
   removeBed,
   holdingsInBed,
   listBeds,
@@ -183,6 +184,27 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     Then('that planting has quantity {int}', async (_, qty: number) => {
       expect((await reloadPlacement()).quantity).toBe(qty)
+    })
+  })
+
+  Scenario("Overriding a placement's colour, then resetting it", ({ Given, And, When, Then }) => {
+    Given('a {string} bed {string} measuring {string} by {string}', async (_, _mode: string, id: string, w: string, h: string) => {
+      await addFreeBed(id, w, h)
+    })
+    And('I have placed {string} on {string} over the whole bed', async (_, node: string, bed: string) => {
+      await placeWholeBed(node, bed)
+    })
+    When('I set the placement colour to {string}', async (_, color: string) => {
+      await setPlacementColor(lastPlacement!.id, color)
+    })
+    Then('that planting is drawn in {string}', async (_, color: string) => {
+      expect((await reloadPlacement()).color).toBe(color)
+    })
+    When('I reset the placement colour', async () => {
+      await setPlacementColor(lastPlacement!.id, undefined)
+    })
+    Then('that planting has no colour override', async () => {
+      expect((await reloadPlacement()).color).toBeUndefined()
     })
   })
 

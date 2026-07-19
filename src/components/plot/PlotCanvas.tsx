@@ -435,7 +435,7 @@ function PlotCanvas(
           const region = placementRegion(h)
           const p = toPx(bed.x + region.x, bed.y + region.y)
           const node = nodesById.get(h.nodeId)
-          const color = categoryColor(node)
+          const color = h.color ?? categoryColor(node)
           const selected = selection?.type === 'placement' && selection.id === h.id
           const shape = h.shape ?? 'area'
           const fp = footprintOf(h)

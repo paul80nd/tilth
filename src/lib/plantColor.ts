@@ -8,9 +8,9 @@ import type { PlantNode } from '../schema/plant'
 export const CATEGORY_COLOR: Record<string, string> = {
   flower: '#c084fc',
   fruit: '#fb7185',
-  herb: '#34d399',
+  herb: '#f59e0b',
   tree: '#60a5fa',
-  veg: '#f59e0b',
+  veg: '#34d399',
 }
 
 /** Fallback for a node with no (or an unknown) category. */

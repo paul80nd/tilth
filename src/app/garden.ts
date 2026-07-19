@@ -205,6 +205,18 @@ export async function setQuantity(holdingId: string, quantity: number): Promise<
   })
 }
 
+/** Set (or clear) the colour a placement is drawn in on the plot. Pass `undefined` to fall back to
+ *  the plant's category colour. */
+export async function setPlacementColor(holdingId: string, color: string | undefined): Promise<void> {
+  await db.transaction('rw', db.holdings, db.settings, async () => {
+    const h = await db.holdings.get(holdingId)
+    if (!h) return
+    const { color: _c, ...rest } = h
+    await db.holdings.put(color ? { ...rest, color } : rest)
+    await markUser()
+  })
+}
+
 /** Take a plant off the plot without deleting the holding (it returns to the flat list). */
 export async function unplace(holdingId: string): Promise<void> {
   await db.transaction('rw', db.holdings, db.settings, async () => {

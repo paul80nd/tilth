@@ -48,6 +48,14 @@ Feature: Plan the garden on a plot of beds
     When I set the placement quantity to 10
     Then that planting has quantity 10
 
+  Scenario: Overriding a placement's colour, then resetting it
+    Given a "free" bed "bed1" measuring "1.2" by "0.6"
+    And I have placed "tomato" on "bed1" over the whole bed
+    When I set the placement colour to "#ff0000"
+    Then that planting is drawn in "#ff0000"
+    When I reset the placement colour
+    Then that planting has no colour override
+
   Scenario: Removing a bed unplaces its plants but keeps the holdings
     Given a "free" bed "bed1" measuring "1.2" by "0.6"
     And I have placed "tomato" on "bed1" over the whole bed

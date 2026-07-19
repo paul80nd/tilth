@@ -13,6 +13,7 @@ import {
   movePlacement,
   setQuantity,
   setPlacementShape,
+  setPlacementColor,
   unplace,
   getPlotSize,
   setPlotSize,
@@ -82,7 +83,7 @@ export default function GardenPage() {
         return {
           id: h.id,
           label: node ? displayLabel(node) : h.nodeId,
-          color: categoryColor(node),
+          color: h.color ?? categoryColor(node),
           count: h.quantity ?? placementCount(h.shape, h.footprint ?? 0.3, h.region!),
         }
       })
@@ -209,6 +210,7 @@ export default function GardenPage() {
             node={selectedPlacement ? nodesById.get(selectedPlacement.nodeId) : undefined}
             bedPlantings={bedPlantings}
             snapStep={snapStep}
+            placementDefaultColor={selectedPlacement ? categoryColor(nodesById.get(selectedPlacement.nodeId)) : undefined}
             onSelectPlanting={(id) => setSelection({ type: 'placement', id })}
             onBedChange={handleBedChange}
             onRemoveBed={() => {
@@ -219,6 +221,7 @@ export default function GardenPage() {
             }}
             onQuantityChange={(qty) => selectedPlacement && void setQuantity(selectedPlacement.id, qty)}
             onPlacementShapeChange={(shape) => selectedPlacement && void setPlacementShape(selectedPlacement.id, shape)}
+            onPlacementColorChange={(color) => selectedPlacement && void setPlacementColor(selectedPlacement.id, color)}
             onPlacementResize={(region) => {
               if (!selectedPlacement) return
               const bed = beds.find((b) => b.id === selectedPlacement.bedId)

@@ -78,6 +78,9 @@ export interface Holding {
   shape?: PlacementShape
   /** Spacing footprint (diameter, metres) — default derived from the node, hand-overridable. */
   footprint?: number
+  /** Colour this block is drawn in on the plot (CSS hex, e.g. `#c084fc`) — an override so a flower
+   *  can show its real bloom colour. Absent = the plant's category colour. */
+  color?: string
   /** The plan year this placement belongs to (crop rotation + follow-on). Absent = current. */
   year?: number
 }

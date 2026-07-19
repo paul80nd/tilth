@@ -24,6 +24,8 @@ export interface InspectorProps {
   bedPlantings?: BedPlanting[]
   /** Snap increment (m) for typed bed sizes; 0 when snapping is off (a 0.1 spinner step is used). */
   snapStep: number
+  /** The plant's default (category) colour — the swatch shown when there's no override. */
+  placementDefaultColor?: string
   /** Select one of the bed's plantings (jumps to it on the plot). */
   onSelectPlanting?: (id: string) => void
   onBedChange: (patch: Partial<Bed>) => void
@@ -31,6 +33,8 @@ export interface InspectorProps {
   onQuantityChange: (qty: number) => void
   onPlacementShapeChange: (shape: PlacementShape) => void
   onPlacementResize: (region: Rect) => void
+  /** Set (or clear, with `undefined`) the colour this planting is drawn in on the plot. */
+  onPlacementColorChange: (color: string | undefined) => void
   onUnplace: () => void
 }
 
@@ -42,7 +46,7 @@ const PLACEMENT_TYPES: { shape: PlacementShape; label: string }[] = [
   { shape: 'rect', label: 'Single' },
 ]
 
-export default function Inspector({ bed, placement, node, bedPlantings = [], snapStep, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onUnplace }: InspectorProps) {
+export default function Inspector({ bed, placement, node, bedPlantings = [], snapStep, placementDefaultColor = '#94a3b8', onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
   if (bed) {
     return (
       <div className="flex flex-col gap-3 p-3">
@@ -170,6 +174,29 @@ export default function Inspector({ bed, placement, node, bedPlantings = [], sna
             </Field>
           </div>
         )}
+        <Field label="Colour on plot">
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              aria-label="Colour on plot"
+              value={placement.color ?? placementDefaultColor}
+              onChange={(e) => onPlacementColorChange(e.target.value)}
+              className="h-8 w-10 flex-none cursor-pointer rounded border border-line bg-card p-0.5"
+            />
+            <span className="flex-1 text-xs text-muted">
+              {placement.color ? 'Custom — e.g. the real bloom colour' : 'Default (category colour)'}
+            </span>
+            {placement.color && (
+              <button
+                type="button"
+                onClick={() => onPlacementColorChange(undefined)}
+                className="flex-none rounded px-2 py-1 text-xs font-medium text-muted hover:bg-sunken hover:text-ink"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        </Field>
         <button type="button" onClick={onUnplace} className="mt-1 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink">
           Take off the plot
         </button>
