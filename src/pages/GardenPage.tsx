@@ -211,9 +211,9 @@ export default function GardenPage() {
           />
         </div>
         {shopping.length > 0 && (
-          <div className="flex-none border-t border-line p-3">
-            <h2 className="text-sm font-semibold text-ink">Shopping list</h2>
-            <ul className="mt-2 flex flex-col gap-1">
+          <div className="flex max-h-[33%] flex-none flex-col border-t border-line p-3">
+            <h2 className="flex-none text-sm font-semibold text-ink">Shopping list</h2>
+            <ul className="mt-2 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
               {shopping.map(([nodeId, qty]) => {
                 const node = nodesById.get(nodeId)
                 return (
