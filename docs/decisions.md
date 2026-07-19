@@ -7,6 +7,25 @@ feature spec; private rationale (the real sources, personal curation rules) stay
 
 Each entry: the decision, *why*, and what it superseded if anything.
 
+## 2026-07-19 — Family/genus common names: committed defaults + editable user overrides
+
+The plain-language names that gloss the Taxonomy banners ("Rose family · Rosaceae") and the new
+family gloss ("…strawberries, apples, roses and brambles") come from two hard-coded maps in
+`src/lib/taxonNames.ts` (`FAMILY_COMMON` / `GENUS_COMMON`). The gardener can now **override or
+add** to them on the Data page. *Why overrides over migrating the vocabulary into a store:* the
+maps are generic public taxonomy (firewall-safe, and the demo relies on them), so they stay in
+committed code as the defaults; a settings-backed `CommonNameOverrides` (`{families,genera}`, keyed
+by *scientific* name, `src/app/taxonNames.ts`) overlays purely additively — no migration, the
+defaults survive, and edits travel in the backup like any other setting. The pure lookups
+(`familyCommon`/`genusCommon`/`genusPlural`/`bannerParts`/`genusGloss`) take an optional
+`overrides` arg (override wins, default is the fallback) so they stay pure and the only consumer
+(`TaxonomyPage`) reads the overrides via `useLiveQuery`. **Plurals are derived** by a naive
+`pluralize` (regular English: sibilant→-es, consonant+y→-ies, else -s — every current genus name is
+regular) with an optional explicit `plural` per genus for an eventual irregular. Saving an override
+marks the store user-owned (consistent with every other user write). *Alternative rejected:*
+storing the whole vocabulary as user data seeded from the maps — cleaner single-source but a real
+migration + demo-seeding for no gain while the maps are the trustworthy baseline.
+
 ## 2026-07-19 — Split `position` out of `conditions` (independent inheritance)
 
 `PlantNode` now carries **two** growing-environment fields: `conditions` (soil / moisture / pH)

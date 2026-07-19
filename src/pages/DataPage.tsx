@@ -1,5 +1,6 @@
 import BackupRestore from '../components/BackupRestore'
 import ImportPanel from '../components/ImportPanel'
+import CommonNamesEditor from '../components/CommonNamesEditor'
 
 // Data & backup: everything in Tilth lives in the browser (IndexedDB), which a browser may
 // clear when space is tight. The exported JSON is the durable copy — this page is where you
@@ -17,6 +18,7 @@ export default function DataPage() {
       <div className="flex max-w-2xl flex-col gap-5">
         <BackupRestore />
         <ImportPanel />
+        <CommonNamesEditor />
       </div>
     </div>
   )

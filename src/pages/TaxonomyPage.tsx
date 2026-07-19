@@ -12,7 +12,8 @@ import { CalendarCell } from '../components/CalendarBar'
 import Chip from '../components/Chip'
 import { CheatsheetModal } from '../components/CheatsheetModal'
 import { FilterPopover } from '../components/FilterPopover'
-import { bannerParts } from '../lib/taxonNames'
+import { bannerParts, genusGloss, type CommonNameOverrides } from '../lib/taxonNames'
+import { getCommonNameOverrides } from '../app/taxonNames'
 import { nodeTags } from '../lib/tags'
 import { usePersistentState } from '../hooks/usePersistentState'
 import type { PlantNode } from '../schema/plant'
@@ -118,9 +119,9 @@ function SourceCell({ node, byId }: { node: PlantNode; byId: Map<string, PlantNo
 
 /** One line of the flat-view Family / Genus cell — the same "common name · scientific" label
  *  construction the tree banners use, built from a plant's resolved family/genus string. */
-function TaxonLine({ rank, sci, muted }: { rank: 'family' | 'genus'; sci?: string; muted?: boolean }) {
+function TaxonLine({ rank, sci, muted, overrides }: { rank: 'family' | 'genus'; sci?: string; muted?: boolean; overrides?: CommonNameOverrides }) {
   if (!sci) return null
-  const { primary, secondary } = bannerParts({ id: sci, rank, botanicalName: sci })
+  const { primary, secondary } = bannerParts({ id: sci, rank, botanicalName: sci }, overrides)
   return (
     <span className={`block truncate text-xs ${muted ? 'text-muted' : 'text-ink'}`} title={secondary ? `${primary} · ${secondary}` : primary}>
       {primary}
@@ -159,6 +160,9 @@ function TagList({ node, inheritedFrom }: { node: PlantNode; inheritedFrom: Part
 
 export default function TaxonomyPage() {
   const nodes = useLiveQuery(() => db.nodes.toArray(), [])
+  // The gardener's common-name overrides overlay the committed defaults for the banner labels +
+  // the family gloss (edited on the Data page). Empty object until any are saved.
+  const nameOverrides = useLiveQuery(getCommonNameOverrides, []) ?? {}
   const forest = useMemo(() => (nodes ? withUnplacedBucket(buildForest(nodes)) : []), [nodes])
   const resolved = useMemo(() => (nodes ? resolveAll(nodes) : new Map()), [nodes])
   const byId = useMemo(() => new Map((nodes ?? []).map((n) => [n.id, n])), [nodes])
@@ -335,7 +339,13 @@ export default function TaxonomyPage() {
                 // Family and genus both sit flush left — the font weight/tone carries the
                 // hierarchy, not indentation. Common name leads; the scientific name trails
                 // muted. The label sticks to the left as the facet columns scroll.
-                const { primary, secondary } = bannerParts(node)
+                const { primary, secondary } = bannerParts(node, nameOverrides)
+                // On family rows, a gloss of what the family includes: the pluralised common
+                // names of its child genera ("melons and squashes"). Family-only — genus rows
+                // already sit next to their species.
+                const gloss = isFamily
+                  ? genusGloss(children.filter((c) => c.node.rank === 'genus').map((c) => c.node.botanicalName ?? c.node.genus ?? c.node.id), nameOverrides)
+                  : undefined
                 return (
                   <tr key={node.id}>
                     <td colSpan={TOTAL_COLS} className={`border-b border-divider p-0 ${isFamily ? 'bg-sunken' : 'bg-sunken/60'}`}>
@@ -346,6 +356,7 @@ export default function TaxonomyPage() {
                         <span className={isFamily ? 'text-sm font-semibold text-ink' : 'text-sm font-medium text-muted'}>{primary}</span>
                         {secondary && <span className="text-xs italic text-subtle">· {secondary}</span>}
                         <span className="text-[0.65rem] tabular-nums text-subtle">· {countPlants(children)}</span>
+                        {gloss && <span className="text-xs italic text-subtle">({gloss})</span>}
                       </div>
                     </td>
                   </tr>
@@ -395,8 +406,8 @@ export default function TaxonomyPage() {
                   </td>
                   {mode === 'flat' && (
                     <td className="sticky z-10 border-b border-divider bg-card px-2 align-middle" style={frozen('famgen')}>
-                      <TaxonLine rank="family" sci={r.family} />
-                      <TaxonLine rank="genus" sci={r.genus} muted />
+                      <TaxonLine rank="family" sci={r.family} overrides={nameOverrides} />
+                      <TaxonLine rank="genus" sci={r.genus} muted overrides={nameOverrides} />
                     </td>
                   )}
                   <td className="sticky z-10 border-b border-r border-line bg-card px-0 align-middle" style={frozen('src')}>
