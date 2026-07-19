@@ -354,16 +354,18 @@ export default function TaxonomyPage() {
               const r = res?.node ?? node
               const inh = res?.inheritedFrom ?? {}
               const c = r.conditions
+              const p = r.position
               const interest = seasonalInterest(r.seasonalInterest)
               // Only draw a glyph where the plant actually has that facet — an empty cell reads far
               // cleaner across the whole record and makes "still to enrich" obvious at a glance.
               const hasInterest = interest.some((s) => s.parts.length > 0)
-              // Which ancestor a facet-group was borrowed from (dims the glyph). Season comes from
-              // `seasonalInterest`; Position + Conditions both read the `conditions` field, so they
-              // share one source. undefined = the node asserts it itself.
+              // Which ancestor a facet-group was borrowed from (dims the glyph). Position and
+              // Conditions are separate fields now, so each has its own source. undefined = the node
+              // asserts it itself.
               const ancLabel = (a?: PlantNode) => (a ? (a.commonName ?? a.botanicalName ?? a.id) : undefined)
               const seasonFrom = ancLabel(inh.seasonalInterest)
               const condFrom = ancLabel(inh.conditions)
+              const posFrom = ancLabel(inh.position)
               const sizeFrom = ancLabel(inh.size)
               const calFrom = ancLabel(inh.calendar)
               const hasCal = !!(r.calendar && r.calendar.length)
@@ -422,10 +424,10 @@ export default function TaxonomyPage() {
                     ))}
                   {cols.position && (
                     <>
-                      <Cell from={condFrom}>{c?.sun?.length ? <LightCell conditions={c} size={POS} /> : null}</Cell>
-                      <Cell from={condFrom}>{c?.aspect?.length ? <AspectCell conditions={c} size={POS} /> : null}</Cell>
-                      <Cell from={condFrom}>{c?.exposure?.length ? <ExposureCell conditions={c} size={POS} /> : null}</Cell>
-                      <Cell from={condFrom}>{c?.hardiness ? <HardinessCell conditions={c} /> : null}</Cell>
+                      <Cell from={posFrom}>{p?.sun?.length ? <LightCell position={p} size={POS} /> : null}</Cell>
+                      <Cell from={posFrom}>{p?.aspect?.length ? <AspectCell position={p} size={POS} /> : null}</Cell>
+                      <Cell from={posFrom}>{p?.exposure?.length ? <ExposureCell position={p} size={POS} /> : null}</Cell>
+                      <Cell from={posFrom}>{p?.hardiness ? <HardinessCell position={p} /> : null}</Cell>
                     </>
                   )}
                   {cols.conditions && (

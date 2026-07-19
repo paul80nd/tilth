@@ -44,9 +44,9 @@ Feature: Merge-import plant fragments
 
   Scenario: Two sources fill different facets of the same conditions object (deep-merge)
     Given I import from "plant-db" a node "rose" with soil "clay"
-    When I import from "seed-packet" a node "rose" with sun "full-sun"
+    When I import from "seed-packet" a node "rose" with moisture "moist"
     Then node "rose" soil is "clay"
-    And node "rose" sun is "full-sun"
+    And node "rose" moisture is "moist"
 
   Scenario: A later source adds a fact without clobbering the earlier facts (deep-merge)
     Given I import from "plant-db" a node "rose" with:

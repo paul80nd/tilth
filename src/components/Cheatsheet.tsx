@@ -172,7 +172,7 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
         <div className="lg:col-span-2">
           <Tile
             title="Position"
-            note={inheritedNote('conditions')}
+            note={inheritedNote('position')}
             action={
               <button
                 type="button"
@@ -185,7 +185,7 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
             fill
             bleed
           >
-            <PositionCard conditions={resolved.conditions} />
+            <PositionCard position={resolved.position} />
           </Tile>
         </div>
 
@@ -385,7 +385,7 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
       {editingPosition && (
         <PositionEditor
           node={node}
-          conditions={resolved.conditions}
+          position={resolved.position}
           onClose={() => setEditingPosition(false)}
         />
       )}

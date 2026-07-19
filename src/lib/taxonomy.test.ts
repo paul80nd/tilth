@@ -8,11 +8,13 @@ const species: PlantNode = {
   category: 'veg',
   genus: 'Solanum',
   calendar: [{ code: 'sow-indoors', months: [3, 4] }],
-  conditions: { sun: ['full-sun'] },
+  conditions: { moisture: ['moist'] },
+  position: { sun: ['full-sun'] },
   facts: { spacing: '45cm' },
   provenance: {
     calendar: { source: 'plant-db' },
     conditions: { source: 'plant-db' },
+    position: { source: 'plant-db' },
     facts: { source: 'plant-db' },
   },
 }
@@ -34,6 +36,23 @@ describe('resolveInherited', () => {
     expect(node.category).toBe('veg')
     expect(inheritedFrom.calendar).toBe(species)
     expect(inheritedFrom.category).toBe(species)
+  })
+
+  it('inherits position and conditions independently (each is its own field)', () => {
+    // A cultivar that owns its OWN conditions still inherits position from the species, and vice
+    // versa — the whole point of splitting the two.
+    const ownConditions: PlantNode = {
+      id: 't-oc',
+      rank: 'cultivar',
+      parentId: 'tomato',
+      conditions: { soil: ['chalk'] },
+      provenance: { conditions: { source: 'manual' } },
+    }
+    const { node, inheritedFrom } = resolveInherited(ownConditions, [species])
+    expect(node.conditions).toEqual({ soil: ['chalk'] }) // own — not inherited
+    expect(inheritedFrom.conditions).toBeUndefined()
+    expect(node.position).toEqual(species.position) // still borrowed from the species
+    expect(inheritedFrom.position).toBe(species)
   })
 
   it("keeps the node's own field and does not mark it inherited (whole-field, no merge)", () => {

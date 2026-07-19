@@ -1,4 +1,4 @@
-import type { Conditions } from '../schema/plant'
+import type { Position } from '../schema/plant'
 import {
   lightSet,
   lightLevel,
@@ -209,25 +209,25 @@ function exposureLabel(set: Set<Exposure>): string {
 }
 
 // Single-facet cells for the compare table — the same glyphs, sized to fill a table square.
-export function LightCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
-  return <SunGlyph level={lightLevel(lightSet(conditions?.sun))} size={size} />
+export function LightCell({ position, size }: { position?: Position; size?: number }) {
+  return <SunGlyph level={lightLevel(lightSet(position?.sun))} size={size} />
 }
-export function AspectCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
-  return <CompassGlyph set={aspectSet(conditions?.aspect)} size={size} />
+export function AspectCell({ position, size }: { position?: Position; size?: number }) {
+  return <CompassGlyph set={aspectSet(position?.aspect)} size={size} />
 }
-export function ExposureCell({ conditions, size }: { conditions?: Conditions; size?: number }) {
-  return <ExposureGlyph level={exposureLevel(exposureSet(conditions?.exposure))} size={size} />
+export function ExposureCell({ position, size }: { position?: Position; size?: number }) {
+  return <ExposureGlyph level={exposureLevel(exposureSet(position?.exposure))} size={size} />
 }
-export function HardinessCell({ conditions }: { conditions?: Conditions }) {
-  const hardy = hardiness(conditions?.hardiness)
+export function HardinessCell({ position }: { position?: Position }) {
+  const hardy = hardiness(position?.hardiness)
   return hardy ? <HardinessGlyph rank={hardy.rank} label={hardy.label} /> : <span className="text-sm text-subtle">—</span>
 }
 
-export default function PositionCard({ conditions }: { conditions?: Conditions }) {
-  const light = lightSet(conditions?.sun)
-  const aspect = aspectSet(conditions?.aspect)
-  const exposure = exposureSet(conditions?.exposure)
-  const hardy = hardiness(conditions?.hardiness)
+export default function PositionCard({ position }: { position?: Position }) {
+  const light = lightSet(position?.sun)
+  const aspect = aspectSet(position?.aspect)
+  const exposure = exposureSet(position?.exposure)
+  const hardy = hardiness(position?.hardiness)
 
   const slots = [
     { title: 'Light', detail: lightLabel(light), glyph: <SunGlyph level={lightLevel(light)} /> },

@@ -3,7 +3,7 @@ import { resolveAsset } from '../lib/assets'
 import { importFragment } from '../app/dataset'
 
 // Bump when the bundled demo dataset changes so demo users auto-refresh.
-const DEMO_VERSION = 9
+const DEMO_VERSION = 10
 
 async function importDemo(): Promise<void> {
   const res = await fetch(resolveAsset('demo/plants.json'))

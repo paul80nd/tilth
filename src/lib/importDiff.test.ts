@@ -6,7 +6,7 @@ const existing: PlantNode = {
   id: 'delphinium-magic-fountains',
   rank: 'cultivar',
   commonName: 'Delphinium',
-  conditions: { soil: ['loam'], hardiness: 'H5' },
+  conditions: { soil: ['loam'], ph: ['neutral'] },
 }
 
 describe('diffNode', () => {
@@ -15,7 +15,7 @@ describe('diffNode', () => {
       id: 'delphinium-magic-fountains',
       commonName: 'Delphinium', // same
       botanicalName: 'Delphinium Magic Fountains Series', // new
-      conditions: { soil: ['chalk', 'loam', 'sand'], hardiness: 'H5' }, // changed (soil differs)
+      conditions: { soil: ['chalk', 'loam', 'sand'], ph: ['neutral'] }, // changed (soil differs)
     })
     expect(isNew).toBe(false)
     expect(changes).toContainEqual({ field: 'commonName', status: 'same', existing: 'Delphinium', incoming: 'Delphinium' })
@@ -28,11 +28,11 @@ describe('diffNode', () => {
     // The fragment adds a sibling facet; the existing soil/hardiness must show through.
     const { changes } = diffNode(existing, {
       id: 'delphinium-magic-fountains',
-      conditions: { sun: ['full-sun'] },
+      conditions: { moisture: ['moist'] },
     })
     const cond = changes.find((c) => c.field === 'conditions')!
     expect(cond.status).toBe('changed')
-    expect(cond.incoming).toEqual({ soil: ['loam'], hardiness: 'H5', sun: ['full-sun'] })
+    expect(cond.incoming).toEqual({ soil: ['loam'], ph: ['neutral'], moisture: ['moist'] })
   })
 
   it('reads a re-asserted object key as same (deep-merge is a no-op)', () => {

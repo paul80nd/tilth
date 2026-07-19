@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { Conditions, PlantNode } from '../schema/plant'
+import type { Position, PlantNode } from '../schema/plant'
 import { updateNode, clearNodeField } from '../app/editNode'
 import { deepEqual } from '../lib/equal'
 import {
@@ -10,30 +10,29 @@ import {
   LIGHT_LEVELS,
   conditionLabel,
 } from '../lib/conditions'
-import { applyPosition, toPositionDraft, withoutPosition, type PositionDraft } from '../lib/positionEdit'
+import { applyPosition, toPositionDraft, type PositionDraft } from '../lib/positionEdit'
 import PositionCard from './PositionCard'
 import { Row, Toggle, EditorFooter } from './EditorControls'
 
 // A modal for editing the Position facets (light · aspect · exposure · hardiness) with a live
-// preview of the exact card the cheatsheet shows. These share the `conditions` field with the
-// Conditions card (soil/moisture/ph), which the merge replaces wholesale — so we start from the
-// resolved conditions and carry the sibling soil/moisture/ph through untouched (see positionEdit).
-// Saving writes the node's own conditions via the normal merge seam (stamped `manual`); an
-// unchanged edit writes nothing.
+// preview of the exact card the cheatsheet shows. Position is its own field (sibling of the
+// Conditions card's soil/moisture/ph), so editing it never touches Conditions. Saving writes the
+// node's own position via the normal merge seam (stamped `manual`); an unchanged edit writes
+// nothing; clearing removes the field so the card re-inherits.
 
 const HARDINESS = HARDINESS_RATINGS
 
 export function PositionEditor({
   node,
-  conditions,
+  position,
   onClose,
 }: {
   node: PlantNode
-  /** The resolved (possibly inherited) conditions currently shown — the editor's starting point. */
-  conditions: Conditions | undefined
+  /** The resolved (possibly inherited) position currently shown — the editor's starting point. */
+  position: Position | undefined
   onClose: () => void
 }) {
-  const initial = useMemo(() => toPositionDraft(conditions), [conditions])
+  const initial = useMemo(() => toPositionDraft(position), [position])
   const [draft, setDraft] = useState<PositionDraft>(initial)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -51,8 +50,8 @@ export function PositionEditor({
     }
   }, [onClose])
 
-  // Fold the draft back onto the conditions so the preview is exactly what the card will render.
-  const preview = useMemo(() => applyPosition(conditions, draft), [conditions, draft])
+  // The draft folded into a Position — exactly what the card will render.
+  const preview = useMemo(() => applyPosition(draft), [draft])
   const dirty = !deepEqual(draft, initial)
 
   function toggle<T>(key: 'sun' | 'aspect' | 'exposure', value: T, order: readonly T[]) {
@@ -64,10 +63,9 @@ export function PositionEditor({
     })
   }
 
-  // Clearing Position drops the node's own light/aspect/exposure/hardiness but keeps its own
-  // soil/moisture/ph (the Conditions half) — if nothing's left, the whole field goes and Position
-  // inherits from a parent again. Only enabled when the node asserts a position facet itself.
-  const own = node.conditions
+  // Clearing Position removes the node's own field so the card inherits from a parent again. Only
+  // enabled when the node asserts a position facet itself.
+  const own = node.position
   const canClear = !!(own && (own.sun?.length || own.aspect?.length || own.exposure?.length || own.hardiness))
 
   async function onSave() {
@@ -75,7 +73,9 @@ export function PositionEditor({
     setSaving(true)
     setError(null)
     try {
-      await updateNode(node, { conditions: preview })
+      // An all-empty draft means "own nothing here" → drop the field so it re-inherits.
+      if (Object.keys(preview).length === 0) await clearNodeField(node.id, 'position')
+      else await updateNode(node, { position: preview })
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save.')
@@ -87,7 +87,7 @@ export function PositionEditor({
     setSaving(true)
     setError(null)
     try {
-      await clearNodeField(node.id, 'conditions', withoutPosition(own))
+      await clearNodeField(node.id, 'position')
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not clear.')
@@ -123,7 +123,7 @@ export function PositionEditor({
         <div className="mb-5">
           <div className="mb-1.5 text-[0.6rem] font-medium uppercase tracking-wide text-subtle">Preview</div>
           <div className="h-32 overflow-hidden rounded-lg border border-line bg-card">
-            <PositionCard conditions={preview} />
+            <PositionCard position={preview} />
           </div>
         </div>
 

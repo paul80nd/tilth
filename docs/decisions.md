@@ -7,6 +7,26 @@ feature spec; private rationale (the real sources, personal curation rules) stay
 
 Each entry: the decision, *why*, and what it superseded if anything.
 
+## 2026-07-19 — Split `position` out of `conditions` (independent inheritance)
+
+`PlantNode` now carries **two** growing-environment fields: `conditions` (soil / moisture / pH)
+and `position` (light / aspect / exposure / hardiness). *Why split what used to be one
+`conditions` object:* inheritance and provenance are **per top-level field** (a whole field is
+borrowed or owned; a whole field carries one source). With both cards on one field, a node that
+set *anything* — even just its own hardiness — stopped inheriting the *whole* thing, so its soil
+went blank; and editing one card silently baked in the other's inherited values. Splitting lets a
+node inherit its parent's position while overriding its own soil (or vice versa), each with its own
+`provenance` entry, and removes the edit-baking coupling (the two editors write different fields, so
+one never touches the other). *Supersedes* the `withoutPosition`/`withoutConditions` "carry the
+sibling half through" workaround in the editors, now deleted.
+
+**Migration.** Legacy stored/imported data has the combined object. A pure, idempotent
+`splitLegacyConditions` (`src/lib/positionSplit.ts`) moves the position facets into `position` and
+copies the old `conditions` provenance onto it; it runs at every entry point — the Dexie **v3**
+upgrade (live store), the import parser (`parsePlantDataset`), and backup restore (`parseBackup`) —
+so old backups/fragments/records normalise on the way in. The cards, the Compare table, and the
+resolver read the two fields independently.
+
 ## 2026-07-18 — Three placement shapes: packed area, single round, single rect
 
 A placement's `region` can be occupied three ways, held in one field `Holding.shape: 'area' |

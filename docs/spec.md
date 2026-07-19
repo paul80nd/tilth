@@ -61,11 +61,16 @@ An import fragment is a **partial overlay**. For each record it touches:
 - **Present field ⇒ overwrite. Absent field ⇒ leave the existing value alone.**
 - Arrays (`soil`, `calendar`) **replace wholesale**, they do not union. (A source that
   supplies `soil` supplies the *complete* set it knows.)
-- Nested **objects** (`conditions`, `size`, `seasonalInterest`, `facts`) **deep-merge
+- Nested **objects** (`conditions`, `position`, `size`, `seasonalInterest`, `facts`) **deep-merge
   key-by-key** — two sources can fill different facets of the same object without clobbering
   each other (leaf arrays/scalars still replace). The hand-edit path is the exception: it
   submits the whole object and *replaces*, so dropping a facet removes it. See
   [`decisions.md`](decisions.md) → *Deep-merge nested objects*.
+- **Position vs conditions are separate fields.** `conditions` = soil / moisture / pH;
+  `position` = light / aspect / exposure / hardiness. They inherit and carry provenance
+  independently, so a plant can borrow one from its parent while overriding the other. Legacy
+  combined data is split on import/restore/upgrade. See [`decisions.md`](decisions.md) →
+  *Split position out of conditions*.
 - Every overwritten field is **stamped with provenance** — which `source` set it, the deep
   link, and when. So you can see "size came from the horticultural DB, sowing depth from the
   seed packet", and a deliberate re-import from a preferred source can win.

@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie'
 import type { PlantNode, Guide, TaskTemplate } from '../schema/plant'
 import type { Bed, Holding, JobLog, Setting } from '../schema/userData'
+import { splitLegacyConditions } from '../lib/positionSplit'
 
 // IndexedDB working store. The demo seed is disposable (re-importable), but once a gardener
 // hand-authors or merge-imports plants, the reference data (nodes/guides/tasks) is their own
@@ -35,6 +36,22 @@ export class TilthDB extends Dexie {
     this.version(2).stores({
       holdings: 'id, nodeId, status, bedId',
       beds: 'id',
+    })
+    // v3 — position split out of conditions. No index change; a data migration moves each node's
+    // legacy position facets (sun/aspect/exposure/hardiness) from `conditions` into a new
+    // `position` field so the two cards inherit independently. See docs/decisions.md.
+    this.version(3).stores({}).upgrade(async (tx) => {
+      await tx
+        .table('nodes')
+        .toCollection()
+        .modify((node) => {
+          const split = splitLegacyConditions(node as PlantNode)
+          if (split === node) return // already in the new shape
+          node.position = split.position
+          if (split.conditions) node.conditions = split.conditions
+          else delete node.conditions
+          node.provenance = split.provenance
+        })
     })
   }
 }

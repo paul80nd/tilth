@@ -33,7 +33,9 @@
       "conditions": {
         "soil": ["loam"],
         "moisture": ["moist"],
-        "ph": ["neutral"],
+        "ph": ["neutral"]
+      },
+      "position": {
         "sun": ["full-sun"],
         "aspect": ["south", "west"],
         "exposure": ["sheltered"],
@@ -84,7 +86,9 @@
       "conditions": {
         "soil": ["loam", "sand"],
         "moisture": ["well-drained"],
-        "ph": ["neutral", "alkaline"],
+        "ph": ["neutral", "alkaline"]
+      },
+      "position": {
         "sun": ["full-sun"],
         "aspect": ["south"],
         "exposure": ["sheltered"],
@@ -118,7 +122,9 @@
       "conditions": {
         "soil": ["loam"],
         "moisture": ["moist"],
-        "ph": ["neutral"],
+        "ph": ["neutral"]
+      },
+      "position": {
         "sun": ["full-sun", "partial-shade"],
         "exposure": ["sheltered"],
         "hardiness": "H1c"
@@ -152,7 +158,9 @@
       "conditions": {
         "soil": ["loam", "sand"],
         "moisture": ["well-drained", "moist"],
-        "ph": ["acid", "neutral"],
+        "ph": ["acid", "neutral"]
+      },
+      "position": {
         "sun": ["full-sun"],
         "aspect": ["south"],
         "exposure": ["sheltered"],
@@ -189,7 +197,9 @@
       "conditions": {
         "soil": ["loam", "clay"],
         "moisture": ["moist", "well-drained"],
-        "ph": ["neutral"],
+        "ph": ["neutral"]
+      },
+      "position": {
         "sun": ["full-sun"],
         "aspect": ["south", "west"],
         "exposure": ["sheltered", "exposed"],

@@ -25,11 +25,19 @@ describe('parsePlantDataset', () => {
       { code: 'sow-indoors', months: [3, 4] },
       { code: 'harvest', months: [6, 7] },
     ]
-    const conditions = { soil: ['loam'], sun: ['full-sun'], aspect: ['south', 'west'] }
+    const conditions = { soil: ['loam'], moisture: ['moist'], ph: ['neutral'] }
     const { nodes } = parsePlantDataset({ nodes: [{ id: 'x', calendar, conditions, awards: ['A', 'B'] }] })
     expect(nodes[0].calendar).toEqual(calendar)
     expect(nodes[0].conditions).toEqual(conditions)
     expect(nodes[0].awards).toEqual(['A', 'B'])
+  })
+
+  it('splits a legacy combined conditions (soil + position) into the two fields', () => {
+    const { nodes } = parsePlantDataset({
+      nodes: [{ id: 'x', conditions: { soil: ['loam'], sun: ['full-sun'], hardiness: 'H5' } }],
+    })
+    expect(nodes[0].conditions).toEqual({ soil: ['loam'] })
+    expect(nodes[0].position).toEqual({ sun: ['full-sun'], hardiness: 'H5' })
   })
 
   it('passes the descriptive fields through (colour, edible, wildlife, uses, names, synonyms)', () => {

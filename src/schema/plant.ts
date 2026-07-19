@@ -90,14 +90,22 @@ export type InterestPart = 'stem' | 'flower' | 'foliage' | 'fruit'
  *  it knows), only the leaf colour arrays replace. See merge.ts. */
 export type SeasonalInterest = Partial<Record<Season, Partial<Record<InterestPart, string[]>>>>
 
-/** Soil / position facets, kept as small closed vocabularies so the cheatsheet can render
- *  them as compact iconography (like the spreadsheet). All optional — a node only carries
- *  what a source has supplied. */
+/** Soil facets, kept as small closed vocabularies so the cheatsheet can render them as compact
+ *  iconography (like the spreadsheet). All optional — a node only carries what a source supplied.
+ *  Split from {@link Position} so the two cards inherit + are sourced independently: a node can
+ *  set its own soil while still borrowing a parent's position (and vice versa). See
+ *  docs/decisions.md → "Split position from conditions". */
 export interface Conditions {
   /** Suitable soil textures. */
   soil?: Array<'chalk' | 'clay' | 'loam' | 'sand'>
   moisture?: Array<'well-drained' | 'moist' | 'poorly-drained'>
   ph?: Array<'acid' | 'neutral' | 'alkaline'>
+}
+
+/** Position facets — where a plant wants to sit (light / aspect / exposure / hardiness). A
+ *  sibling of {@link Conditions} (soil), kept as a separate top-level field so it inherits and
+ *  carries provenance on its own. All optional. */
+export interface Position {
   sun?: Array<'full-sun' | 'partial-shade' | 'full-shade'>
   /** Compass aspect the position faces — distinct from `sun` (how much light) and `exposure`
    *  (shelter). Rendered as e.g. "S / W facing". */
@@ -152,7 +160,10 @@ export interface PlantNode {
 
   /** Per-month ACTIONABLE phases (jobs) for the cheatsheet chart + the jobs engine. */
   calendar?: PhaseSpan[]
+  /** Soil (soil/moisture/pH). Position (light/aspect/exposure/hardiness) is the separate
+   *  `position` field so the two inherit independently. */
   conditions?: Conditions
+  position?: Position
   size?: Size
 
   /** Ornamental interest by season and part — the source's "seasonal interest" grid. This is

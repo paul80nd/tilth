@@ -9,16 +9,15 @@ import {
   SOIL_TYPES,
   conditionLabel,
 } from '../lib/conditions'
-import { applyConditions, toConditionsDraft, withoutConditions, type ConditionsDraft } from '../lib/conditionsEdit'
+import { applyConditions, toConditionsDraft, type ConditionsDraft } from '../lib/conditionsEdit'
 import ConditionsCard from './ConditionsCard'
 import { Row, Toggle, EditorFooter } from './EditorControls'
 
 // A modal for editing the growing-condition facets (soil · moisture · pH) with a live preview of
-// the exact card the cheatsheet shows. These share the `conditions` field with the Position card
-// (light/aspect/exposure/hardiness), which the merge replaces wholesale — so we start from the
-// resolved conditions and carry the sibling position facets through untouched (see conditionsEdit).
-// Saving writes the node's own conditions via the normal merge seam (stamped `manual`); an
-// unchanged edit writes nothing.
+// the exact card the cheatsheet shows. Conditions is its own field (sibling of the Position card's
+// light/aspect/exposure/hardiness), so editing it never touches Position. Saving writes the node's
+// own conditions via the normal merge seam (stamped `manual`); an unchanged edit writes nothing;
+// clearing removes the field so the card re-inherits.
 
 export function ConditionsEditor({
   node,
@@ -48,7 +47,7 @@ export function ConditionsEditor({
     }
   }, [onClose])
 
-  const preview = useMemo(() => applyConditions(conditions, draft), [conditions, draft])
+  const preview = useMemo(() => applyConditions(draft), [draft])
   const dirty = !deepEqual(draft, initial)
 
   function toggle<T>(key: keyof ConditionsDraft, value: T, order: readonly T[]) {
@@ -59,9 +58,8 @@ export function ConditionsEditor({
     })
   }
 
-  // Clearing Conditions drops the node's own soil/moisture/ph but keeps its own position facets
-  // (light/aspect/exposure/hardiness) — if nothing's left, the whole field goes and Conditions
-  // inherits from a parent again. Only enabled when the node asserts a soil facet itself.
+  // Clearing Conditions removes the node's own field so the card inherits from a parent again.
+  // Only enabled when the node asserts a soil facet itself.
   const own = node.conditions
   const canClear = !!(own && (own.soil?.length || own.moisture?.length || own.ph?.length))
 
@@ -70,7 +68,9 @@ export function ConditionsEditor({
     setSaving(true)
     setError(null)
     try {
-      await updateNode(node, { conditions: preview })
+      // An all-empty draft means "own nothing here" → drop the field so it re-inherits.
+      if (Object.keys(preview).length === 0) await clearNodeField(node.id, 'conditions')
+      else await updateNode(node, { conditions: preview })
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save.')
@@ -82,7 +82,7 @@ export function ConditionsEditor({
     setSaving(true)
     setError(null)
     try {
-      await clearNodeField(node.id, 'conditions', withoutConditions(own))
+      await clearNodeField(node.id, 'conditions')
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not clear.')

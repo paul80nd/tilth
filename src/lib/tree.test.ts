@@ -4,7 +4,7 @@ import type { PlantNode } from '../schema/plant'
 
 const nodes: PlantNode[] = [
   { id: 'rosaceae', rank: 'family', botanicalName: 'Rosaceae', family: 'Rosaceae' },
-  { id: 'malus', rank: 'genus', parentId: 'rosaceae', botanicalName: 'Malus', genus: 'Malus', conditions: { hardiness: 'H6' } },
+  { id: 'malus', rank: 'genus', parentId: 'rosaceae', botanicalName: 'Malus', genus: 'Malus', position: { hardiness: 'H6' } },
   { id: 'malus-domestica', rank: 'species', parentId: 'malus', commonName: 'Apple', category: 'fruit' },
   { id: 'malus-domestica-red-falstaff', rank: 'cultivar', parentId: 'malus-domestica', commonName: 'Apple', variety: 'Red Falstaff' },
   { id: 'floating', rank: 'cultivar', commonName: 'Orphan' }, // parent absent → a root
@@ -40,8 +40,8 @@ describe('resolveAll', () => {
     const resolved = resolveAll(nodes)
     const cultivar = resolved.get('malus-domestica-red-falstaff')!
     expect(cultivar.node.category).toBe('fruit') // from species
-    expect(cultivar.node.conditions?.hardiness).toBe('H6') // from genus, two hops up
-    expect(cultivar.inheritedFrom.conditions?.id).toBe('malus')
+    expect(cultivar.node.position?.hardiness).toBe('H6') // from genus, two hops up
+    expect(cultivar.inheritedFrom.position?.id).toBe('malus')
   })
 })
 

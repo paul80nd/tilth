@@ -16,6 +16,7 @@ import type {
   TaskTemplate,
   PlantDataset,
 } from '../schema/plant'
+import { splitLegacyConditions } from './positionSplit'
 
 /** A node fragment: an id plus whichever fields this import supplies. */
 export type NodeFragment = Partial<PlantNode> & { id: string }
@@ -66,6 +67,7 @@ const NODE_FIELDS: Array<keyof PlantNode> = [
   'habit',
   'calendar',
   'conditions',
+  'position',
   'size',
   'seasonalInterest',
   'edible',
@@ -98,7 +100,9 @@ function normaliseNode(raw: unknown, index: number): NodeFragment | string {
       ;(node as Record<string, unknown>)[key] = value
     }
   }
-  return node
+  // Tolerate the legacy combined `conditions` (soil + position together) — split the position
+  // facets into their own field so an old fragment/backup still imports correctly.
+  return splitLegacyConditions(node)
 }
 
 function normaliseGuide(raw: unknown, index: number): Guide | string {

@@ -8,6 +8,8 @@
 // each record intact — provenance included — dropping only records too broken to restore.
 
 import type { BackupSnapshot, Setting } from '../schema/userData'
+import type { PlantNode } from '../schema/plant'
+import { splitLegacyConditions } from './positionSplit'
 
 /** Current backup envelope version (what a fresh Save writes). Bump when the snapshot shape
  *  changes. v2 added `beds`. */
@@ -76,7 +78,9 @@ export function parseBackup(input: unknown): BackupParseResult {
   const snapshot: BackupSnapshot = {
     version: BACKUP_VERSION,
     exportedAt: typeof data.exportedAt === 'string' ? data.exportedAt : '',
-    nodes: keepRecords(data.nodes, ['id'], 'node', warnings),
+    // Split the legacy combined `conditions` (soil + position) so an old backup restores into the
+    // current position/conditions shape. Preserves whole records + provenance otherwise.
+    nodes: keepRecords(data.nodes, ['id'], 'node', warnings).map((n) => splitLegacyConditions(n as PlantNode)),
     guides: keepRecords(data.guides, ['id', 'title', 'kind'], 'guide', warnings),
     tasks: keepRecords(data.tasks, ['id', 'action'], 'task', warnings),
     holdings: keepRecords(data.holdings, ['id', 'nodeId', 'status'], 'holding', warnings),

@@ -113,7 +113,7 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     And('node {string} has hardiness {string}', async (_, id: string, h: string) => {
       const n = (await db.nodes.get(id))!
-      await db.nodes.put({ ...n, conditions: { ...n.conditions, hardiness: h } })
+      await db.nodes.put({ ...n, position: { ...n.position, hardiness: h } })
     })
     And('node {string} has category {string}', async (_, id: string, cat: string) => {
       const n = (await db.nodes.get(id))!
@@ -123,7 +123,7 @@ describeFeature(feature, ({ Background, Scenario }) => {
       await build()
     })
     Then('the resolved node {string} has hardiness {string}', (_, id: string, h: string) => {
-      expect(resolved.get(id)?.node.conditions?.hardiness).toBe(h)
+      expect(resolved.get(id)?.node.position?.hardiness).toBe(h)
     })
     And('the resolved node {string} has category {string}', (_, id: string, cat: string) => {
       expect(resolved.get(id)?.node.category).toBe(cat)

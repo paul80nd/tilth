@@ -1,18 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { toConditionsDraft, applyConditions, withoutConditions } from './conditionsEdit'
+import { toConditionsDraft, applyConditions } from './conditionsEdit'
 import type { Conditions } from '../schema/plant'
-
-describe('withoutConditions', () => {
-  it('keeps the position half and drops the soil facets', () => {
-    const c: Conditions = { soil: ['loam'], moisture: ['moist'], ph: ['neutral'], sun: ['full-sun'], aspect: ['south'], exposure: ['sheltered'], hardiness: 'H5' }
-    expect(withoutConditions(c)).toEqual({ sun: ['full-sun'], aspect: ['south'], exposure: ['sheltered'], hardiness: 'H5' })
-  })
-
-  it('returns {} when there is no position half to keep (caller then removes the field)', () => {
-    expect(withoutConditions({ soil: ['loam'], ph: ['neutral'] })).toEqual({})
-    expect(withoutConditions(undefined)).toEqual({})
-  })
-})
 
 describe('toConditionsDraft', () => {
   it('normalises free-text soil/moisture/pH to the canonical vocab, in order', () => {
@@ -35,25 +23,17 @@ describe('toConditionsDraft', () => {
 })
 
 describe('applyConditions', () => {
-  it('carries the position facets through untouched while writing soil/moisture/pH', () => {
-    const base: Conditions = { sun: ['full-sun'], aspect: ['south'], hardiness: 'H6' }
-    const out = applyConditions(base, { soil: ['loam'], moisture: ['moist'], ph: ['neutral'] })
-    expect(out).toEqual({
-      sun: ['full-sun'],
-      aspect: ['south'],
-      hardiness: 'H6',
-      soil: ['loam'],
-      moisture: ['moist'],
-      ph: ['neutral'],
-    })
+  it('writes soil/moisture/pH, omitting empties', () => {
+    const out = applyConditions({ soil: ['loam'], moisture: [], ph: ['neutral'] })
+    expect(out).toEqual({ soil: ['loam'], ph: ['neutral'] })
   })
 
   it('omits empty facets (no empty arrays stored)', () => {
-    expect(applyConditions(undefined, { soil: [], moisture: [], ph: [] })).toEqual({})
+    expect(applyConditions({ soil: [], moisture: [], ph: [] })).toEqual({})
   })
 
-  it('round-trips a Conditions draft unchanged', () => {
-    const c: Conditions = { hardiness: 'H4', soil: ['clay', 'sand'], moisture: ['well-drained'], ph: ['acid'] }
-    expect(applyConditions(c, toConditionsDraft(c))).toEqual(c)
+  it('round-trips a Conditions unchanged', () => {
+    const c: Conditions = { soil: ['clay', 'sand'], moisture: ['well-drained'], ph: ['acid'] }
+    expect(applyConditions(toConditionsDraft(c))).toEqual(c)
   })
 })

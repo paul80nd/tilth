@@ -20,6 +20,7 @@ const INHERITABLE: Array<keyof PlantNode> = [
   'habit',
   'calendar',
   'conditions',
+  'position',
   'size',
   'seasonalInterest',
   'edible',

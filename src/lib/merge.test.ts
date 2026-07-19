@@ -37,13 +37,13 @@ describe('mergeNode', () => {
     const existing: PlantNode = {
       id: 'x',
       rank: 'species',
-      conditions: { soil: ['loam', 'sand'], hardiness: 'H7' },
+      conditions: { soil: ['loam', 'sand'], ph: ['neutral'] },
     }
     const merged = mergeNode(existing, { id: 'x', conditions: { soil: ['chalk'] } }, DB)
     // The `soil` array is replaced (not unioned)…
     expect(merged.conditions?.soil).toEqual(['chalk'])
-    // …but the sibling `hardiness` another source set survives — the object deep-merges.
-    expect(merged.conditions?.hardiness).toBe('H7')
+    // …but the sibling `ph` another source set survives — the object deep-merges.
+    expect(merged.conditions?.ph).toEqual(['neutral'])
   })
 
   it('deep-merges nested objects so two sources fill different facets', () => {
@@ -76,9 +76,9 @@ describe('mergeNode', () => {
     const existing: PlantNode = {
       id: 'x',
       rank: 'species',
-      conditions: { soil: ['loam'], hardiness: 'H7' },
+      conditions: { soil: ['loam'], moisture: ['moist'] },
     }
-    // The editor submits the whole object; dropping `hardiness` must remove it.
+    // The editor submits the whole object; dropping `moisture` must remove it.
     const merged = mergeNode(existing, { id: 'x', conditions: { soil: ['chalk'] } }, { ...DB, objects: 'replace' })
     expect(merged.conditions).toEqual({ soil: ['chalk'] })
   })

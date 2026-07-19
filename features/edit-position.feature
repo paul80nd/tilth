@@ -1,28 +1,33 @@
-Feature: Edit a plant's position
-  As a gardener correcting a plant's growing position by hand
-  I want to edit light, aspect, exposure and hardiness from the cheatsheet
-  So that the Position card matches my plot — without disturbing the soil/moisture/pH it shares
-  the conditions field with
+Feature: Edit a plant's position independently of its conditions
+  As a gardener correcting a plant by hand
+  I want light/aspect/exposure/hardiness (position) to be a separate field from soil/moisture/pH
+  So that I can inherit one and override the other — changing position never disturbs conditions
 
   Background:
-    Given a rose species carrying full conditions and a sparse cultivar
+    Given a rose species carrying its own position and conditions, and a sparse cultivar
 
-  Scenario: Editing position saves the node's own conditions and keeps soil/moisture/pH
+  Scenario: Editing position saves its own field and leaves conditions untouched
     When I edit node "rosa" position setting light "full-sun" and hardiness "H6"
     Then node "rosa" light is "full-sun"
     And node "rosa" hardiness is "H6"
-    And node "rosa" still has soil "loam"
-    And node "rosa" conditions are sourced from "manual"
+    And node "rosa" position is sourced from "manual"
+    And node "rosa" conditions are still sourced from "plant-db"
 
-  Scenario: Editing an inherited position creates an override on the cultivar
+  Scenario: Overriding an inherited position leaves conditions inheriting
     When I edit node "rosa-crimson" position setting light "partial-shade" and hardiness "H5"
-    Then node "rosa-crimson" has its own conditions
+    Then node "rosa-crimson" has its own position
     And node "rosa-crimson" light is "partial-shade"
-    And node "rosa-crimson" still has soil "loam"
-    And node "rosa-crimson" conditions are sourced from "manual"
+    And node "rosa-crimson" owns no conditions
+    And node "rosa-crimson" resolves soil "loam" from its parent
 
-  Scenario: Clearing position drops light and hardiness but keeps the soil half
+  Scenario: Overriding conditions leaves position inheriting
+    When I set node "rosa-crimson" soil to "chalk"
+    Then node "rosa-crimson" has its own conditions
+    And node "rosa-crimson" owns no position
+    And node "rosa-crimson" resolves light "partial-shade" from its parent
+
+  Scenario: Clearing position removes only that field
     When I clear node "rosa" position
-    Then node "rosa" has no light recorded
+    Then node "rosa" owns no position
     And node "rosa" still has soil "loam"
-    And node "rosa" conditions are sourced from "manual"
+    And node "rosa" conditions are still sourced from "plant-db"

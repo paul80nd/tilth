@@ -1,29 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { toPositionDraft, applyPosition, withoutPosition } from './positionEdit'
-import type { Conditions } from '../schema/plant'
-
-describe('withoutPosition', () => {
-  it('keeps the soil half and drops the position facets', () => {
-    const c: Conditions = { soil: ['loam'], moisture: ['moist'], ph: ['neutral'], sun: ['full-sun'], aspect: ['south'], exposure: ['sheltered'], hardiness: 'H5' }
-    expect(withoutPosition(c)).toEqual({ soil: ['loam'], moisture: ['moist'], ph: ['neutral'] })
-  })
-
-  it('returns {} when there is no soil half to keep (caller then removes the field)', () => {
-    expect(withoutPosition({ sun: ['full-sun'], hardiness: 'H5' })).toEqual({})
-    expect(withoutPosition(undefined)).toEqual({})
-  })
-})
+import { toPositionDraft, applyPosition } from './positionEdit'
+import type { Position } from '../schema/plant'
 
 describe('toPositionDraft', () => {
   it('normalises free-text position values to the canonical vocab, in order', () => {
     // Cast: exercise the tolerant matchers on messy import strings the union type wouldn't allow.
-    const c = {
+    const p = {
       sun: ['Full sun', 'partial shade'],
       aspect: ['South', 'West'],
       exposure: ['Exposed'],
       hardiness: 'H5',
-    } as unknown as Conditions
-    expect(toPositionDraft(c)).toEqual({
+    } as unknown as Position
+    expect(toPositionDraft(p)).toEqual({
       sun: ['full-sun', 'partial-shade'],
       aspect: ['south', 'west'],
       exposure: ['exposed'],
@@ -31,32 +19,23 @@ describe('toPositionDraft', () => {
     })
   })
 
-  it('yields empty facets for absent conditions', () => {
+  it('yields empty facets for absent position', () => {
     expect(toPositionDraft(undefined)).toEqual({ sun: [], aspect: [], exposure: [], hardiness: '' })
   })
 })
 
 describe('applyPosition', () => {
-  it('carries soil/moisture/ph through untouched while writing the position facets', () => {
-    const base: Conditions = { soil: ['loam'], moisture: ['moist'], ph: ['neutral'] }
-    const out = applyPosition(base, { sun: ['full-sun'], aspect: ['south'], exposure: [], hardiness: 'H6' })
-    expect(out).toEqual({
-      soil: ['loam'],
-      moisture: ['moist'],
-      ph: ['neutral'],
-      sun: ['full-sun'],
-      aspect: ['south'],
-      hardiness: 'H6',
-    })
+  it('writes the position facets, omitting empties', () => {
+    const out = applyPosition({ sun: ['full-sun'], aspect: ['south'], exposure: [], hardiness: 'H6' })
+    expect(out).toEqual({ sun: ['full-sun'], aspect: ['south'], hardiness: 'H6' })
   })
 
   it('omits empty facets (no empty arrays / blank hardiness stored)', () => {
-    const out = applyPosition(undefined, { sun: [], aspect: [], exposure: [], hardiness: '  ' })
-    expect(out).toEqual({})
+    expect(applyPosition({ sun: [], aspect: [], exposure: [], hardiness: '  ' })).toEqual({})
   })
 
-  it('round-trips a Position draft unchanged', () => {
-    const c: Conditions = { soil: ['clay'], sun: ['full-sun', 'partial-shade'], aspect: ['north'], exposure: ['sheltered'], hardiness: 'H4' }
-    expect(applyPosition(c, toPositionDraft(c))).toEqual(c)
+  it('round-trips a Position unchanged', () => {
+    const p: Position = { sun: ['full-sun', 'partial-shade'], aspect: ['north'], exposure: ['sheltered'], hardiness: 'H4' }
+    expect(applyPosition(toPositionDraft(p))).toEqual(p)
   })
 })

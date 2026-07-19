@@ -33,9 +33,9 @@ async function importSoil(source: string, id: string, soil: string): Promise<voi
   )
 }
 
-async function importSun(source: string, id: string, sun: string): Promise<void> {
+async function importMoisture(source: string, id: string, moisture: string): Promise<void> {
   await importFragment(
-    { nodes: [{ id, conditions: { sun: sun.split(',').map((s) => s.trim()) as never } }] },
+    { nodes: [{ id, conditions: { moisture: moisture.split(',').map((s) => s.trim()) as never } }] },
     { source },
   )
 }
@@ -123,14 +123,14 @@ describeFeature(feature, ({ Background, Scenario }) => {
     Given('I import from {string} a node {string} with soil {string}', async (_, source: string, id: string, soil: string) => {
       await importSoil(source, id, soil)
     })
-    When('I import from {string} a node {string} with sun {string}', async (_, source: string, id: string, sun: string) => {
-      await importSun(source, id, sun)
+    When('I import from {string} a node {string} with moisture {string}', async (_, source: string, id: string, moisture: string) => {
+      await importMoisture(source, id, moisture)
     })
     Then('node {string} soil is {string}', async (_, id: string, expected: string) => {
       expect((await db.nodes.get(id))?.conditions?.soil).toEqual(expected.split(',').map((s) => s.trim()))
     })
-    And('node {string} sun is {string}', async (_, id: string, expected: string) => {
-      expect((await db.nodes.get(id))?.conditions?.sun).toEqual(expected.split(',').map((s) => s.trim()))
+    And('node {string} moisture is {string}', async (_, id: string, expected: string) => {
+      expect((await db.nodes.get(id))?.conditions?.moisture).toEqual(expected.split(',').map((s) => s.trim()))
     })
   })
 
