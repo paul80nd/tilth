@@ -81,6 +81,8 @@ export interface PlotCanvasProps {
   plotH: number
   /** Snap bed drag/resize to the grid (grid beds → cell, free beds → 0.1 m); off = continuous. */
   snap: boolean
+  /** Freeze every bed's position + size (planting inside them still works). */
+  bedsLocked: boolean
   selection: Selection
   /** The plant armed for placing (from the palette), or null. */
   brushNodeId: string | null
@@ -119,6 +121,7 @@ function PlotCanvas(
     plotW,
     plotH,
     snap,
+    bedsLocked,
     selection,
     brushNodeId,
     brushShape,
@@ -214,10 +217,12 @@ function PlotCanvas(
       return
     }
 
-    // 3) On a bed's resize handle → resize; else on the bed body → select + move.
+    // 3) On a bed's resize handle → resize; else on the bed body → select + move. When beds are
+    //    locked, select only — no move/resize (planting inside them is unaffected).
     const bed = bedAt(mx, my)
     if (bed) {
       onSelect({ type: 'bed', id: bed.id })
+      if (bedsLocked) return
       if (nearResizeHandle(bed, mx, my)) {
         setDrag({ kind: 'resize-bed', id: bed.id, mx0: mx, my0: my, grabDX: 0, grabDY: 0, ox0: 0, oy0: 0 })
       } else {
@@ -418,7 +423,7 @@ function PlotCanvas(
               <text x={p.x + 6} y={p.y + 16} className="fill-subtle" fontSize={11} fontWeight={600}>
                 {b.name} · {r.width.toFixed(1)}×{r.height.toFixed(1)}m
               </text>
-              {selected && <rect x={p.x + len(r.width) - 6} y={p.y + len(r.height) - 6} width={12} height={12} className="fill-brand" />}
+              {selected && !bedsLocked && <rect x={p.x + len(r.width) - 6} y={p.y + len(r.height) - 6} width={12} height={12} className="fill-brand" />}
             </g>
           )
         })}

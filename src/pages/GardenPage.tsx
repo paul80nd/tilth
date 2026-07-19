@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Bed, Holding, PlacementShape, Rect } from '../schema/userData'
 import type { PlantNode } from '../schema/plant'
@@ -34,6 +34,11 @@ import { PlotSizeModal } from '../components/plot/PlotSizeModal'
 
 const BROWSABLE = new Set<PlantNode['rank']>(['species', 'cultivar'])
 
+// Locking beds is an editing preference (like zoom), so it lives in localStorage — not the garden
+// data / backup. It survives a reload so a finished layout stays protected.
+const LOCK_KEY = 'tilth-beds-locked'
+const readBedsLocked = () => localStorage.getItem(LOCK_KEY) === '1'
+
 export default function GardenPage() {
   const beds = useLiveQuery(listBeds, [], [] as Bed[])
   const holdings = useLiveQuery(listHoldings, [], [] as Holding[])
@@ -44,7 +49,12 @@ export default function GardenPage() {
   const [brushNodeId, setBrushNodeId] = useState<string | null>(null)
   const [brushShape, setBrushShape] = useState<PlacementShape>('area')
   const [snap, setSnap] = useState(true)
+  const [bedsLocked, setBedsLocked] = useState(readBedsLocked)
   const [plotModalOpen, setPlotModalOpen] = useState(false)
+
+  useEffect(() => {
+    localStorage.setItem(LOCK_KEY, bedsLocked ? '1' : '0')
+  }, [bedsLocked])
   const canvasRef = useRef<PlotCanvasHandle>(null)
 
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
@@ -139,6 +149,18 @@ export default function GardenPage() {
           </label>
           <button
             type="button"
+            onClick={() => setBedsLocked((v) => !v)}
+            aria-pressed={bedsLocked}
+            title={bedsLocked ? 'Beds are locked — click to unlock' : 'Lock beds so they can’t be moved or resized'}
+            className={[
+              'rounded-md px-3 py-1.5 text-sm font-medium',
+              bedsLocked ? 'bg-brand text-onbrand' : 'border border-line text-muted hover:border-line-strong hover:text-ink',
+            ].join(' ')}
+          >
+            {bedsLocked ? '🔒' : '🔓'} Lock beds
+          </button>
+          <button
+            type="button"
             onClick={() => setPlotModalOpen(true)}
             className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
           >
@@ -165,6 +187,7 @@ export default function GardenPage() {
               plotW={plot.width}
               plotH={plot.height}
               snap={snap}
+              bedsLocked={bedsLocked}
               selection={selection}
               brushNodeId={brushNodeId}
               brushShape={brushShape}
