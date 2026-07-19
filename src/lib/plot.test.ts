@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { snap, snapRect, clampRect, overlaps, cellsAcross, reanchorRects, bedGaps } from './plot'
+import { snap, snapRect, clampRect, overlaps, cellsAcross, reanchorRects, bedGaps, estimateLabelWidth, labelFits } from './plot'
 
 describe('snap', () => {
   it('rounds to the nearest step', () => {
@@ -119,5 +119,23 @@ describe('bedGaps', () => {
       12,
     )
     expect(g.east).toEqual({ dist: 1, toEdge: false })
+  })
+})
+
+describe('labelFits', () => {
+  it('grows the width estimate with the label length', () => {
+    expect(estimateLabelWidth('AB')).toBeLessThan(estimateLabelWidth('ABCD'))
+  })
+  it('fits a short label in a wide block', () => {
+    expect(labelFits('Basil', 200)).toBe(true)
+  })
+  it('rejects a long label in a narrow block', () => {
+    expect(labelFits("Chilli 'Cayenne' ×4", 30)).toBe(false)
+  })
+  it('accounts for the padding room', () => {
+    // a label whose bare width equals the box still fails once padding is required
+    const w = estimateLabelWidth('Courgette')
+    expect(labelFits('Courgette', w)).toBe(false)
+    expect(labelFits('Courgette', w + 8)).toBe(true)
   })
 })

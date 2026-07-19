@@ -20,6 +20,8 @@ import {
   DEFAULT_PLOT_H,
 } from '../app/garden'
 import { displayLabel } from '../lib/naming'
+import { categoryColor } from '../lib/plantColor'
+import { placementCount } from '../lib/spacing'
 import { clampRect } from '../lib/plot'
 import PlotCanvas, { type Selection, type PlotCanvasHandle } from '../components/plot/PlotCanvas'
 import Palette from '../components/plot/Palette'
@@ -58,6 +60,23 @@ export default function GardenPage() {
   // cell (grid beds) or a 10 cm nudge (free beds).
   const bedStep = selectedBed?.spacing === 'grid' ? selectedBed.cellSize ?? 0.3 : 0.1
   const snapStep = snap ? bedStep : 0
+
+  // What's planted in the selected bed — a colour-swatched list so the canvas can stay symbol-first
+  // (names shown on demand). Clicking a row selects that planting on the plot.
+  const bedPlantings = useMemo(() => {
+    if (!selectedBed) return []
+    return placements
+      .filter((h) => h.bedId === selectedBed.id && h.region)
+      .map((h) => {
+        const node = nodesById.get(h.nodeId)
+        return {
+          id: h.id,
+          label: node ? displayLabel(node) : h.nodeId,
+          color: categoryColor(node),
+          count: h.quantity ?? placementCount(h.shape, h.footprint ?? 0.3, h.region!),
+        }
+      })
+  }, [selectedBed, placements, nodesById])
 
   // Shopping list — plant totals across the plot (grouped by node).
   const shopping = useMemo(() => {
@@ -165,7 +184,9 @@ export default function GardenPage() {
             bed={selectedBed}
             placement={selectedPlacement}
             node={selectedPlacement ? nodesById.get(selectedPlacement.nodeId) : undefined}
+            bedPlantings={bedPlantings}
             snapStep={snapStep}
+            onSelectPlanting={(id) => setSelection({ type: 'placement', id })}
             onBedChange={handleBedChange}
             onRemoveBed={() => {
               if (selectedBed) {

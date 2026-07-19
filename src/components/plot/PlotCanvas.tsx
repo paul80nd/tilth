@@ -2,8 +2,9 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import type { Bed, Holding, PlacementShape, Rect } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
-import { footprintOf as nodeFootprint, plantsInRegion } from '../../lib/spacing'
-import { snapRect, clampRect, bedGaps, type BedGap, type BedGaps } from '../../lib/plot'
+import { footprintOf as nodeFootprint, placementCount } from '../../lib/spacing'
+import { snapRect, clampRect, bedGaps, labelFits, type BedGap, type BedGaps } from '../../lib/plot'
+import { categoryColor, DEFAULT_CATEGORY_COLOR } from '../../lib/plantColor'
 
 // The interactive plot canvas — beds drawn to metre scale, plants placed within them at their
 // spacing footprint. Everything is computed in PIXEL space (metres × pixels-per-metre + pan) so
@@ -24,16 +25,7 @@ function readZoom(): number {
 const HANDLE_PX = 14 // resize-handle hit radius
 const DOT_CAP = 400 // don't draw more plant dots than this (a dense bed stays readable)
 
-/** Placeholder per-category fill — literal hexes behind a later brand pass, like the condition
- *  glyphs. Used at low opacity so beds read through. */
-const CAT_COLOR: Record<string, string> = {
-  flower: '#c084fc',
-  fruit: '#fb7185',
-  herb: '#34d399',
-  tree: '#60a5fa',
-  veg: '#f59e0b',
-}
-const DEFAULT_COLOR = '#94a3b8'
+const DEFAULT_COLOR = DEFAULT_CATEGORY_COLOR
 
 /** Placeholder per-kind colour — literal hexes behind a later brand pass, like CAT_COLOR. Each bed
  *  kind gets a subtle diagonal hatch + matching border in its colour, so kinds read apart at a
@@ -117,7 +109,6 @@ interface Drag {
   oy0: number
 }
 
-const catColor = (node?: PlantNode) => (node?.category && CAT_COLOR[node.category]) || DEFAULT_COLOR
 const footprintOf = (h: Holding) => h.footprint ?? 0.3
 
 function PlotCanvas(
@@ -439,7 +430,7 @@ function PlotCanvas(
           const region = placementRegion(h)
           const p = toPx(bed.x + region.x, bed.y + region.y)
           const node = nodesById.get(h.nodeId)
-          const color = catColor(node)
+          const color = categoryColor(node)
           const selected = selection?.type === 'placement' && selection.id === h.id
           const shape = h.shape ?? 'area'
           const fp = footprintOf(h)
@@ -447,10 +438,13 @@ function PlotCanvas(
           const hPx = len(region.height)
           const strokeW = selected ? 2.5 : 1.2
           const strokeO = selected ? 1 : 0.6
-          const label = node ? displayLabel(node) : h.nodeId
 
           // The stored quantity is the source of truth (never < 1); a single round/rect is one plant.
-          const count = h.quantity ?? (shape === 'area' ? Math.max(1, plantsInRegion(fp, region)) : 1)
+          const count = h.quantity ?? placementCount(shape, fp, region)
+          const label = `${node ? displayLabel(node) : h.nodeId}${shape === 'area' ? ` ×${count}` : ''}`
+          // Symbol-first: only label inline when the name fits the block, so packed plantings don't
+          // overprint each other. The selected planting gets a legible pill on top instead (below).
+          const showLabel = !selected && labelFits(label, wPx)
 
           let body: React.ReactNode
           if (shape === 'round') {
@@ -499,9 +493,11 @@ function PlotCanvas(
           return (
             <g key={h.id}>
               {body}
-              <text x={p.x + 4} y={p.y + 13} fontSize={10.5} fontWeight={700} className="fill-ink">
-                {label} {shape === 'area' ? `×${count}` : ''}
-              </text>
+              {showLabel && (
+                <text x={p.x + 4} y={p.y + 13} fontSize={10.5} fontWeight={700} className="fill-ink">
+                  {label}
+                </text>
+              )}
             </g>
           )
         })}
@@ -548,6 +544,30 @@ function PlotCanvas(
               return <circle cx={p.x + w / 2} cy={p.y + hh / 2} r={Math.min(w, hh) / 2} className="fill-brand stroke-brand" fillOpacity={0.15} strokeWidth={1.5} strokeDasharray="4 3" />
             }
             return <rect x={p.x} y={p.y} width={w} height={hh} rx={3} className="fill-brand stroke-brand" fillOpacity={0.15} strokeWidth={1.5} strokeDasharray="4 3" />
+          })()}
+
+        {/* selected planting: its full name on a pill, drawn last so it reads over any neighbours */}
+        {selection?.type === 'placement' &&
+          (() => {
+            const h = placements.find((x) => x.id === selection.id)
+            if (!h || !h.region) return null
+            const bed = bedById(h.bedId)
+            if (!bed) return null
+            const region = placementRegion(h)
+            const p = toPx(bed.x + region.x, bed.y + region.y)
+            const node = nodesById.get(h.nodeId)
+            const shape = h.shape ?? 'area'
+            const count = h.quantity ?? placementCount(shape, footprintOf(h), region)
+            const label = `${node ? displayLabel(node) : h.nodeId}${shape === 'area' ? ` ×${count}` : ''}`
+            const w = label.length * 6.2 + 12
+            return (
+              <g>
+                <rect x={p.x} y={p.y + 2} width={w} height={16} rx={3} className="fill-card stroke-brand" strokeWidth={1} />
+                <text x={p.x + 6} y={p.y + 13} fontSize={10.5} fontWeight={700} className="fill-ink">
+                  {label}
+                </text>
+              </g>
+            )
           })()}
       </svg>
 

@@ -8,12 +8,24 @@ import { Field, SizeInput, inputCls } from './fields'
 // every change is persisted by the callbacks the page wires to src/app/garden.ts. (Plot size is
 // edited in its own modal — see PlotSizeModal.)
 
+/** A planted row shown under a selected bed — colour swatch · name · count. */
+export interface BedPlanting {
+  id: string
+  label: string
+  color: string
+  count: number
+}
+
 export interface InspectorProps {
   bed?: Bed
   placement?: Holding
   node?: PlantNode
+  /** What's planted in the selected bed (empty unless a bed is selected). */
+  bedPlantings?: BedPlanting[]
   /** Snap increment (m) for typed bed sizes; 0 when snapping is off (a 0.1 spinner step is used). */
   snapStep: number
+  /** Select one of the bed's plantings (jumps to it on the plot). */
+  onSelectPlanting?: (id: string) => void
   onBedChange: (patch: Partial<Bed>) => void
   onRemoveBed: () => void
   onQuantityChange: (qty: number) => void
@@ -30,7 +42,7 @@ const PLACEMENT_TYPES: { shape: PlacementShape; label: string }[] = [
   { shape: 'rect', label: 'Single' },
 ]
 
-export default function Inspector({ bed, placement, node, snapStep, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onUnplace }: InspectorProps) {
+export default function Inspector({ bed, placement, node, bedPlantings = [], snapStep, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onUnplace }: InspectorProps) {
   if (bed) {
     return (
       <div className="flex flex-col gap-3 p-3">
@@ -73,6 +85,26 @@ export default function Inspector({ bed, placement, node, snapStep, onBedChange,
           </Field>
         )}
         <p className="text-xs text-subtle">Or drag the corner handle to resize.</p>
+        {bedPlantings.length > 0 && (
+          <div className="mt-1 border-t border-line pt-3">
+            <h3 className="text-xs font-medium text-muted">In this bed</h3>
+            <ul className="mt-2 flex flex-col gap-0.5">
+              {bedPlantings.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelectPlanting?.(p.id)}
+                    className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm hover:bg-sunken"
+                  >
+                    <span className="size-2.5 flex-none rounded-full" style={{ backgroundColor: p.color }} />
+                    <span className="min-w-0 flex-1 truncate text-ink">{p.label}</span>
+                    <span className="shrink-0 tabular-nums font-medium text-muted">×{p.count}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <button type="button" onClick={onRemoveBed} className="mt-1 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink">
           Remove bed
         </button>

@@ -46,6 +46,20 @@ export function overlaps(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
 }
 
+/** Rough rendered width (px) of a bold plot label at `fontPx`. A glyph averages ~0.62 em in the
+ *  UI font; deliberately a slight over-estimate so labels hide a touch sooner rather than smear
+ *  into a neighbour. Cheap enough to run per placement without measuring the DOM. */
+export function estimateLabelWidth(text: string, fontPx = 10.5): number {
+  return text.length * fontPx * 0.62
+}
+
+/** Does `text` fit within a `boxPx`-wide block, leaving `padPx` total breathing room? Used to
+ *  decide whether a placement shows its name inline (it fits) or stays a bare symbol (it doesn't,
+ *  so packed plantings don't overprint each other). */
+export function labelFits(text: string, boxPx: number, fontPx = 10.5, padPx = 8): boolean {
+  return estimateLabelWidth(text, fontPx) <= boxPx - padPx
+}
+
 /** Whole grid cells that span a length (rounded to the nearest cell), at least one. */
 export function cellsAcross(lengthM: number, cellM: number): number {
   if (cellM <= 0) return 0
