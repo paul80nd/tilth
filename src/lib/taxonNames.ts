@@ -51,6 +51,7 @@ const GENUS_COMMON: Record<string, string> = {
   Fragaria: 'Strawberry',
   Helianthus: 'Sunflower',
   Helichrysum: 'Strawflower',
+  Lactuca: 'Lettuce',
   Lavandula: 'Lavender',
   Lotus: 'Trefoil',
   Malus: 'Apple',
