@@ -28,14 +28,12 @@ const SHAPE_MODES: { shape: PlacementShape; label: string; glyph: string; hint: 
 export default function Palette({ plants, heldNodeIds, brushNodeId, brushShape, onArm, onShapeChange }: PaletteProps) {
   const [query, setQuery] = useState('')
   const results = useMemo(() => {
-    const matched = plants.filter((p) => matchesQuery(p, query))
-    // held first, then alphabetical
-    return matched.sort((a, b) => {
-      const ha = heldNodeIds.has(a.id) ? 0 : 1
-      const hb = heldNodeIds.has(b.id) ? 0 : 1
-      return ha - hb || displayLabel(a).localeCompare(displayLabel(b))
-    })
-  }, [plants, query, heldNodeIds])
+    // Purely alphabetical — plants you grow are mixed in (marked with a badge), not floated to the
+    // top, so the list order doesn't jump the moment you first place one.
+    return plants
+      .filter((p) => matchesQuery(p, query))
+      .sort((a, b) => displayLabel(a).localeCompare(displayLabel(b)))
+  }, [plants, query])
 
   return (
     <div className="flex h-full flex-col">
