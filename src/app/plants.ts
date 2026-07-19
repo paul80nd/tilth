@@ -14,6 +14,17 @@ export async function getNode(id: string): Promise<PlantNode | undefined> {
   return db.nodes.get(id)
 }
 
+/** Distinct fact keys used across the whole collection (own `facts` only) — the vocabulary the
+ *  More-facts editor suggests from, so a new fact reuses existing wording. */
+export async function listFactKeys(): Promise<string[]> {
+  const nodes = await db.nodes.toArray()
+  const keys = new Set<string>()
+  for (const n of nodes) {
+    if (n.facts) for (const k of Object.keys(n.facts)) keys.add(k)
+  }
+  return [...keys]
+}
+
 /**
  * A node's ancestors, nearest-first: [parent, grandparent, …] up the `parentId` chain.
  * Guards against a cycle/among broken data by tracking visited ids.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toFactsDraft, fromFactsDraft } from './factsEdit'
+import { toFactsDraft, fromFactsDraft, factKeySuggestions } from './factsEdit'
 
 describe('toFactsDraft', () => {
   it('reads facts into ordered rows', () => {
@@ -28,5 +28,22 @@ describe('fromFactsDraft', () => {
 
   it('collapses an all-blank draft to an empty map', () => {
     expect(fromFactsDraft([{ key: '', value: '' }])).toEqual({})
+  })
+})
+
+describe('factKeySuggestions', () => {
+  it('suggests collection keys not already used, sorted and de-duplicated', () => {
+    expect(factKeySuggestions(['spacing', 'depth', 'spacing', 'scent'], ['depth'])).toEqual([
+      'scent',
+      'spacing',
+    ])
+  })
+
+  it('excludes used keys case-insensitively but keeps the collection spelling', () => {
+    expect(factKeySuggestions(['Spacing', 'Scent'], ['spacing'])).toEqual(['Scent'])
+  })
+
+  it('ignores blank keys on both sides', () => {
+    expect(factKeySuggestions(['spacing', '  ', ''], ['', '  '])).toEqual(['spacing'])
   })
 })

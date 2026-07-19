@@ -26,3 +26,21 @@ export function fromFactsDraft(rows: FactRow[]): Record<string, string> {
   }
   return out
 }
+
+/** Fact-key suggestions for the editor: keys drawn from across the collection that aren't already
+ *  used in the current draft — so a new fact reuses existing wording ("spacing", not "plant
+ *  spacing"). The "used" check is case-insensitive; the collection's own spelling is returned,
+ *  de-duplicated and alphabetically sorted. */
+export function factKeySuggestions(collectionKeys: string[], usedKeys: string[]): string[] {
+  const used = new Set(usedKeys.map((k) => k.trim().toLowerCase()).filter(Boolean))
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const raw of collectionKeys) {
+    const k = raw.trim()
+    const lc = k.toLowerCase()
+    if (!k || used.has(lc) || seen.has(lc)) continue
+    seen.add(lc)
+    out.push(k)
+  }
+  return out.sort((a, b) => a.localeCompare(b))
+}

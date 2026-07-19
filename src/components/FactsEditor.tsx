@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
 import type { PlantNode } from '../schema/plant'
 import { updateNode, clearNodeField } from '../app/editNode'
+import { listFactKeys } from '../app/plants'
 import { deepEqual } from '../lib/equal'
-import { fromFactsDraft, toFactsDraft, type FactRow } from '../lib/factsEdit'
+import { fromFactsDraft, toFactsDraft, factKeySuggestions, type FactRow } from '../lib/factsEdit'
 import { EditorFooter } from './EditorControls'
+
+const KEY_SUGGESTIONS_ID = 'facts-key-suggestions'
 
 // A modal for editing the "More facts" card — the free key/value chips (e.g. "spacing" → "20cm").
 // Rows can be added, edited and removed; the preview shows the exact chips the cheatsheet renders.
@@ -43,6 +47,14 @@ export function FactsEditor({
   const previewEntries = Object.entries(preview)
   const dirty = !deepEqual(rows, initial)
   const canClear = node.facts !== undefined
+
+  // Suggest fact keys used elsewhere in the collection that this draft hasn't used yet, so a new
+  // fact is worded like the existing ones (e.g. everything says "spacing").
+  const collectionKeys = useLiveQuery(listFactKeys, [], [] as string[])
+  const keySuggestions = useMemo(
+    () => factKeySuggestions(collectionKeys, rows.map((r) => r.key)),
+    [collectionKeys, rows],
+  )
 
   function setRow(i: number, patch: Partial<FactRow>) {
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)))
@@ -124,6 +136,7 @@ export function FactsEditor({
                 value={row.key}
                 placeholder="label"
                 aria-label={`Fact ${i + 1} label`}
+                list={KEY_SUGGESTIONS_ID}
                 onChange={(e) => setRow(i, { key: e.target.value })}
                 className="w-2/5 flex-none rounded-md border border-line bg-card px-2.5 py-1.5 text-sm placeholder:text-subtle"
               />
@@ -152,6 +165,12 @@ export function FactsEditor({
           >
             + Add fact
           </button>
+          {/* Shared across the key inputs — existing labels from the collection not yet used here. */}
+          <datalist id={KEY_SUGGESTIONS_ID}>
+            {keySuggestions.map((k) => (
+              <option key={k} value={k} />
+            ))}
+          </datalist>
         </div>
 
         {error && <p className="mt-3 text-sm text-accent-ink">{error}</p>}
