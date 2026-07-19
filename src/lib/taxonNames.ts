@@ -29,6 +29,7 @@ const FAMILY_COMMON: Record<string, string> = {
   Scrophulariaceae: 'Figwort',
   Solanaceae: 'Nightshade',
   Tropaeolaceae: 'Nasturtium',
+  Verbenaceae: 'Vervain',
   Viburnaceae: 'Moschatel',
 }
 
@@ -74,6 +75,7 @@ const GENUS_COMMON: Record<string, string> = {
   Thymus: 'Thyme',
   Tropaeolum: 'Nasturtium',
   Tulipa: 'Tulip',
+  Verbena: 'Vervain',
 }
 
 /** A user-set common name for a family or genus, overlaying the committed defaults above. `plural`
