@@ -139,6 +139,8 @@ function normaliseTask(raw: unknown, index: number): TaskTemplate | string {
   if (scopeCategory) task.scopeCategory = scopeCategory as TaskTemplate['scopeCategory']
   const note = asString(raw.note)
   if (note) task.note = note
+  const cadence = asString(raw.cadence)
+  if (cadence === 'once' || cadence === 'ongoing') task.cadence = cadence
   return task
 }
 

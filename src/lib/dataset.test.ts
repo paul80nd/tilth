@@ -111,6 +111,19 @@ describe('parsePlantDataset', () => {
     expect(errors).toHaveLength(2)
   })
 
+  it('carries a valid task cadence and drops an invalid one', () => {
+    const { tasks } = parsePlantDataset({
+      tasks: [
+        { id: 't1', action: 'Winter prune', months: [1], cadence: 'once' },
+        { id: 't2', action: 'Water', months: [], cadence: 'ongoing' },
+        { id: 't3', action: 'Feed', months: [], cadence: 'sometimes' },
+      ],
+    })
+    expect(tasks.find((t) => t.id === 't1')?.cadence).toBe('once')
+    expect(tasks.find((t) => t.id === 't2')?.cadence).toBe('ongoing')
+    expect(tasks.find((t) => t.id === 't3')?.cadence).toBeUndefined() // invalid → left off
+  })
+
   it('reports invalid JSON text rather than throwing', () => {
     const { errors, skipped } = parsePlantDataset('{ not json')
     expect(skipped).toBe(1)
