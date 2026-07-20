@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeHolding, makeNode, makeTask } from '../../test/factories'
-import { buildJobs, formatMonths, groupJobs, type Job } from './jobs'
+import { buildJobs, formatMonths, groupJobsByPlant, type Job } from './jobs'
 
 describe('formatMonths', () => {
   it('labels an empty month list as Anytime', () => {
@@ -121,66 +121,53 @@ describe('buildJobs — maintenance tasks', () => {
   })
 })
 
-// Build a display Job directly — groupJobs is pure over the flat Job[] a month bucket holds.
+// Build a display Job directly — groupJobsByPlant is pure over the flat Job[] a bucket holds.
 function job(over: Partial<Job> & { action: string; subjectId: string; subjectName: string }): Job {
   return { key: `task:${over.subjectId}:${over.action}`, months: [], holdingIds: [], ...over }
 }
 
-describe('groupJobs — display grouping', () => {
-  it('returns no groups for an empty month', () => {
-    expect(groupJobs([])).toEqual([])
+describe('groupJobsByPlant — plant-first display grouping', () => {
+  it('returns no rows for an empty bucket', () => {
+    expect(groupJobsByPlant([])).toEqual([])
   })
 
-  it('collapses an identical job (same action + note) across crops into one multi-subject row', () => {
-    const groups = groupJobs([
-      job({ action: 'Water in dry spells', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit', note: 'Keep evenly moist' }),
-      job({ action: 'Water in dry spells', subjectId: 'pear', subjectName: 'Pear', subjectCategory: 'fruit', note: 'Keep evenly moist' }),
-    ])
-    expect(groups).toHaveLength(1)
-    expect(groups[0].action).toBe('Water in dry spells')
-    expect(groups[0].rows).toHaveLength(1)
-    expect(groups[0].rows[0].subjects.map((s) => s.name)).toEqual(['Apple', 'Pear'])
-    expect(groups[0].rows[0].keys).toHaveLength(2)
-  })
-
-  it('keeps crops with distinct notes as separate rows under one action heading', () => {
-    const groups = groupJobs([
-      job({ action: 'Winter prune', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit', note: 'Prune to an open goblet' }),
-      job({ action: 'Winter prune', subjectId: 'grape', subjectName: 'Grape', subjectCategory: 'fruit', note: 'Prune back to two buds' }),
-    ])
-    expect(groups).toHaveLength(1)
-    expect(groups[0].rows).toHaveLength(2)
-    // rows sort by first subject name
-    expect(groups[0].rows.map((r) => r.subjects[0].name)).toEqual(['Apple', 'Grape'])
-  })
-
-  it('de-duplicates a subject that appears twice in one row and sorts subjects by name', () => {
-    const groups = groupJobs([
-      job({ action: 'Mulch', subjectId: 'pear', subjectName: 'Pear', subjectCategory: 'fruit' }),
-      job({ action: 'Mulch', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit' }),
+  it("groups a plant's actions under it, sorted by action, with notes kept for detail", () => {
+    const plants = groupJobsByPlant([
+      job({ action: 'Winter prune', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit', note: 'Open goblet' }),
       job({ action: 'Mulch', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit' }),
     ])
-    expect(groups[0].rows[0].subjects.map((s) => s.name)).toEqual(['Apple', 'Pear'])
+    expect(plants).toHaveLength(1)
+    expect(plants[0]).toMatchObject({ subjectName: 'Apple', category: 'fruit' })
+    // actions sort by name: Mulch before Winter prune; the note rides along.
+    expect(plants[0].actions.map((a) => a.action)).toEqual(['Mulch', 'Winter prune'])
+    expect(plants[0].actions[1].note).toBe('Open goblet')
   })
 
-  it('clusters groups by category then action', () => {
-    const groups = groupJobs([
+  it('gives each plant its own row — a shared action is not collapsed', () => {
+    const plants = groupJobsByPlant([
+      job({ action: 'Water in dry spells', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit' }),
+      job({ action: 'Water in dry spells', subjectId: 'pear', subjectName: 'Pear', subjectCategory: 'fruit' }),
+    ])
+    expect(plants.map((p) => p.subjectName)).toEqual(['Apple', 'Pear'])
+    expect(plants.every((p) => p.actions[0].action === 'Water in dry spells')).toBe(true)
+  })
+
+  it('de-duplicates the same action on one plant, merging the underlying keys', () => {
+    const plants = groupJobsByPlant([
+      { ...job({ action: 'Feed', subjectId: 'apple', subjectName: 'Apple' }), key: 'task:a' },
+      { ...job({ action: 'Feed', subjectId: 'apple', subjectName: 'Apple' }), key: 'task:b' },
+    ])
+    expect(plants[0].actions).toHaveLength(1)
+    expect(plants[0].actions[0].keys).toEqual(['task:a', 'task:b'])
+  })
+
+  it('clusters plants by category then name', () => {
+    const plants = groupJobsByPlant([
+      job({ action: 'Mulch', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit' }),
       job({ action: 'Deadhead', subjectId: 'rosa', subjectName: 'Rose', subjectCategory: 'flower' }),
-      job({ action: 'Mulch', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit' }),
       job({ action: 'Feed', subjectId: 'dahlia', subjectName: 'Dahlia', subjectCategory: 'flower' }),
     ])
-    // flower (Deadhead, Feed) before fruit (Mulch); within flower, action A→Z.
-    expect(groups.map((g) => g.action)).toEqual(['Deadhead', 'Feed', 'Mulch'])
-  })
-
-  it('treats a job with no note as its own row, never merged with a noted one', () => {
-    const groups = groupJobs([
-      job({ action: 'Feed', subjectId: 'apple', subjectName: 'Apple', subjectCategory: 'fruit', note: 'High potash' }),
-      job({ action: 'Feed', subjectId: 'pear', subjectName: 'Pear', subjectCategory: 'fruit' }),
-    ])
-    expect(groups[0].rows).toHaveLength(2)
-    const notes = groups[0].rows.map((r) => r.note)
-    expect(notes).toContain('High potash')
-    expect(notes).toContain(undefined)
+    // flower (Dahlia, Rose) before fruit (Apple); within flower, name A-Z.
+    expect(plants.map((p) => p.subjectName)).toEqual(['Dahlia', 'Rose', 'Apple'])
   })
 })

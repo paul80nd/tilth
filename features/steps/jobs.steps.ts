@@ -2,7 +2,7 @@ import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 import { db } from '../../src/db/db'
 import { listJobs } from '../../src/app/jobs'
-import { groupJobs, type JobActionGroup, type JobCalendar } from '../../src/lib/jobs'
+import { groupJobsByPlant, type JobCalendar, type PlantJobs } from '../../src/lib/jobs'
 import { MONTH_NAMES } from '../../src/lib/calendar'
 import { makeHolding, makeNode, makeTask } from '../../test/factories'
 import type { Category } from '../../src/schema/plant'
@@ -11,8 +11,8 @@ const feature = await loadFeature('features/jobs.feature')
 
 // The most recent result of listing the jobs — the "When I list the jobs" step fills it.
 let jobs: JobCalendar
-// The most recent grouped view — the "When I group the jobs for {month}" step fills it.
-let groups: JobActionGroup[]
+// The most recent plant-first grouped view — the "When I group the jobs for {month}" step fills it.
+let plants: PlantJobs[]
 
 async function clearAll(): Promise<void> {
   await Promise.all([
@@ -51,18 +51,12 @@ function parseMonths(monthsCsv: string): number[] {
 
 async function addTask(action: string, scopeNodeId: string, monthsCsv: string): Promise<void> {
   await db.tasks.put(
-    makeTask({ id: `task-${action}`, action, months: parseMonths(monthsCsv), scopeNodeId }),
+    makeTask({ id: `task-${action}-${scopeNodeId}`, action, months: parseMonths(monthsCsv), scopeNodeId }),
   )
 }
 
 async function addNamedSpecies(id: string, name: string, category: string): Promise<void> {
   await db.nodes.put(makeNode({ id, rank: 'species', commonName: name, category: category as Category }))
-}
-
-async function addTaskNoted(action: string, scope: string, monthsCsv: string, note: string): Promise<void> {
-  await db.tasks.put(
-    makeTask({ id: `task-${action}-${scope}`, action, months: parseMonths(monthsCsv), scopeNodeId: scope, note }),
-  )
 }
 
 async function list(): Promise<void> {
@@ -72,7 +66,11 @@ async function list(): Promise<void> {
 async function groupFor(month: string): Promise<void> {
   jobs = await listJobs()
   const idx = MONTH_NAMES.indexOf(month)
-  groups = groupJobs(jobs.months[idx].jobs)
+  plants = groupJobsByPlant(jobs.months[idx].jobs)
+}
+
+function plantRow(name: string): PlantJobs | undefined {
+  return plants.find((p) => p.subjectName === name)
 }
 
 function monthBucket(name: string) {
@@ -167,34 +165,31 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
   })
 
-  Scenario('Crops sharing an identical job collapse into one row listing both', ({ Given, And, When, Then }) => {
+  Scenario("A plant's maintenance jobs are grouped under it, one row per plant", ({ Given, And, When, Then }) => {
     Given('I grow {string}', async (_, nodeId: string) => {
       await grow(nodeId)
     })
-    And('a species {string} named {string} in category {string}', async (_, id: string, name: string, category: string) => {
-      await addNamedSpecies(id, name, category)
+    And('a maintenance task {string} on {string} in months {string}', async (_, action: string, scope: string, months: string) => {
+      await addTask(action, scope, months)
     })
-    And('I grow {string}', async (_, nodeId: string) => {
-      await grow(nodeId)
-    })
-    And('a maintenance task {string} on {string} in months {string} with note {string}', async (_, action: string, scope: string, months: string, note: string) => {
-      await addTaskNoted(action, scope, months, note)
-    })
-    And('another maintenance task {string} on {string} in months {string} with note {string}', async (_, action: string, scope: string, months: string, note: string) => {
-      await addTaskNoted(action, scope, months, note)
+    And('another maintenance task {string} on {string} in months {string}', async (_, action: string, scope: string, months: string) => {
+      await addTask(action, scope, months)
     })
     When('I group the jobs for {string}', async (_, month: string) => {
       await groupFor(month)
     })
-    Then('the action {string} has {int} row', (_, action: string, count: number) => {
-      expect(groups.find((g) => g.action === action)?.rows).toHaveLength(count)
+    Then('there is {int} plant row', (_, count: number) => {
+      expect(plants).toHaveLength(count)
     })
-    And('the row lists subjects {string}', (_, csv: string) => {
-      expect(groups[0].rows[0].subjects.map((s) => s.name)).toEqual(csv.split(','))
+    And('the plant {string} needs {int} jobs', (_, name: string, count: number) => {
+      expect(plantRow(name)?.actions).toHaveLength(count)
+    })
+    And('the plant {string} includes the job {string}', (_, name: string, action: string) => {
+      expect(plantRow(name)?.actions.map((a) => a.action)).toContain(action)
     })
   })
 
-  Scenario('Crops with the same action but different notes stay separate rows under one heading', ({ Given, And, When, Then }) => {
+  Scenario('Each plant is its own row — a shared job is not collapsed', ({ Given, And, When, Then }) => {
     Given('I grow {string}', async (_, nodeId: string) => {
       await grow(nodeId)
     })
@@ -204,17 +199,23 @@ describeFeature(feature, ({ Background, Scenario }) => {
     And('I grow {string}', async (_, nodeId: string) => {
       await grow(nodeId)
     })
-    And('a maintenance task {string} on {string} in months {string} with note {string}', async (_, action: string, scope: string, months: string, note: string) => {
-      await addTaskNoted(action, scope, months, note)
+    And('a maintenance task {string} on {string} in months {string}', async (_, action: string, scope: string, months: string) => {
+      await addTask(action, scope, months)
     })
-    And('another maintenance task {string} on {string} in months {string} with note {string}', async (_, action: string, scope: string, months: string, note: string) => {
-      await addTaskNoted(action, scope, months, note)
+    And('another maintenance task {string} on {string} in months {string}', async (_, action: string, scope: string, months: string) => {
+      await addTask(action, scope, months)
     })
     When('I group the jobs for {string}', async (_, month: string) => {
       await groupFor(month)
     })
-    Then('the action {string} has {int} rows', (_, action: string, count: number) => {
-      expect(groups.find((g) => g.action === action)?.rows).toHaveLength(count)
+    Then('there are {int} plant rows', (_, count: number) => {
+      expect(plants).toHaveLength(count)
+    })
+    And('the plant {string} includes the job {string}', (_, name: string, action: string) => {
+      expect(plantRow(name)?.actions.map((a) => a.action)).toContain(action)
+    })
+    And('the plant {string} also includes the job {string}', (_, name: string, action: string) => {
+      expect(plantRow(name)?.actions.map((a) => a.action)).toContain(action)
     })
   })
 })

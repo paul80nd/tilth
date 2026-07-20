@@ -1,7 +1,8 @@
 # Jobs page — whole-garden maintenance, month by month
 
-Status: **specified, not built** (design agreed 2026-07-20). This is the cross-garden counterpart
-to the per-plant **Care tile** on the cheatsheet: every held plant's maintenance jobs, rolled up,
+Status: **built 2026-07-20** (v1), then **pivoted to plant-first display** the same day after a
+density review (see the Display-model note below). This is the cross-garden counterpart to the
+per-plant **Care tile** on the cheatsheet: every held plant's maintenance jobs, rolled up,
 de-duplicated, and laid out by month with "this month" up top.
 
 Read alongside `docs/spec.md` (data model) and the jobs engine in `src/lib/jobs.ts`.
@@ -37,46 +38,52 @@ dropped. Jobs are for what's actually in the garden — nothing else.
 
 ## Display model
 
-Within any month bucket, group the flat `Job[]` for display:
+> **Pivoted to plant-first, 2026-07-20 (post-build).** The first cut grouped **action-first**
+> (parent = task, children = per-crop rows, identical jobs collapsing). Paul found it busy even at a
+> modest plant count: a bold action heading over a single crop, repeated, plus a full note-sentence
+> on every row. We flipped to **plant-first** (one row per plant listing its jobs) and moved notes
+> off by default. The shared-job collapse (the action-first payoff) barely fired for a small garden,
+> so little was lost. The old `groupJobs` / `JobRow` / `JobActionGroup` are gone.
 
-1. **Parent = the general task** — group by `action` (e.g. "Winter prune").
-2. **Child rows = the exact per-crop job** — within an action group, sub-group by `note` (exact
-   match). Each row = one distinct note shared by 1+ crops, listing the crop **subjects**. So crops
-   whose job is *identical* (same action **and** same note) collapse into one row listing the names
-   (keeps generic jobs like "Water in dry spells" from sprawling into a row per crop); crops with a
-   crop-specific note each get their own row under the shared action heading.
-3. Each subject name is **clickable → `CheatsheetModal`** on its `subjectId`.
-4. Each subject row carries a small **category colour dot** (`categoryColor`); groups sort by
-   category then action (Q4 resolution — category is a dot + sort key, **not** a nesting level,
-   because an action like "Water in dry spells" spans categories).
+Within any bucket, group the flat `Job[]` **by the plant** (`subjectId`):
+
+1. **One row per plant** — a category colour **dot** (`categoryColor`), the plant name, then the
+   distinct **actions** it needs that bucket, joined `·`.
+2. The plant name is **clickable → `CheatsheetModal`** on its `subjectId` — that's where the full
+   how-to lives (the Care tile). Notes are demoted: each action carries its `note` as a hover
+   tooltip, not inline text.
+3. Rows sort by **category then name** (a stable, colour-clustered order); actions within a row
+   sort by name.
+4. A genus/category-scoped job stays **one subject** (not expanded per cultivar) — matching
+   `buildJobs`; clicking it opens the genus cheatsheet where the shared care lives.
 
 ### New pure helper (`src/lib/jobs.ts`, unit-tested)
 
 ```ts
-/** One displayed row within an action group: a single distinct job (note) shared by ≥1 crop. */
-export interface JobRow {
+/** One maintenance action a plant needs in a bucket. `note` = the how-to (shown on demand);
+ *  `keys` = the underlying Job keys (stable ids for the future done-log). */
+export interface PlantAction {
+  action: string
   note?: string
-  /** Crops this exact job covers — de-duped by id, sorted by name; each links to its cheatsheet. */
-  subjects: { id: string; name: string; category?: Category }[]
-  /** Underlying Job keys (stable ids for the future done-log). */
   keys: string[]
 }
 
-/** A month's jobs grouped by action (the general task), each holding ≥1 row. */
-export interface JobActionGroup {
-  action: string
-  rows: JobRow[]
+/** A plant-first display row: one subject and the distinct actions it needs this bucket. */
+export interface PlantJobs {
+  subjectId: string
+  subjectName: string
+  category?: Category
+  actions: PlantAction[]
 }
 
-/** Group a month bucket's flat jobs into action → rows for display. Pure; date-free. */
-export function groupJobs(jobs: Job[]): JobActionGroup[]
+/** Group a bucket's flat jobs by the plant they're about, for a plant-first display. Pure. */
+export function groupJobsByPlant(jobs: Job[]): PlantJobs[]
 ```
 
-- Group by `action`; within, sub-group by `note` (treat `undefined` as its own key).
-- `subjects` = distinct `{ subjectId, subjectName, subjectCategory }` sorted by name.
-- `keys` = the underlying `Job.key`s (for the future done-log).
-- Sort rows within a group (by first subject name), and groups by (first subject's category, then
-  action) for a stable, category-clustered order.
+- Group by `subjectId`; within, sub-group by `action` (same action twice on one plant merges,
+  keeping both `keys`).
+- Sort subjects by (category, name); sort actions by name.
+- `note` rides on each action (hover tooltip); `keys` are the underlying `Job.key`s (done-log).
 
 ### Engine tweak (small, additive)
 
@@ -89,14 +96,15 @@ update `src/lib/jobs.test.ts` and, if asserted, `features/jobs.feature`.
 
 - Reactive: `useLiveQuery(() => listJobs())`. `const CURRENT_MONTH = new Date().getMonth() + 1`.
 - Layout, top to bottom:
-  1. **"This month — {MonthName}"** — pinned card, `groupJobs(calendar.months[CURRENT_MONTH-1].jobs)`.
-     Empty → a quiet "Nothing to do this month."
+  1. **"This month — {MonthName}"** — pinned, always-open card, `groupJobsByPlant(this month's jobs)`.
+     Empty → a quiet "Nothing to do."
   2. **The year** — the other 11 months in calendar order Jan→Dec (omit the current month; it's the
-     pinned card above), each a block with its `groupJobs(...)` (or "Nothing to do"). A month with
-     no jobs still renders its header so positions stay familiar.
-  3. **Anytime** — the `anytime` bucket, grouped the same way, at the very bottom (condition-based
+     pinned card above), each a **collapsed `<details>` disclosure** (Safari-safe, no JS) with a
+     **job count** on the tab so you needn't open an empty one. Body is its `groupJobsByPlant(...)`.
+  3. **Anytime** — the `anytime` bucket, same collapsed disclosure, at the very bottom (condition-based
      jobs like "water in dry spells" have no fixed month; kept out of "this month" to keep it crisp).
-- **Modal:** `const [openId, setOpenId] = useState<string | null>(null)`; clicking a subject sets it;
+- **Wide screens:** rows flow into **two masonry columns** (`lg:columns-2` + `break-inside-avoid`).
+- **Modal:** `const [openId, setOpenId] = useState<string | null>(null)`; clicking a plant sets it;
   render `{openId && <CheatsheetModal id={openId} onClose={() => setOpenId(null)} />}`.
 - Full-bleed vs `Padded`: an ordinary scrolling page — route it inside `Padded` like Browse/Data
   (not full-bleed like Taxonomy/Garden).
@@ -105,16 +113,14 @@ update `src/lib/jobs.test.ts` and, if asserted, `features/jobs.feature`.
 
 ## Testing
 
-- **Unit** (`src/lib/jobs.test.ts`): `groupJobs` — action grouping; identical-note collapse into one
-  multi-subject row; distinct notes stay separate rows under the shared action; subject de-dupe +
-  sort; group/row ordering; empty input.
-- **Gherkin** (`features/jobs.feature` + `features/steps/jobs.steps.ts`): a scenario for the grouped
-  view driven through the lib — e.g. two crops sharing an identical "Water in dry spells" job
-  collapse to one row listing both; two crops with the same action but different notes show two rows
-  under one "Winter prune" heading. Steps call `listJobs`/`buildJobs` then `groupJobs` (both pure/app
-  seams the runner already drives). _Runner gotchas:_ no `{float}` param; each step **line** needs
-  its own keyword+pattern (duplicate `And` text across a scenario collides); keep example inputs
-  quote-free.
+- **Unit** (`src/lib/jobs.test.ts`): `groupJobsByPlant` — a plant's actions grouped + sorted with
+  notes kept; one row per plant (shared action not collapsed); same-action-on-one-plant de-dupe
+  merging keys; category-then-name ordering; empty input. Plus `buildJobs` tags `subjectCategory`.
+- **Gherkin** (`features/jobs.feature` + `features/steps/jobs.steps.ts`): scenarios driven through
+  the lib — a plant's jobs group under it (one row, N actions); each plant is its own row (a shared
+  "Water in dry spells" is *not* collapsed). Steps call `listJobs` then `groupJobsByPlant`. _Runner
+  gotchas:_ no `{float}` param; each step **line** needs its own keyword+pattern (duplicate `And`
+  text across a scenario collides — hence "…also includes the job"); keep example inputs quote-free.
 
 ## Deferred — the "mark done" follow-up (v1.1)
 

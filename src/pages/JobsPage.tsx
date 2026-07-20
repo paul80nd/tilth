@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { listJobs } from '../app/jobs'
-import { groupJobs, type Job, type JobActionGroup } from '../lib/jobs'
+import { groupJobsByPlant, type Job, type PlantJobs } from '../lib/jobs'
 import { MONTH_NAMES } from '../lib/calendar'
 import { CATEGORY_COLOR, DEFAULT_CATEGORY_COLOR } from '../lib/plantColor'
 import { CheatsheetModal } from '../components/CheatsheetModal'
@@ -9,9 +9,10 @@ import { CheatsheetModal } from '../components/CheatsheetModal'
 const CURRENT_MONTH = new Date().getMonth() + 1
 
 // The whole-garden maintenance list: every held plant's jobs, rolled up + de-duplicated, laid
-// out by month. This month is pinned + open at the top; the rest of the year (and the
-// condition-based "Anytime" jobs) are collapsed disclosures below. Display-only, growing-only
-// (see docs/jobs-page-spec.md).
+// out by month and grouped plant-first (one row per plant listing what it needs). This month is
+// pinned + open at the top; the rest of the year (and the condition-based "Anytime" jobs) are
+// collapsed disclosures below. Notes ride on hover; the plant's cheatsheet holds the full how-to.
+// Display-only, growing-only (see docs/jobs-page-spec.md).
 export default function JobsPage() {
   const calendar = useLiveQuery(() => listJobs(), [])
   const [openId, setOpenId] = useState<string | null>(null)
@@ -35,7 +36,7 @@ export default function JobsPage() {
         <h2 className="mb-3 font-display text-h2 font-semibold">
           This month — {MONTH_NAMES[CURRENT_MONTH - 1]}
         </h2>
-        <JobGroups jobs={thisMonth.jobs} onOpen={setOpenId} />
+        <PlantRows jobs={thisMonth.jobs} onOpen={setOpenId} />
       </section>
 
       {/* The rest of the year (Jan→Dec) + Anytime — collapsed disclosures */}
@@ -53,8 +54,8 @@ export default function JobsPage() {
 
 /** A collapsible month (or Anytime) block — collapsed by default, with a job count on the tab. */
 function MonthSection({ name, jobs, onOpen }: { name: string; jobs: Job[]; onOpen: (id: string) => void }) {
-  const groups = jobs.length ? groupJobs(jobs) : []
-  const count = groups.reduce((n, g) => n + g.rows.length, 0)
+  const plants = jobs.length ? groupJobsByPlant(jobs) : []
+  const count = plants.reduce((n, p) => n + p.actions.length, 0)
   return (
     <details className="group border-b border-line last:border-b-0">
       <summary className="flex cursor-pointer list-none items-center gap-2 py-3">
@@ -65,67 +66,62 @@ function MonthSection({ name, jobs, onOpen }: { name: string; jobs: Job[]; onOpe
         </span>
       </summary>
       <div className="pb-4 pl-6">
-        <JobGroups jobs={jobs} groups={groups} onOpen={onOpen} />
+        <PlantRows jobs={jobs} plants={plants} onOpen={onOpen} />
       </div>
     </details>
   )
 }
 
-/** A bucket's jobs grouped by action — or a quiet empty note. Pass `groups` to reuse a
+/** A bucket's jobs grouped plant-first — or a quiet empty note. Pass `plants` to reuse a
  *  pre-computed grouping (the disclosures do, for the tab count), else it groups `jobs`. */
-function JobGroups({
+function PlantRows({
   jobs,
-  groups,
+  plants,
   onOpen,
 }: {
   jobs: Job[]
-  groups?: JobActionGroup[]
+  plants?: PlantJobs[]
   onOpen: (id: string) => void
 }) {
   if (jobs.length === 0) return <p className="text-sm text-subtle">Nothing to do.</p>
-  const resolved = groups ?? groupJobs(jobs)
-  // Multi-column masonry on wide screens: groups flow into two columns, each kept whole.
+  const resolved = plants ?? groupJobsByPlant(jobs)
+  // Multi-column masonry on wide screens: plant rows flow into two columns, each kept whole.
   return (
     <ul className="columns-1 gap-x-10 lg:columns-2">
-      {resolved.map((g) => (
-        <ActionGroup key={g.action} group={g} onOpen={onOpen} />
+      {resolved.map((p) => (
+        <PlantRow key={p.subjectId} plant={p} onOpen={onOpen} />
       ))}
     </ul>
   )
 }
 
-/** One action (the general task) and its rows — each row a distinct job listing its crops,
- *  with the note demoted to a quiet line beneath. */
-function ActionGroup({ group, onOpen }: { group: JobActionGroup; onOpen: (id: string) => void }) {
+/** One plant and the actions it needs this bucket — a single scannable line. The plant name
+ *  opens its cheatsheet (the full how-to); each action carries its note as a hover tooltip. */
+function PlantRow({ plant, onOpen }: { plant: PlantJobs; onOpen: (id: string) => void }) {
   return (
-    <li className="mb-5 break-inside-avoid">
-      <p className="text-sm font-semibold">{group.action}</p>
-      <ul className="mt-1.5 flex flex-col gap-2">
-        {group.rows.map((row, i) => (
-          <li key={i}>
-            <span className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm">
-              {row.subjects.map((s, j) => (
-                <span key={s.id} className="inline-flex items-center gap-1.5">
-                  <span
-                    aria-hidden
-                    className="inline-block size-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: CATEGORY_COLOR[s.category ?? ''] ?? DEFAULT_CATEGORY_COLOR }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onOpen(s.id)}
-                    className="font-medium text-ink hover:text-brand-ink hover:underline"
-                  >
-                    {s.name}
-                  </button>
-                  {j < row.subjects.length - 1 && <span className="text-subtle">,</span>}
-                </span>
-              ))}
+    <li className="mb-2.5 flex break-inside-avoid items-baseline gap-2 text-sm">
+      <span
+        aria-hidden
+        className="mt-1.5 inline-block size-2 shrink-0 rounded-full"
+        style={{ backgroundColor: CATEGORY_COLOR[plant.category ?? ''] ?? DEFAULT_CATEGORY_COLOR }}
+      />
+      <span className="min-w-0">
+        <button
+          type="button"
+          onClick={() => onOpen(plant.subjectId)}
+          className="font-medium text-ink hover:text-brand-ink hover:underline"
+        >
+          {plant.subjectName}
+        </button>
+        <span className="ml-2 text-muted">
+          {plant.actions.map((a, i) => (
+            <span key={a.action} title={a.note} className={a.note ? 'cursor-help' : undefined}>
+              {i > 0 && <span className="text-subtle"> · </span>}
+              {a.action}
             </span>
-            {row.note && <p className="mt-0.5 max-w-prose pl-3.5 text-xs text-muted">{row.note}</p>}
-          </li>
-        ))}
-      </ul>
+          ))}
+        </span>
+      </span>
     </li>
   )
 }

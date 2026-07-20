@@ -196,25 +196,23 @@ export function buildJobs(input: BuildJobsInput, options: BuildJobsOptions = {})
   return { months, anytime }
 }
 
-/** One displayed row within an action group: a single distinct job (note) shared by ≥1 crop. */
-export interface JobRow {
+/** One maintenance action a plant needs in a bucket. `note` is the how-to (shown on demand);
+ *  `keys` are the underlying Job keys (stable ids for the future done-log). */
+export interface PlantAction {
+  action: string
   note?: string
-  /** Crops this exact job covers — de-duped by id, sorted by name; each links to its cheatsheet. */
-  subjects: { id: string; name: string; category?: Category }[]
-  /** Underlying Job keys (stable ids for the future done-log). */
   keys: string[]
 }
 
-/** A month's jobs grouped by action (the general task), each holding ≥1 row. */
-export interface JobActionGroup {
-  action: string
-  rows: JobRow[]
+/** A plant-first display row: one subject and the distinct actions it needs this bucket. */
+export interface PlantJobs {
+  subjectId: string
+  subjectName: string
+  category?: Category
+  actions: PlantAction[]
 }
 
-/** Sentinel key for a job with no note, so `undefined` gets its own row (never merged with ''). */
-const NO_NOTE = ' '
-
-/** Compare two categories for the display sort — defined categories A→Z, undefined last. */
+/** Compare two categories for the display sort: defined categories A-Z, undefined last. */
 function compareCategory(a: Category | undefined, b: Category | undefined): number {
   if (a === b) return 0
   if (a === undefined) return 1
@@ -223,50 +221,46 @@ function compareCategory(a: Category | undefined, b: Category | undefined): numb
 }
 
 /**
- * Group a month bucket's flat jobs into action → rows for display. Pure; date-free.
+ * Group a bucket's flat jobs by the plant they're about: one row per subject listing the
+ * actions it needs, for a plant-first, scannable display. Pure; date-free.
  *
- * - Group by `action` (the general task, e.g. "Winter prune").
- * - Within an action, sub-group by `note` (exact match; `undefined` is its own key) so crops
- *   whose job is *identical* collapse to one row listing the names, while crop-specific notes
- *   each get their own row under the shared action heading.
- * - Subjects within a row are de-duped by id and sorted by name; rows sort by their first
- *   subject's name; groups sort by their first subject's category (then action) — a stable,
- *   category-clustered order (category is a dot + sort key, never a nesting level).
+ * - Subjects sort by category then name (a stable, colour-clustered order); actions within a
+ *   subject sort by name. Notes ride along on each action for on-demand detail (hover / the
+ *   plant's cheatsheet), not shown by default.
+ * - A job whose scope is a genus/category stays ONE subject (it is not expanded per cultivar,
+ *   matching buildJobs); clicking it opens the genus cheatsheet where the shared care lives.
  */
-export function groupJobs(jobs: Job[]): JobActionGroup[] {
-  const byAction = new Map<string, Map<string, JobRow>>()
+export function groupJobsByPlant(jobs: Job[]): PlantJobs[] {
+  const bySubject = new Map<
+    string,
+    { subjectId: string; subjectName: string; category?: Category; byAction: Map<string, PlantAction> }
+  >()
   for (const job of jobs) {
-    let rows = byAction.get(job.action)
-    if (!rows) {
-      rows = new Map()
-      byAction.set(job.action, rows)
+    let entry = bySubject.get(job.subjectId)
+    if (!entry) {
+      entry = {
+        subjectId: job.subjectId,
+        subjectName: job.subjectName,
+        category: job.subjectCategory,
+        byAction: new Map(),
+      }
+      bySubject.set(job.subjectId, entry)
     }
-    const noteKey = job.note ?? NO_NOTE
-    let row = rows.get(noteKey)
-    if (!row) {
-      row = { note: job.note, subjects: [], keys: [] }
-      rows.set(noteKey, row)
+    let action = entry.byAction.get(job.action)
+    if (!action) {
+      action = { action: job.action, note: job.note, keys: [] }
+      entry.byAction.set(job.action, action)
     }
-    if (!row.subjects.some((s) => s.id === job.subjectId)) {
-      row.subjects.push({ id: job.subjectId, name: job.subjectName, category: job.subjectCategory })
-    }
-    row.keys.push(job.key)
+    action.keys.push(job.key)
   }
 
-  const groups: JobActionGroup[] = []
-  for (const [action, rowMap] of byAction) {
-    const rows = [...rowMap.values()]
-    for (const row of rows) {
-      row.subjects.sort((a, b) => a.name.localeCompare(b.name))
-      row.keys.sort()
-    }
-    rows.sort((a, b) => a.subjects[0].name.localeCompare(b.subjects[0].name))
-    groups.push({ action, rows })
-  }
-  groups.sort(
-    (a, b) =>
-      compareCategory(a.rows[0].subjects[0].category, b.rows[0].subjects[0].category) ||
-      a.action.localeCompare(b.action),
+  const plants: PlantJobs[] = [...bySubject.values()].map((e) => {
+    const actions = [...e.byAction.values()].sort((a, b) => a.action.localeCompare(b.action))
+    for (const a of actions) a.keys.sort()
+    return { subjectId: e.subjectId, subjectName: e.subjectName, category: e.category, actions }
+  })
+  plants.sort(
+    (a, b) => compareCategory(a.category, b.category) || a.subjectName.localeCompare(b.subjectName),
   )
-  return groups
+  return plants
 }

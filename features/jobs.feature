@@ -38,21 +38,22 @@ Feature: A month-by-month job list for the plants I grow
     When I list the jobs
     Then "January" has no jobs
 
-  Scenario: Crops sharing an identical job collapse into one row listing both
+  Scenario: A plant's maintenance jobs are grouped under it, one row per plant
     Given I grow "apple-a"
-    And a species "pear" named "Pear" in category "fruit"
-    And I grow "pear"
-    And a maintenance task "Water in dry spells" on "apple" in months "7" with note "Keep evenly moist"
-    And another maintenance task "Water in dry spells" on "pear" in months "7" with note "Keep evenly moist"
-    When I group the jobs for "July"
-    Then the action "Water in dry spells" has 1 row
-    And the row lists subjects "Apple,Pear"
-
-  Scenario: Crops with the same action but different notes stay separate rows under one heading
-    Given I grow "apple-a"
-    And a species "pear" named "Pear" in category "fruit"
-    And I grow "pear"
-    And a maintenance task "Winter prune" on "apple" in months "1" with note "Prune to an open goblet"
-    And another maintenance task "Winter prune" on "pear" in months "1" with note "Prune back to two buds"
+    And a maintenance task "Winter prune" on "apple" in months "1"
+    And another maintenance task "Mulch" on "apple" in months "1"
     When I group the jobs for "January"
-    Then the action "Winter prune" has 2 rows
+    Then there is 1 plant row
+    And the plant "Apple" needs 2 jobs
+    And the plant "Apple" includes the job "Winter prune"
+
+  Scenario: Each plant is its own row — a shared job is not collapsed
+    Given I grow "apple-a"
+    And a species "pear" named "Pear" in category "fruit"
+    And I grow "pear"
+    And a maintenance task "Water in dry spells" on "apple" in months "7"
+    And another maintenance task "Water in dry spells" on "pear" in months "7"
+    When I group the jobs for "July"
+    Then there are 2 plant rows
+    And the plant "Apple" includes the job "Water in dry spells"
+    And the plant "Pear" also includes the job "Water in dry spells"
