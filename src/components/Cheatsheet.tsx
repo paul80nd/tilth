@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import type { PlantNode, Guide } from '../schema/plant'
-import { getGuidesFor, getLineage } from '../app/plants'
+import type { PlantNode, Guide, TaskTemplate } from '../schema/plant'
+import { getGuidesFor, getLineage, getTasksFor } from '../app/plants'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
 import { nodeTags } from '../lib/tags'
 import { seasonalInterest } from '../lib/calendar'
+import { formatMonths } from '../lib/jobs'
 import { EdibilityFacts } from './KeyFacts'
 import PositionCard from './PositionCard'
 import SizeCard from './SizeCard'
@@ -27,23 +28,25 @@ export interface PlantDetail {
   node?: PlantNode
   ancestors: PlantNode[]
   guides: Guide[]
+  tasks: TaskTemplate[]
 }
 
-/** Live-load a plant's node, ancestor chain and aggregated guides — the data the cheatsheet
- *  renders. Shared by the full page and the Taxonomy modal so both stay in sync. */
+/** Live-load a plant's node, ancestor chain, aggregated guides and maintenance tasks — the
+ *  data the cheatsheet renders. Shared by the full page and the Taxonomy modal so both stay in
+ *  sync. */
 export function usePlantDetail(id: string): PlantDetail | undefined {
   return useLiveQuery(async () => {
     const { node, ancestors } = await getLineage(id)
-    if (!node) return { node: undefined, ancestors: [], guides: [] as Guide[] }
-    const guides = await getGuidesFor(node, ancestors)
-    return { node, ancestors, guides }
+    if (!node) return { node: undefined, ancestors: [], guides: [] as Guide[], tasks: [] as TaskTemplate[] }
+    const [guides, tasks] = await Promise.all([getGuidesFor(node, ancestors), getTasksFor(node, ancestors)])
+    return { node, ancestors, guides, tasks }
   }, [id])
 }
 
 /** The cheatsheet one-pager for a plant — the masthead (identity + calendar hero), the dense
  *  tile-grid of facets, and the sources footer. Chrome (back / edit / delete / close) lives with
  *  the caller (the page or the modal) so this stays purely presentational. */
-export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[] }) {
+export function CheatsheetContent({ node, ancestors, guides, tasks }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[]; tasks: TaskTemplate[] }) {
   const [editingCalendar, setEditingCalendar] = useState(false)
   const [editingSeasonal, setEditingSeasonal] = useState(false)
   const [editingPosition, setEditingPosition] = useState(false)
@@ -66,6 +69,13 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
   const hasFacts = !!resolved.facts && Object.keys(resolved.facts).length > 0
   const hasWildlife = (resolved.wildlife?.length ?? 0) > 0
   const hasUses = (resolved.uses?.length ?? 0) > 0
+
+  // Maintenance tasks ordered by their first month, with condition-based ("Anytime") jobs last.
+  const careTasks = [...tasks].sort((a, b) => {
+    const am = a.months.length ? Math.min(...a.months) : 13
+    const bm = b.months.length ? Math.min(...b.months) : 13
+    return am - bm || a.action.localeCompare(b.action)
+  })
 
   // Distinct sources contributing to this cheatsheet (own fields + inherited fields).
   const sources = new Set<string>()
@@ -317,7 +327,29 @@ export function CheatsheetContent({ node, ancestors, guides }: { node: PlantNode
           </Tile>
         </div>
 
-        <div className="sm:col-span-2 lg:col-span-6">
+        <div className="sm:col-span-2 lg:col-span-3">
+          <Tile title="Care" fill>
+            {careTasks.length > 0 ? (
+              <ul className="flex flex-col divide-y divide-divider">
+                {careTasks.map((t) => (
+                  <li key={t.id} className="flex gap-3 py-2 first:pt-0 last:pb-0">
+                    <span className="w-16 shrink-0 text-xs font-semibold uppercase tracking-wide text-brand-ink">
+                      {formatMonths(t.months)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{t.action}</p>
+                      {t.note && <p className="text-xs text-muted">{t.note}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Muted>No maintenance jobs recorded yet.</Muted>
+            )}
+          </Tile>
+        </div>
+
+        <div className="sm:col-span-2 lg:col-span-3">
           <Tile title="Guides" fill>
             {guides.length > 0 ? (
               <ul className="flex flex-col gap-2">

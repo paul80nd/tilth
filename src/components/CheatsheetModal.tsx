@@ -50,7 +50,7 @@ export function CheatsheetModal({ id, onClose }: { id: string; onClose: () => vo
           <p className="text-sm text-muted">No plant found.</p>
         ) : (
           <div className="flex flex-col gap-6">
-            <CheatsheetContent node={data.node} ancestors={data.ancestors} guides={data.guides} />
+            <CheatsheetContent node={data.node} ancestors={data.ancestors} guides={data.guides} tasks={data.tasks} />
           </div>
         )}
       </div>

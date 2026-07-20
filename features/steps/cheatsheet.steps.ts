@@ -2,9 +2,9 @@ import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 import { db } from '../../src/db/db'
 import { importFragment } from '../../src/app/dataset'
-import { getGuidesFor, getLineage } from '../../src/app/plants'
+import { getGuidesFor, getLineage, getTasksFor } from '../../src/app/plants'
 import { resolveInherited } from '../../src/lib/taxonomy'
-import type { Guide, PlantNode } from '../../src/schema/plant'
+import type { Guide, PlantNode, TaskTemplate } from '../../src/schema/plant'
 
 const feature = await loadFeature('features/cheatsheet.feature')
 
@@ -24,12 +24,14 @@ const FIXTURE = {
     { id: 't-sb', rank: 'cultivar', parentId: 'tomato', commonName: 'Tomato', variety: 'Sunny Bench', facts: { fruit: 'cherry' } },
   ],
   guides: [{ id: 'guide-sow', title: 'Sowing under cover', kind: 'grow-guide', scopeNodeId: 'tomato' }],
+  tasks: [{ id: 'task-pinch', action: 'Pinch out side shoots', months: [6, 7], scopeNodeId: 'tomato' }],
 }
 
 // The resolved cheatsheet under test, populated by the "open" step.
 let node: PlantNode
 let inheritedFrom: Partial<Record<keyof PlantNode, PlantNode>>
 let guides: Guide[]
+let tasks: TaskTemplate[]
 
 async function open(id: string): Promise<void> {
   const { node: found, ancestors } = await getLineage(id)
@@ -37,6 +39,7 @@ async function open(id: string): Promise<void> {
   node = resolved.node
   inheritedFrom = resolved.inheritedFrom
   guides = await getGuidesFor(found!, ancestors)
+  tasks = await getTasksFor(found!, ancestors)
 }
 
 describeFeature(feature, ({ Background, Scenario }) => {
@@ -44,6 +47,7 @@ describeFeature(feature, ({ Background, Scenario }) => {
     Given('a tomato species with a sparse {string} cultivar', async () => {
       await db.nodes.clear()
       await db.guides.clear()
+      await db.tasks.clear()
       await db.settings.clear()
       await importFragment(FIXTURE, { source: 'plant-db' })
     })
@@ -75,6 +79,15 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     Then('it shows guide {string}', (_, guideId: string) => {
       expect(guides.map((g) => g.id)).toContain(guideId)
+    })
+  })
+
+  Scenario('A maintenance task attached to the species shows in the cultivar\'s care', ({ When, Then }) => {
+    When('I open the cheatsheet for {string}', async (_, id: string) => {
+      await open(id)
+    })
+    Then('its care includes the job {string}', (_, action: string) => {
+      expect(tasks.map((t) => t.action)).toContain(action)
     })
   })
 

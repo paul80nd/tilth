@@ -13,6 +13,33 @@ import type { Category, PlantNode, TaskTemplate } from '../schema/plant'
 import type { Holding } from '../schema/userData'
 import { MONTH_NAMES } from './calendar'
 
+/** 3-letter month labels (Jan…Dec), derived from the full names. */
+const MONTH_ABBR = MONTH_NAMES.map((n) => n.slice(0, 3))
+
+const prevMonth = (m: number): number => (m === 1 ? 12 : m - 1)
+const nextMonth = (m: number): number => (m === 12 ? 1 : m + 1)
+
+/**
+ * A human month window for a task: "Anytime" for no months, a single month ("Mar"), a
+ * contiguous run — including one that wraps the year end ("Nov–Feb") — or a comma list for
+ * scattered months ("Jun, Sep"). Pure display helper for the Care tile / jobs list.
+ */
+export function formatMonths(months: number[]): string {
+  const set = new Set(months.filter((m) => m >= 1 && m <= 12))
+  if (set.size === 0) return 'Anytime'
+  const sorted = [...set].sort((a, b) => a - b)
+  if (set.size === 1) return MONTH_ABBR[sorted[0] - 1]
+
+  // A single cyclic run has exactly one member whose predecessor is absent (the run's start).
+  const starts = sorted.filter((m) => !set.has(prevMonth(m)))
+  if (starts.length === 1) {
+    let end = starts[0]
+    while (set.has(nextMonth(end))) end = nextMonth(end)
+    return `${MONTH_ABBR[starts[0] - 1]}–${MONTH_ABBR[end - 1]}`
+  }
+  return sorted.map((m) => MONTH_ABBR[m - 1]).join(', ')
+}
+
 /** One job on the list — a single thing to do, already rolled up across every holding it
  *  applies to (so "prune Apple" appears once, listing both apple trees). */
 export interface Job {

@@ -3,7 +3,7 @@
 // (naming / browse / calendar / taxonomy). All Dexie access lives here, never in components.
 
 import { db } from '../db/db'
-import type { Guide, PlantNode } from '../schema/plant'
+import type { Guide, PlantNode, TaskTemplate } from '../schema/plant'
 
 /** Every reference node (all ranks). Browse filters this to the browsable ranks. */
 export async function listNodes(): Promise<PlantNode[]> {
@@ -61,5 +61,21 @@ export async function getGuidesFor(node: PlantNode, ancestors: PlantNode[]): Pro
     (g) =>
       (g.scopeNodeId && nodeIds.has(g.scopeNodeId)) ||
       (g.scopeCategory && g.scopeCategory === node.category),
+  )
+}
+
+/**
+ * Maintenance tasks relevant to a node: those scoped to the node itself or any ancestor
+ * (care aggregates down to descendants, so a species' "winter prune" shows on its cultivars),
+ * plus tasks scoped to the node's category (own or inherited). The cheatsheet's Care tile.
+ */
+export async function getTasksFor(node: PlantNode, ancestors: PlantNode[]): Promise<TaskTemplate[]> {
+  const nodeIds = new Set<string>([node.id, ...ancestors.map((a) => a.id)])
+  const category = node.category ?? ancestors.find((a) => a.category)?.category
+  const all = await db.tasks.toArray()
+  return all.filter(
+    (t) =>
+      (t.scopeNodeId && nodeIds.has(t.scopeNodeId)) ||
+      (t.scopeCategory && t.scopeCategory === category),
   )
 }

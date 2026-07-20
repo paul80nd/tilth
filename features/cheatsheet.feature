@@ -18,6 +18,10 @@ Feature: Cheatsheet inheritance
     When I open the cheatsheet for "t-sb"
     Then it shows guide "guide-sow"
 
+  Scenario: A maintenance task attached to the species shows in the cultivar's care
+    When I open the cheatsheet for "t-sb"
+    Then its care includes the job "Pinch out side shoots"
+
   Scenario: A plant shows its own award
     When I open the cheatsheet for "tomato"
     Then it shows award "Trial Award"
