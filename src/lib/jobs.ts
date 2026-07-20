@@ -50,6 +50,8 @@ export interface Job {
   /** The node (or category) the job is about — used to label it ("Apple"). */
   subjectId: string
   subjectName: string
+  /** The subject's own-or-inherited category — the display dot + sort key on the jobs page. */
+  subjectCategory?: Category
   note?: string
   /** Months (1–12) it applies. Empty = condition-based (no fixed month) → the `anytime` bucket. */
   months: number[]
@@ -161,11 +163,15 @@ export function buildJobs(input: BuildJobsInput, options: BuildJobsOptions = {})
       : task.scopeCategory
         ? categoryLabel(task.scopeCategory)
         : 'Garden'
+    const subjectCategory = task.scopeNodeId
+      ? resolveCategory(task.scopeNodeId, byId)
+      : task.scopeCategory
     jobs.push({
       key: `task:${task.id}`,
       action: task.action,
       subjectId,
       subjectName,
+      subjectCategory,
       note: task.note,
       months: task.months,
       holdingIds,
@@ -188,4 +194,79 @@ export function buildJobs(input: BuildJobsInput, options: BuildJobsOptions = {})
   anytime.sort(compareJobs)
 
   return { months, anytime }
+}
+
+/** One displayed row within an action group: a single distinct job (note) shared by ≥1 crop. */
+export interface JobRow {
+  note?: string
+  /** Crops this exact job covers — de-duped by id, sorted by name; each links to its cheatsheet. */
+  subjects: { id: string; name: string; category?: Category }[]
+  /** Underlying Job keys (stable ids for the future done-log). */
+  keys: string[]
+}
+
+/** A month's jobs grouped by action (the general task), each holding ≥1 row. */
+export interface JobActionGroup {
+  action: string
+  rows: JobRow[]
+}
+
+/** Sentinel key for a job with no note, so `undefined` gets its own row (never merged with ''). */
+const NO_NOTE = ' '
+
+/** Compare two categories for the display sort — defined categories A→Z, undefined last. */
+function compareCategory(a: Category | undefined, b: Category | undefined): number {
+  if (a === b) return 0
+  if (a === undefined) return 1
+  if (b === undefined) return -1
+  return a.localeCompare(b)
+}
+
+/**
+ * Group a month bucket's flat jobs into action → rows for display. Pure; date-free.
+ *
+ * - Group by `action` (the general task, e.g. "Winter prune").
+ * - Within an action, sub-group by `note` (exact match; `undefined` is its own key) so crops
+ *   whose job is *identical* collapse to one row listing the names, while crop-specific notes
+ *   each get their own row under the shared action heading.
+ * - Subjects within a row are de-duped by id and sorted by name; rows sort by their first
+ *   subject's name; groups sort by their first subject's category (then action) — a stable,
+ *   category-clustered order (category is a dot + sort key, never a nesting level).
+ */
+export function groupJobs(jobs: Job[]): JobActionGroup[] {
+  const byAction = new Map<string, Map<string, JobRow>>()
+  for (const job of jobs) {
+    let rows = byAction.get(job.action)
+    if (!rows) {
+      rows = new Map()
+      byAction.set(job.action, rows)
+    }
+    const noteKey = job.note ?? NO_NOTE
+    let row = rows.get(noteKey)
+    if (!row) {
+      row = { note: job.note, subjects: [], keys: [] }
+      rows.set(noteKey, row)
+    }
+    if (!row.subjects.some((s) => s.id === job.subjectId)) {
+      row.subjects.push({ id: job.subjectId, name: job.subjectName, category: job.subjectCategory })
+    }
+    row.keys.push(job.key)
+  }
+
+  const groups: JobActionGroup[] = []
+  for (const [action, rowMap] of byAction) {
+    const rows = [...rowMap.values()]
+    for (const row of rows) {
+      row.subjects.sort((a, b) => a.name.localeCompare(b.name))
+      row.keys.sort()
+    }
+    rows.sort((a, b) => a.subjects[0].name.localeCompare(b.subjects[0].name))
+    groups.push({ action, rows })
+  }
+  groups.sort(
+    (a, b) =>
+      compareCategory(a.rows[0].subjects[0].category, b.rows[0].subjects[0].category) ||
+      a.action.localeCompare(b.action),
+  )
+  return groups
 }

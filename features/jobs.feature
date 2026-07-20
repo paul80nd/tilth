@@ -37,3 +37,22 @@ Feature: A month-by-month job list for the plants I grow
     Given a maintenance task "Winter prune" on "apple" in months "1"
     When I list the jobs
     Then "January" has no jobs
+
+  Scenario: Crops sharing an identical job collapse into one row listing both
+    Given I grow "apple-a"
+    And a species "pear" named "Pear" in category "fruit"
+    And I grow "pear"
+    And a maintenance task "Water in dry spells" on "apple" in months "7" with note "Keep evenly moist"
+    And another maintenance task "Water in dry spells" on "pear" in months "7" with note "Keep evenly moist"
+    When I group the jobs for "July"
+    Then the action "Water in dry spells" has 1 row
+    And the row lists subjects "Apple,Pear"
+
+  Scenario: Crops with the same action but different notes stay separate rows under one heading
+    Given I grow "apple-a"
+    And a species "pear" named "Pear" in category "fruit"
+    And I grow "pear"
+    And a maintenance task "Winter prune" on "apple" in months "1" with note "Prune to an open goblet"
+    And another maintenance task "Winter prune" on "pear" in months "1" with note "Prune back to two buds"
+    When I group the jobs for "January"
+    Then the action "Winter prune" has 2 rows

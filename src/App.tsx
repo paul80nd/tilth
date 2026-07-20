@@ -4,6 +4,7 @@ import BrowsePage from './pages/BrowsePage'
 import CheatsheetPage from './pages/CheatsheetPage'
 import PlantFormPage from './pages/PlantFormPage'
 import GardenPage from './pages/GardenPage'
+import JobsPage from './pages/JobsPage'
 import TaxonomyPage from './pages/TaxonomyPage'
 import DataPage from './pages/DataPage'
 
@@ -48,6 +49,7 @@ export default function App() {
             <Tab to="/">Browse</Tab>
             <Tab to="/taxonomy">Taxonomy</Tab>
             <Tab to="/garden">My garden</Tab>
+            <Tab to="/jobs">Jobs</Tab>
           </nav>
           <div className="ml-auto flex items-center gap-1">
             <Tab to="/data">Data</Tab>
@@ -63,6 +65,7 @@ export default function App() {
           <Route path="/plant/:id" element={<Padded><CheatsheetPage /></Padded>} />
           <Route path="/plant/:id/edit" element={<Padded><PlantFormPage /></Padded>} />
           <Route path="/garden" element={<GardenPage />} />
+          <Route path="/jobs" element={<Padded><JobsPage /></Padded>} />
           <Route path="/taxonomy" element={<TaxonomyPage />} />
           <Route path="/data" element={<Padded><DataPage /></Padded>} />
         </Routes>
