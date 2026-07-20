@@ -79,16 +79,20 @@ export function NeighbourhoodCard({
       {entries.length > 0 ? (
         <ul className="flex flex-col gap-1.5">
           {entries.map((e) => (
-            <li key={e.node.id}>
+            <li key={e.node.id} className="flex flex-wrap items-baseline gap-x-1.5">
               <TaxonName node={e.node} current={e.node.id === currentId} onNavigate={onNavigate} />
               {e.children.length > 0 && (
-                <ul className="mt-1 flex flex-col gap-0.5 border-l border-divider pl-3">
-                  {e.children.map((c) => (
-                    <li key={c.id} className="text-sm">
-                      <TaxonName node={c} current={c.id === currentId} asChild onNavigate={onNavigate} />
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <span className="text-subtle">›</span>
+                  <span className="flex flex-wrap items-baseline gap-x-1 text-muted">
+                    {e.children.map((c, i) => (
+                      <span key={c.id} className="inline-flex items-baseline">
+                        <TaxonName node={c} current={c.id === currentId} asChild onNavigate={onNavigate} />
+                        {i < e.children.length - 1 && <span className="text-subtle">,</span>}
+                      </span>
+                    ))}
+                  </span>
+                </>
               )}
             </li>
           ))}

@@ -338,7 +338,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
 
         {neighbourhood && (
           <div className="lg:col-span-2">
-            <Tile title="Neighbourhood" note="Where this plant sits in the genus" fill>
+            <Tile title="Neighbourhood" fill>
               <NeighbourhoodCard data={neighbourhood} currentId={node.id} onNavigate={onNavigate} />
             </Tile>
           </div>
