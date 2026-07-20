@@ -228,7 +228,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           </Tile>
         </div>
 
-        <div className="lg:col-span-2 lg:row-span-2">
+        <div className="lg:col-span-2">
           <Tile
             title="Size"
             note={inheritedNote('size')}
@@ -297,6 +297,16 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
         </div>
 
         <div className="lg:col-span-2">
+          <Tile title="Notes" note={resolved.summary ? inheritedNote('summary') : undefined} fill>
+            {resolved.summary ? (
+              <p className="text-sm leading-relaxed text-muted">{resolved.summary}</p>
+            ) : (
+              <Muted>No notes yet.</Muted>
+            )}
+          </Tile>
+        </div>
+
+        <div className="lg:col-span-2">
           <Tile
             title="More facts"
             note={hasFacts ? inheritedNote('facts') : undefined}
@@ -326,15 +336,13 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           </Tile>
         </div>
 
-        <div className="lg:col-span-2">
-          <Tile title="Notes" note={resolved.summary ? inheritedNote('summary') : undefined} fill>
-            {resolved.summary ? (
-              <p className="text-sm leading-relaxed text-muted">{resolved.summary}</p>
-            ) : (
-              <Muted>No notes yet.</Muted>
-            )}
-          </Tile>
-        </div>
+        {neighbourhood && (
+          <div className="lg:col-span-2">
+            <Tile title="Neighbourhood" note="Where this plant sits in the genus" fill>
+              <NeighbourhoodCard data={neighbourhood} currentId={node.id} onNavigate={onNavigate} />
+            </Tile>
+          </div>
+        )}
 
         <div className="sm:col-span-2 lg:col-span-3">
           <Tile
@@ -393,13 +401,6 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           </Tile>
         </div>
 
-        {neighbourhood && (
-          <div className="sm:col-span-2 lg:col-span-3">
-            <Tile title="Neighbourhood" note="Where this plant sits in the genus" fill>
-              <NeighbourhoodCard data={neighbourhood} currentId={node.id} onNavigate={onNavigate} />
-            </Tile>
-          </div>
-        )}
       </div>
 
       {sources.size > 0 && (
