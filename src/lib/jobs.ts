@@ -106,6 +106,25 @@ function lineageIds(startId: string, byId: Map<string, PlantNode>): Set<string> 
   return ids
 }
 
+/** The months (1–12) a plant is active, from its nearest own-or-inherited calendar (the union
+ *  of every phase span). Empty when no calendar is found up the chain — season unknown. */
+function activeSeason(startId: string, byId: Map<string, PlantNode>): Set<number> {
+  let current = byId.get(startId)
+  const seen = new Set<string>()
+  while (current && !seen.has(current.id)) {
+    if (current.calendar && current.calendar.length) {
+      const months = new Set<number>()
+      for (const span of current.calendar) {
+        for (const m of span.months) if (m >= 1 && m <= 12) months.add(m)
+      }
+      return months
+    }
+    seen.add(current.id)
+    current = current.parentId ? byId.get(current.parentId) : undefined
+  }
+  return new Set()
+}
+
 /** The nearest own-or-inherited category up the chain. */
 function resolveCategory(startId: string, byId: Map<string, PlantNode>): Category | undefined {
   let current = byId.get(startId)
@@ -136,12 +155,14 @@ export function buildJobs(input: BuildJobsInput, options: BuildJobsOptions = {})
   const byId = new Map(input.nodes.map((n) => [n.id, n]))
   const held = input.holdings.filter((h) => statuses.has(h.status))
 
-  // Per held planting: the ancestor id set + resolved category, for matching a task's scope.
-  const info = new Map<string, { lineage: Set<string>; category?: Category }>()
+  // Per held planting: the ancestor id set (for scope matching), resolved category, and the
+  // months it's active (for bounding an as-needed job to its season).
+  const info = new Map<string, { lineage: Set<string>; category?: Category; season: Set<number> }>()
   for (const h of held) {
     info.set(h.id, {
       lineage: lineageIds(h.nodeId, byId),
       category: resolveCategory(h.nodeId, byId),
+      season: activeSeason(h.nodeId, byId),
     })
   }
 
@@ -166,6 +187,18 @@ export function buildJobs(input: BuildJobsInput, options: BuildJobsOptions = {})
     const subjectCategory = task.scopeNodeId
       ? resolveCategory(task.scopeNodeId, byId)
       : task.scopeCategory
+
+    // An as-needed task (no months) has an *implicit* season: you don't tend a plant out of its
+    // growing season. Bound it to the union of the active months of the plants it reaches. Only
+    // a genuinely bounded season (1–11 months) clamps; no calendar, or a year-round plant, leaves
+    // it truly anytime. Explicit-month tasks are untouched.
+    let months = task.months
+    if (!months.length) {
+      const season = new Set<number>()
+      for (const hid of holdingIds) for (const m of info.get(hid)!.season) season.add(m)
+      if (season.size > 0 && season.size < 12) months = [...season].sort((a, b) => a - b)
+    }
+
     jobs.push({
       key: `task:${task.id}`,
       action: task.action,
@@ -173,7 +206,7 @@ export function buildJobs(input: BuildJobsInput, options: BuildJobsOptions = {})
       subjectName,
       subjectCategory,
       note: task.note,
-      months: task.months,
+      months,
       holdingIds,
     })
   }

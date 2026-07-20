@@ -59,6 +59,18 @@ async function addNamedSpecies(id: string, name: string, category: string): Prom
   await db.nodes.put(makeNode({ id, rank: 'species', commonName: name, category: category as Category }))
 }
 
+async function addSeasonalSpecies(id: string, name: string, category: string, monthsCsv: string): Promise<void> {
+  await db.nodes.put(
+    makeNode({
+      id,
+      rank: 'species',
+      commonName: name,
+      category: category as Category,
+      calendar: [{ code: 'harvest', months: parseMonths(monthsCsv) }],
+    }),
+  )
+}
+
 async function list(): Promise<void> {
   jobs = await listJobs()
 }
@@ -152,6 +164,28 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     And('{string} has no jobs', (_, month: string) => {
       expect(monthBucket(month)).toHaveLength(0)
+    })
+  })
+
+  Scenario("An as-needed task is bounded to the plant's growing season", ({ Given, And, When, Then }) => {
+    Given('a species {string} named {string} in category {string} active in months {string}', async (_, id: string, name: string, category: string, months: string) => {
+      await addSeasonalSpecies(id, name, category, months)
+    })
+    And('I grow {string}', async (_, nodeId: string) => {
+      await grow(nodeId)
+    })
+    And('a maintenance task {string} on {string} in months {string}', async (_, action: string, scope: string, months: string) => {
+      await addTask(action, scope, months)
+    })
+    When('I list the jobs', list)
+    Then('{string} includes the job {string} for {string}', (_, month: string, action: string, subject: string) => {
+      expectJobInMonth(month, action, subject)
+    })
+    And('{string} has no jobs', (_, month: string) => {
+      expect(monthBucket(month)).toHaveLength(0)
+    })
+    And('the anytime list does not include {string}', (_, action: string) => {
+      expect(jobs.anytime.map((j) => j.action)).not.toContain(action)
     })
   })
 

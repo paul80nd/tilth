@@ -77,7 +77,7 @@ describe('buildJobs — maintenance tasks', () => {
     expect(monthJobs(cal, 3)[0]).toMatchObject({ action: 'Mulch', subjectName: 'Fruit' })
   })
 
-  it('puts a condition-based task (no months) in the anytime bucket, not a month', () => {
+  it('puts a condition-based task (no months) in the anytime bucket when the plant has no calendar', () => {
     const cal = buildJobs({
       nodes,
       holdings: [makeHolding({ id: 'h1', nodeId: 'apple-a' })],
@@ -86,6 +86,57 @@ describe('buildJobs — maintenance tasks', () => {
     expect(cal.anytime).toHaveLength(1)
     expect(cal.anytime[0].action).toBe('Water in dry spells')
     expect(cal.months.every((m) => m.jobs.length === 0)).toBe(true)
+  })
+
+  it("bounds an as-needed task (no months) to the plant's growing season from its calendar", () => {
+    // A cucumber active May–Sep; "water regularly" has no stated month → clamp to the season.
+    const cucumber = makeNode({
+      id: 'cucumber',
+      rank: 'species',
+      commonName: 'Cucumber',
+      category: 'veg',
+      calendar: [{ code: 'harvest', months: [5, 6, 7, 8, 9] }],
+    })
+    const cal = buildJobs({
+      nodes: [cucumber],
+      holdings: [makeHolding({ id: 'h1', nodeId: 'cucumber' })],
+      tasks: [makeTask({ id: 't-water', action: 'Water regularly', months: [], scopeNodeId: 'cucumber' })],
+    })
+    expect(monthJobs(cal, 7)).toHaveLength(1) // in season
+    expect(monthJobs(cal, 12)).toHaveLength(0) // out of season
+    expect(cal.anytime).toHaveLength(0) // no longer year-round
+  })
+
+  it('leaves an as-needed task anytime when the plant is active all year (no bounded season)', () => {
+    const evergreen = makeNode({
+      id: 'bay',
+      rank: 'species',
+      commonName: 'Bay',
+      category: 'herb',
+      calendar: [{ code: 'harvest', months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] }],
+    })
+    const cal = buildJobs({
+      nodes: [evergreen],
+      holdings: [makeHolding({ id: 'h1', nodeId: 'bay' })],
+      tasks: [makeTask({ id: 't-water', action: 'Water in dry spells', months: [], scopeNodeId: 'bay' })],
+    })
+    expect(cal.anytime).toHaveLength(1)
+    expect(cal.months.every((m) => m.jobs.length === 0)).toBe(true)
+  })
+
+  it('inherits the season from an ancestor calendar when the held cultivar has none', () => {
+    const seasonalNodes = [
+      makeNode({ id: 'tomato', rank: 'species', commonName: 'Tomato', category: 'veg', calendar: [{ code: 'harvest', months: [7, 8, 9] }] }),
+      makeNode({ id: 'tomato-a', rank: 'cultivar', parentId: 'tomato', commonName: 'Tomato', variety: 'Gardener' }),
+    ]
+    const cal = buildJobs({
+      nodes: seasonalNodes,
+      holdings: [makeHolding({ id: 'h1', nodeId: 'tomato-a' })],
+      tasks: [makeTask({ id: 't-feed', action: 'Feed weekly', months: [], scopeNodeId: 'tomato' })],
+    })
+    expect(monthJobs(cal, 8)).toHaveLength(1)
+    expect(monthJobs(cal, 1)).toHaveLength(0)
+    expect(cal.anytime).toHaveLength(0)
   })
 
   it('omits a task that reaches no held plant', () => {

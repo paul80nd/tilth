@@ -33,6 +33,15 @@ Feature: A month-by-month job list for the plants I grow
     Then the anytime list includes "Water in dry spells"
     And "July" has no jobs
 
+  Scenario: An as-needed task is bounded to the plant's growing season
+    Given a species "cucumber" named "Cucumber" in category "veg" active in months "5,6,7,8,9"
+    And I grow "cucumber"
+    And a maintenance task "Water regularly" on "cucumber" in months ""
+    When I list the jobs
+    Then "July" includes the job "Water regularly" for "Cucumber"
+    And "December" has no jobs
+    And the anytime list does not include "Water regularly"
+
   Scenario: Jobs only cover plants I actually grow
     Given a maintenance task "Winter prune" on "apple" in months "1"
     When I list the jobs

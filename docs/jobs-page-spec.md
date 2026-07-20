@@ -36,6 +36,18 @@ read-only, reactive view of the rolled-up list.
 finished (`archived`) plantings are excluded, and a task reaching none of your held plants is
 dropped. Jobs are for what's actually in the garden — nothing else.
 
+**As-needed jobs are season-bounded (added 2026-07-20).** A `TaskTemplate` with no months (e.g.
+"water in dry spells", "net against birds", "pinch out sideshoots") used to land wholesale in
+**Anytime**. But most such jobs have an *implicit* season — you don't tend a cucumber in December.
+So `buildJobs` now bounds a monthless task to the **union of the active months** of the held plants
+it reaches, taken from each plant's own-or-inherited **calendar** (`activeSeason`). Only a genuinely
+bounded season (1–11 months) clamps; a plant with **no calendar**, or one active all year (an
+evergreen), leaves the job **truly Anytime**. Explicit-month tasks are untouched. This is inference
+from data you already hold — no re-import — and self-heals as the seed-packet source fills in more
+calendars. On the current backup: 61 of 86 as-needed jobs clamp to a season, 25 stay Anytime.
+_Possible later refinement:_ phase-precise windows (net-against-birds → fruiting months only) rather
+than the whole-season union; deferred as a fragile keyword exercise.
+
 ## Display model
 
 > **Pivoted to plant-first, 2026-07-20 (post-build).** The first cut grouped **action-first**
