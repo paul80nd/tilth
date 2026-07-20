@@ -20,6 +20,7 @@ import { SizeEditor } from './SizeEditor'
 import { CalendarEditor } from './CalendarEditor'
 import { EdibilityEditor } from './EdibilityEditor'
 import { FactsEditor } from './FactsEditor'
+import { CareEditor } from './CareEditor'
 import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -54,6 +55,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks }: { node: Pl
   const [editingSize, setEditingSize] = useState(false)
   const [editingEdibility, setEditingEdibility] = useState(false)
   const [editingFacts, setEditingFacts] = useState(false)
+  const [editingCare, setEditingCare] = useState(false)
   const { node: resolved, inheritedFrom } = resolveInherited(node, ancestors)
   const { plant, variety } = displayName(node)
   const botanical = botanicalLabel(resolved)
@@ -328,7 +330,19 @@ export function CheatsheetContent({ node, ancestors, guides, tasks }: { node: Pl
         </div>
 
         <div className="sm:col-span-2 lg:col-span-3">
-          <Tile title="Care" fill>
+          <Tile
+            title="Care"
+            action={
+              <button
+                type="button"
+                onClick={() => setEditingCare(true)}
+                className="text-xs font-medium text-brand-ink hover:underline"
+              >
+                Edit
+              </button>
+            }
+            fill
+          >
             {careTasks.length > 0 ? (
               <ul className="flex flex-col divide-y divide-divider">
                 {careTasks.map((t) => (
@@ -445,6 +459,10 @@ export function CheatsheetContent({ node, ancestors, guides, tasks }: { node: Pl
 
       {editingFacts && (
         <FactsEditor node={node} facts={resolved.facts} onClose={() => setEditingFacts(false)} />
+      )}
+
+      {editingCare && (
+        <CareEditor node={node} ancestors={ancestors} tasks={tasks} onClose={() => setEditingCare(false)} />
       )}
     </>
   )
