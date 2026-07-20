@@ -66,3 +66,9 @@ Feature: A month-by-month job list for the plants I grow
     Then there are 2 plant rows
     And the plant "Apple" includes the job "Water in dry spells"
     And the plant "Pear" also includes the job "Water in dry spells"
+
+  Scenario: Ticking a one-off job off logs it done for the month, and ticking again clears it
+    When I tick off "Winter prune" for "apple" in "2026-01"
+    Then the done jobs for "2026-01" include "Winter prune" for "apple"
+    When I tick off "Winter prune" for "apple" in "2026-01" again
+    Then the done jobs for "2026-01" are empty

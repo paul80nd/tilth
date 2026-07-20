@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeHolding, makeNode, makeTask } from '../../test/factories'
-import { buildJobs, formatMonths, groupJobsByPlant, type Job } from './jobs'
+import { buildJobs, formatMonths, groupJobsByPlant, jobDoneKey, type Job } from './jobs'
 
 describe('formatMonths', () => {
   it('labels an empty month list as Anytime', () => {
@@ -148,6 +148,20 @@ describe('buildJobs — maintenance tasks', () => {
     expect(monthJobs(cal, 1)).toHaveLength(0)
   })
 
+  it("carries a task's cadence onto its job (so the page can split to-do from ongoing care)", () => {
+    const cal = buildJobs({
+      nodes,
+      holdings: [makeHolding({ id: 'h1', nodeId: 'apple-a' })],
+      tasks: [
+        makeTask({ id: 't-prune', action: 'Winter prune', months: [1], scopeNodeId: 'apple', cadence: 'once' }),
+        makeTask({ id: 't-water', action: 'Water in dry spells', months: [1], scopeNodeId: 'apple', cadence: 'ongoing' }),
+      ],
+    })
+    const jan = monthJobs(cal, 1)
+    expect(jan.find((j) => j.action === 'Winter prune')?.cadence).toBe('once')
+    expect(jan.find((j) => j.action === 'Water in dry spells')?.cadence).toBe('ongoing')
+  })
+
   it('ignores holdings that are not growing by default', () => {
     const cal = buildJobs({
       nodes,
@@ -220,5 +234,16 @@ describe('groupJobsByPlant — plant-first display grouping', () => {
     ])
     // flower (Dahlia, Rose) before fruit (Apple); within flower, name A-Z.
     expect(plants.map((p) => p.subjectName)).toEqual(['Dahlia', 'Rose', 'Apple'])
+  })
+})
+
+describe('jobDoneKey', () => {
+  it('builds a stable per-period key', () => {
+    expect(jobDoneKey('2026-07', 'apple', 'Winter prune')).toBe('2026-07:apple:Winter prune')
+  })
+  it('scopes by period, so the same job in a different month is a different key', () => {
+    expect(jobDoneKey('2026-07', 'apple', 'Winter prune')).not.toBe(
+      jobDoneKey('2026-08', 'apple', 'Winter prune'),
+    )
   })
 })

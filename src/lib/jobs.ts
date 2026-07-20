@@ -52,6 +52,8 @@ export interface Job {
   subjectName: string
   /** The subject's own-or-inherited category — the display dot + sort key on the jobs page. */
   subjectCategory?: Category
+  /** How often it's done — `once` jobs are tickable to-dos, everything else is ongoing care. */
+  cadence?: 'once' | 'ongoing'
   note?: string
   /** Months (1–12) it applies. Empty = condition-based (no fixed month) → the `anytime` bucket. */
   months: number[]
@@ -205,6 +207,7 @@ export function buildJobs(input: BuildJobsInput, options: BuildJobsOptions = {})
       subjectId,
       subjectName,
       subjectCategory,
+      cadence: task.cadence,
       note: task.note,
       months,
       holdingIds,
@@ -296,4 +299,14 @@ export function groupJobsByPlant(jobs: Job[]): PlantJobs[] {
     (a, b) => compareCategory(a.category, b.category) || a.subjectName.localeCompare(b.subjectName),
   )
   return plants
+}
+
+/**
+ * Stable id for a ticked-off job in the log: `${period}:${subjectId}:${action}`. `period` is a
+ * `YYYY-MM` string, so a tick is scoped to one specific month occurrence — next year's same month
+ * starts fresh (no auto-reset machinery needed). Doubles as the jobLog row id, so toggling done
+ * is a get/delete by this key. Pure + deterministic; the page supplies `period` from the clock.
+ */
+export function jobDoneKey(period: string, subjectId: string, action: string): string {
+  return `${period}:${subjectId}:${action}`
 }

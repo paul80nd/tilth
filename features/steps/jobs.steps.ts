@@ -1,8 +1,8 @@
 import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 import { db } from '../../src/db/db'
-import { listJobs } from '../../src/app/jobs'
-import { groupJobsByPlant, type JobCalendar, type PlantJobs } from '../../src/lib/jobs'
+import { listDoneKeys, listJobs, toggleJobDone } from '../../src/app/jobs'
+import { groupJobsByPlant, jobDoneKey, type JobCalendar, type PlantJobs } from '../../src/lib/jobs'
 import { MONTH_NAMES } from '../../src/lib/calendar'
 import { makeHolding, makeNode, makeTask } from '../../test/factories'
 import type { Category } from '../../src/schema/plant'
@@ -250,6 +250,23 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     And('the plant {string} also includes the job {string}', (_, name: string, action: string) => {
       expect(plantRow(name)?.actions.map((a) => a.action)).toContain(action)
+    })
+  })
+
+  Scenario('Ticking a one-off job off logs it done for the month, and ticking again clears it', ({ When, Then }) => {
+    When('I tick off {string} for {string} in {string}', async (_, action: string, subjectId: string, period: string) => {
+      await toggleJobDone(period, subjectId, action)
+    })
+    Then('the done jobs for {string} include {string} for {string}', async (_, period: string, action: string, subjectId: string) => {
+      const keys = await listDoneKeys(period)
+      expect(keys.has(jobDoneKey(period, subjectId, action))).toBe(true)
+    })
+    When('I tick off {string} for {string} in {string} again', async (_, action: string, subjectId: string, period: string) => {
+      await toggleJobDone(period, subjectId, action)
+    })
+    Then('the done jobs for {string} are empty', async (_, period: string) => {
+      const keys = await listDoneKeys(period)
+      expect(keys.size).toBe(0)
     })
   })
 })

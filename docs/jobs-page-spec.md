@@ -134,17 +134,39 @@ update `src/lib/jobs.test.ts` and, if asserted, `features/jobs.feature`.
   gotchas:_ no `{float}` param; each step **line** needs its own keyword+pattern (duplicate `And`
   text across a scenario collides — hence "…also includes the job"); keep example inputs quote-free.
 
-## Deferred — the "mark done" follow-up (v1.1)
+## Cadence + tick-off (built 2026-07-20, Stage 1)
 
-Captured so v1 is built compatibly (`Job.key` is already the stable handle):
+> **Why the original "tick everything" idea was dropped.** Trying to tick every job off is
+> pointless for the ~half that are **continuous** ("water regularly", "weed", "deadhead" — you'll
+> just do them again next week). Only **one-off** jobs ("winter-prune", "thin fruitlets", "divide
+> clumps") have a meaningful "done for this year". The two aren't reliably inferable from the action
+> text (heuristic misfires: "pinch out flower buds" reads continuous, "support if flopping" is
+> conditional), so cadence is an **explicit field** the source sets.
 
-- **Tick a dated job → strikethrough + sinks to the bottom of its month** (stays visible, not
-  removed). Only the **dated/monthly** jobs get a done tick; the **Anytime** jobs don't.
-- **Per-month "Clear"** button resets that month's ticks. For now the reset is **manual** — you tick
-  Clear when the month comes round again; no auto-reset per cycle yet.
-- Persist in the `jobLog` table keyed by `(jobKey, period)` where period is the month (or year+month)
-  the job was done in. New app seam (`markJobDone` / `clearMonth`) + a Gherkin scenario; the pure
-  ordering (done jobs to the bottom) is a lib helper with unit tests.
+- **Schema:** `TaskTemplate.cadence?: 'once' | 'ongoing'` — `once` = a discrete one-off (tickable);
+  `ongoing` = continuous care (reminder only). **Absent ⇒ treated as `ongoing`**, so nothing is ever
+  wrongly tickable before classification. Carried through `buildJobs` onto `Job.cadence`.
+- **Page:** within each bucket the jobs split into **To do** (`cadence === 'once'`) and **Ongoing
+  care** (everything else). The two subheadings only show when *both* kinds are present (an
+  all-ongoing month stays a plain list). Only **This month's** To-do actions are tickable.
+- **Tick-off:** click a one-off action → strikethrough; click again → back. Persisted in `jobLog`
+  keyed by `jobDoneKey(period, subjectId, action)` = `${YYYY-MM}:${subjectId}:${action}` (the row
+  id, so toggle is a get/delete). Period is **year+month**, so next year's same month starts fresh —
+  no "Clear" button or auto-reset machinery needed. Seam: `toggleJobDone` / `listDoneKeys`
+  (`src/app/jobs.ts`); pure key helper `jobDoneKey` (`src/lib/jobs.ts`).
+
+### Stage 2 — populate `cadence` (data, TODO)
+
+The engine + UI are live but **every task is currently unclassified** (`cadence` absent ⇒ all show
+as Ongoing care, To-do is empty). Populate by classifying the ~123 distinct actions (see the
+`cadence` analysis in chat: ~62 one-off, ~44 continuous, ~17 ambiguous) into a fragment. Because
+tasks import as **whole-record upsert** (not field-merged — see `importReview.ts`), the fragment
+re-emits full task records with `cadence` added; Paul reviews via the Data → Import diff gate.
+
+### Later polish (still deferred)
+
+- **Done jobs sink to the bottom** of the To-do list (currently they just strike in place). Pure
+  ordering helper + unit test when wanted.
 
 ## Known display notes
 

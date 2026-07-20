@@ -230,6 +230,11 @@ export interface TaskTemplate {
   scopeNodeId?: string
   scopeCategory?: Category
   note?: string
+  /** How often the job is done, which decides whether ticking it off means anything:
+   *  `once` = a discrete one-off for the period (winter-prune, thin fruitlets) — tickable;
+   *  `ongoing` = continuous/repeating care (water, weed, deadhead) — a reminder, not tickable.
+   *  Absent = unclassified; treated as `ongoing` (never wrongly tickable) until a source sets it. */
+  cadence?: 'once' | 'ongoing'
   provenance?: FieldSource
 }
 
