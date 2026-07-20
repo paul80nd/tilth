@@ -3,11 +3,18 @@
 // (naming / browse / calendar / taxonomy). All Dexie access lives here, never in components.
 
 import { db } from '../db/db'
+import { localTaxonomy, type Neighbourhood } from '../lib/neighbourhood'
 import type { Guide, PlantNode, TaskTemplate } from '../schema/plant'
 
 /** Every reference node (all ranks). Browse filters this to the browsable ranks. */
 export async function listNodes(): Promise<PlantNode[]> {
   return db.nodes.toArray()
+}
+
+/** The local taxonomy around a node (its genus's family/species/cultivars) for the cheatsheet's
+ *  Neighbourhood card. Undefined when there's no genus to anchor on. */
+export async function getNeighbourhood(id: string): Promise<Neighbourhood | undefined> {
+  return localTaxonomy(await db.nodes.toArray(), id)
 }
 
 export async function getNode(id: string): Promise<PlantNode | undefined> {

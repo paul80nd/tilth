@@ -20,7 +20,7 @@ export default function CheatsheetPage() {
     )
   }
 
-  const { node, ancestors, guides, tasks } = data
+  const { node, ancestors, guides, tasks, neighbourhood } = data
 
   async function onDelete() {
     const kids = await childrenOf(node.id)
@@ -55,7 +55,7 @@ export default function CheatsheetPage() {
         </div>
       </div>
 
-      <CheatsheetContent node={node} ancestors={ancestors} guides={guides} tasks={tasks} />
+      <CheatsheetContent node={node} ancestors={ancestors} guides={guides} tasks={tasks} neighbourhood={neighbourhood} />
     </article>
   )
 }

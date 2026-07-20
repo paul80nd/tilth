@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { PlantNode, Guide, TaskTemplate } from '../schema/plant'
-import { getGuidesFor, getLineage, getTasksFor } from '../app/plants'
+import { getGuidesFor, getLineage, getNeighbourhood, getTasksFor } from '../app/plants'
 import { botanicalLabel, displayLabel, displayName } from '../lib/naming'
 import { resolveInherited } from '../lib/taxonomy'
+import type { Neighbourhood } from '../lib/neighbourhood'
 import { nodeTags } from '../lib/tags'
 import { seasonalInterest } from '../lib/calendar'
 import { formatMonths } from '../lib/jobs'
@@ -21,6 +22,7 @@ import { CalendarEditor } from './CalendarEditor'
 import { EdibilityEditor } from './EdibilityEditor'
 import { FactsEditor } from './FactsEditor'
 import { CareEditor } from './CareEditor'
+import { NeighbourhoodCard } from './NeighbourhoodCard'
 import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -30,24 +32,29 @@ export interface PlantDetail {
   ancestors: PlantNode[]
   guides: Guide[]
   tasks: TaskTemplate[]
+  neighbourhood?: Neighbourhood
 }
 
-/** Live-load a plant's node, ancestor chain, aggregated guides and maintenance tasks — the
- *  data the cheatsheet renders. Shared by the full page and the Taxonomy modal so both stay in
- *  sync. */
+/** Live-load a plant's node, ancestor chain, aggregated guides and maintenance tasks, and its
+ *  local taxonomy (the genus neighbourhood) — the data the cheatsheet renders. Shared by the full
+ *  page and the Taxonomy modal so both stay in sync. */
 export function usePlantDetail(id: string): PlantDetail | undefined {
   return useLiveQuery(async () => {
     const { node, ancestors } = await getLineage(id)
     if (!node) return { node: undefined, ancestors: [], guides: [] as Guide[], tasks: [] as TaskTemplate[] }
-    const [guides, tasks] = await Promise.all([getGuidesFor(node, ancestors), getTasksFor(node, ancestors)])
-    return { node, ancestors, guides, tasks }
+    const [guides, tasks, neighbourhood] = await Promise.all([
+      getGuidesFor(node, ancestors),
+      getTasksFor(node, ancestors),
+      getNeighbourhood(id),
+    ])
+    return { node, ancestors, guides, tasks, neighbourhood }
   }, [id])
 }
 
 /** The cheatsheet one-pager for a plant — the masthead (identity + calendar hero), the dense
  *  tile-grid of facets, and the sources footer. Chrome (back / edit / delete / close) lives with
  *  the caller (the page or the modal) so this stays purely presentational. */
-export function CheatsheetContent({ node, ancestors, guides, tasks }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[]; tasks: TaskTemplate[] }) {
+export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhood, onNavigate }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[]; tasks: TaskTemplate[]; neighbourhood?: Neighbourhood; onNavigate?: (id: string) => void }) {
   const [editingCalendar, setEditingCalendar] = useState(false)
   const [editingSeasonal, setEditingSeasonal] = useState(false)
   const [editingPosition, setEditingPosition] = useState(false)
@@ -385,6 +392,14 @@ export function CheatsheetContent({ node, ancestors, guides, tasks }: { node: Pl
             )}
           </Tile>
         </div>
+
+        {neighbourhood && (
+          <div className="sm:col-span-2 lg:col-span-3">
+            <Tile title="Neighbourhood" note="Where this plant sits in the genus" fill>
+              <NeighbourhoodCard data={neighbourhood} currentId={node.id} onNavigate={onNavigate} />
+            </Tile>
+          </div>
+        )}
       </div>
 
       {sources.size > 0 && (

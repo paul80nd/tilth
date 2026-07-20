@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { usePlantDetail, CheatsheetContent } from './Cheatsheet'
@@ -6,9 +6,14 @@ import { usePlantDetail, CheatsheetContent } from './Cheatsheet'
 // A pop-up showing a plant's cheatsheet in the full detail layout (via CheatsheetContent), opened
 // from the Taxonomy view so inspecting a plant never navigates away — the tree keeps its scroll
 // position. Closes on Escape, backdrop click, or ✕; locks body scroll while open. "Open full
-// page →" jumps to the real detail route (for edit / delete) when wanted.
+// page →" jumps to the real detail route (for edit / delete) when wanted. Clicking a plant in the
+// Neighbourhood card swaps the shown plant in place (never leaving the modal).
 export function CheatsheetModal({ id, onClose }: { id: string; onClose: () => void }) {
-  const data = usePlantDetail(id)
+  // The plant currently shown — seeded from the opened id, then swapped by neighbourhood clicks.
+  const [shown, setShown] = useState(id)
+  useEffect(() => setShown(id), [id])
+  const data = usePlantDetail(shown)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -23,8 +28,13 @@ export function CheatsheetModal({ id, onClose }: { id: string; onClose: () => vo
     }
   }, [onClose])
 
+  // On swap, jump back to the top so the new plant reads from its masthead.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 })
+  }, [shown])
+
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" onClick={onClose}>
+    <div ref={scrollRef} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
@@ -32,7 +42,7 @@ export function CheatsheetModal({ id, onClose }: { id: string; onClose: () => vo
         className="relative my-4 w-full max-w-5xl rounded-2xl border border-line bg-surface p-5 shadow-xl sm:p-6"
       >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <Link to={`/plant/${id}`} className="text-sm text-brand-ink hover:underline" onClick={onClose}>
+          <Link to={`/plant/${shown}`} className="text-sm text-brand-ink hover:underline" onClick={onClose}>
             Open full page →
           </Link>
           <button
@@ -50,7 +60,7 @@ export function CheatsheetModal({ id, onClose }: { id: string; onClose: () => vo
           <p className="text-sm text-muted">No plant found.</p>
         ) : (
           <div className="flex flex-col gap-6">
-            <CheatsheetContent node={data.node} ancestors={data.ancestors} guides={data.guides} tasks={data.tasks} />
+            <CheatsheetContent node={data.node} ancestors={data.ancestors} guides={data.guides} tasks={data.tasks} neighbourhood={data.neighbourhood} onNavigate={setShown} />
           </div>
         )}
       </div>
