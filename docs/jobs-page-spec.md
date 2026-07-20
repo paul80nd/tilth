@@ -155,13 +155,17 @@ update `src/lib/jobs.test.ts` and, if asserted, `features/jobs.feature`.
   no "Clear" button or auto-reset machinery needed. Seam: `toggleJobDone` / `listDoneKeys`
   (`src/app/jobs.ts`); pure key helper `jobDoneKey` (`src/lib/jobs.ts`).
 
-### Stage 2 — populate `cadence` (data, TODO)
+### Stage 2 — populate `cadence` (fragments generated 2026-07-20, awaiting import)
 
-The engine + UI are live but **every task is currently unclassified** (`cadence` absent ⇒ all show
-as Ongoing care, To-do is empty). Populate by classifying the ~123 distinct actions (see the
-`cadence` analysis in chat: ~62 one-off, ~44 continuous, ~17 ambiguous) into a fragment. Because
-tasks import as **whole-record upsert** (not field-merged — see `importReview.ts`), the fragment
-re-emits full task records with `cadence` added; Paul reviews via the Data → Import diff gate.
+All 123 distinct actions were classified once/ongoing and re-emitted as **5 category cadence
+fragments** under `data/private/fragments/*-cadence-rhs-2026-07-20.json` (gitignored): flower 47,
+fruit 69, herb 43, veg 48, tree 3 = **210 tasks (109 once / 101 ongoing)**. Full task records
+(whole-record upsert — the parser now carries `cadence`, see `dataset.ts`), `source: 'rhs'`. One
+demo leftover (`task-apple-winter-prune`, scoped to the legacy `apple` node with no category) was
+**skipped** — it's on the taxonomy dedup worklist. Verified end-to-end (real fragment → import →
+store keeps cadence, zero missing). **NEXT: Paul imports the 5 fragments via Data → Import** (his
+review gate) — untick any misjudged cadence. Generator: `scratchpad/gen-cadence.mjs` (asserts every
+action is classified exactly once).
 
 ### Later polish (still deferred)
 
