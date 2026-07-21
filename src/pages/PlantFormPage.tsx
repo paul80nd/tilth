@@ -1,104 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import type { Category, PlantNode, Rank, SourceLink } from '../schema/plant'
-import type { NodeFragment } from '../lib/dataset'
+import type { Category, PlantNode, Rank } from '../schema/plant'
 import { listNodes } from '../app/plants'
 import { createNode, updateNode } from '../app/editNode'
 import { suggestId, hasIdentity } from '../lib/editNode'
 import { displayLabel } from '../lib/naming'
+import { EMPTY_FORM, fromNode, toPatch, toCreateFragment, type FormState } from '../lib/plantForm'
 
 const RANKS: Rank[] = ['family', 'genus', 'species', 'cultivar', 'group']
 const CATEGORIES: Category[] = ['flower', 'fruit', 'herb', 'tree', 'veg']
-
-/** Editable form state — the identity + placement + links + notes fields a gardener hand-enters.
- *  The rich fields (calendar, conditions, size, colour) are left to the acquire step. */
-interface FormState {
-  rank: Rank
-  category: string
-  commonName: string
-  variety: string
-  botanicalName: string
-  family: string
-  genus: string
-  otherNames: string
-  synonyms: string
-  parentId: string
-  summary: string
-  sourceLinks: SourceLink[]
-  facts: Array<{ key: string; value: string }>
-}
-
-const EMPTY: FormState = {
-  rank: 'cultivar',
-  category: '',
-  commonName: '',
-  variety: '',
-  botanicalName: '',
-  family: '',
-  genus: '',
-  otherNames: '',
-  synonyms: '',
-  parentId: '',
-  summary: '',
-  sourceLinks: [],
-  facts: [],
-}
-
-/** Hydrate the form from an existing node (edit mode). */
-function fromNode(node: PlantNode): FormState {
-  return {
-    rank: node.rank,
-    category: node.category ?? '',
-    commonName: node.commonName ?? '',
-    variety: node.variety ?? '',
-    botanicalName: node.botanicalName ?? '',
-    family: node.family ?? '',
-    genus: node.genus ?? '',
-    otherNames: (node.otherNames ?? []).join(', '),
-    synonyms: (node.synonyms ?? []).join(', '),
-    parentId: node.parentId ?? '',
-    summary: node.summary ?? '',
-    sourceLinks: (node.sourceLinks ?? []).map((l) => ({ ...l })),
-    facts: Object.entries(node.facts ?? {}).map(([key, value]) => ({ key, value })),
-  }
-}
-
-const trimmed = (s: string): string | undefined => (s.trim() === '' ? undefined : s.trim())
-const list = (s: string): string[] | undefined => {
-  const items = s.split(',').map((x) => x.trim()).filter(Boolean)
-  return items.length ? items : undefined
-}
-
-/** Turn form state into a patch of the fields it manages. `existing` (edit mode) lets an
- *  emptied array/map clear a previously-set value rather than churn one that was always empty. */
-function toPatch(form: FormState, existing?: PlantNode): Partial<PlantNode> {
-  const links = form.sourceLinks
-    .map((l) => ({ source: l.source.trim(), url: l.url.trim(), label: l.label?.trim() }))
-    .filter((l) => l.url && l.source)
-    .map((l) => (l.label ? l : { source: l.source, url: l.url }))
-  const facts: Record<string, string> = {}
-  for (const { key, value } of form.facts) {
-    const k = key.trim()
-    if (k) facts[k] = value.trim()
-  }
-
-  return {
-    rank: form.rank,
-    category: (trimmed(form.category) as Category) ?? undefined,
-    commonName: trimmed(form.commonName),
-    variety: trimmed(form.variety),
-    botanicalName: trimmed(form.botanicalName),
-    family: trimmed(form.family),
-    genus: trimmed(form.genus),
-    otherNames: list(form.otherNames),
-    synonyms: list(form.synonyms),
-    parentId: trimmed(form.parentId),
-    summary: trimmed(form.summary),
-    sourceLinks: links.length ? links : existing?.sourceLinks?.length ? [] : undefined,
-    facts: Object.keys(facts).length ? facts : existing?.facts ? {} : undefined,
-  }
-}
 
 export default function PlantFormPage() {
   const { id } = useParams()
@@ -113,7 +24,7 @@ export default function PlantFormPage() {
 
   // Seed the form once the (edit) node is available; a plain useState initialiser can't wait
   // for the async node, so track whether we've hydrated and derive the initial state lazily.
-  const [form, setForm] = useState<FormState | null>(isEdit ? null : EMPTY)
+  const [form, setForm] = useState(isEdit ? null : EMPTY_FORM)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const state = form ?? (existing ? fromNode(existing) : null)
@@ -157,11 +68,7 @@ export default function PlantFormPage() {
         await updateNode(existing, toPatch(state, existing))
         navigate(`/plant/${existing.id}`)
       } else {
-        const patch = toPatch(state)
-        const fragment: NodeFragment = { id: suggestId(patch) }
-        for (const [k, v] of Object.entries(patch)) {
-          if (v !== undefined) (fragment as Record<string, unknown>)[k] = v
-        }
+        const fragment = toCreateFragment(state)
         await createNode(fragment)
         navigate(`/plant/${fragment.id}`)
       }
