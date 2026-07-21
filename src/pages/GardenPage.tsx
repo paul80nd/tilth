@@ -298,6 +298,9 @@ export default function GardenPage() {
             placement={selectedPlacement}
             node={selectedPlacement ? nodesById.get(selectedPlacement.nodeId) : undefined}
             bedPlantings={bedPlantings}
+            beds={beds}
+            warnBedIds={warnBeds}
+            onSelectBed={(id) => setSelection({ type: 'bed', id })}
             rotation={selectedBed ? rotationByBed.get(selectedBed.id) : undefined}
             snapStep={snapStep}
             placementDefaultColor={selectedPlacement ? categoryColor(nodesById.get(selectedPlacement.nodeId)) : undefined}

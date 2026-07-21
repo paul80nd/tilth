@@ -25,6 +25,13 @@ export interface InspectorProps {
   node?: PlantNode
   /** What's planted in the selected bed (empty unless a bed is selected). */
   bedPlantings?: BedPlanting[]
+  /** Every bed on the plot — listed in the empty state so a full bed (hard to click through its
+   *  plantings) can be selected from here instead. */
+  beds?: Bed[]
+  /** Bed ids with a crop-rotation warning — marked ⚠ in the empty-state bed list. */
+  warnBedIds?: Set<string>
+  /** Select a bed from the empty-state list (selects it on the plot + switches the inspector). */
+  onSelectBed?: (id: string) => void
   /** The selected bed's crop-rotation picture for the active year (families + any clashes). */
   rotation?: BedRotation
   /** Snap increment (m) for typed bed sizes; 0 when snapping is off (a 0.1 spinner step is used). */
@@ -58,7 +65,7 @@ function familyLabel(family: string): string {
   return common ? `${common} family (${family})` : family
 }
 
-export default function Inspector({ bed, placement, node, bedPlantings = [], rotation, snapStep, placementDefaultColor = DEFAULT_CATEGORY_COLOR, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
+export default function Inspector({ bed, placement, node, bedPlantings = [], beds = [], warnBedIds, onSelectBed, rotation, snapStep, placementDefaultColor = DEFAULT_CATEGORY_COLOR, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
   if (bed) {
     const conflicts = rotation?.conflicts ?? []
     return (
@@ -232,8 +239,34 @@ export default function Inspector({ bed, placement, node, bedPlantings = [], rot
   }
 
   return (
-    <div className="p-3 text-xs text-muted">
-      Select a bed or a planting to edit it. Nothing selected.
+    <div className="flex flex-col gap-3 p-3">
+      <p className="text-xs text-muted">Select a bed or a planting to edit it. Nothing selected.</p>
+      {beds.length > 0 && (
+        <div className="border-t border-line pt-3">
+          <h3 className="text-xs font-medium text-muted">Beds</h3>
+          <ul className="mt-2 flex flex-col gap-0.5">
+            {beds.map((b) => (
+              <li key={b.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectBed?.(b.id)}
+                  className="flex w-full items-center gap-2 rounded px-1 py-1 text-left text-sm hover:bg-sunken"
+                >
+                  <span className="min-w-0 flex-1 truncate text-ink">{b.name}</span>
+                  {warnBedIds?.has(b.id) && (
+                    <span className="flex-none text-warn-ink" title="Crop-rotation warning">
+                      ⚠
+                    </span>
+                  )}
+                  <span className="flex-none tabular-nums text-xs text-muted">
+                    {b.width.toFixed(1)}×{b.height.toFixed(1)} m
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
