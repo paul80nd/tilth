@@ -7,6 +7,7 @@ import { fromFactsDraft, toFactsDraft, factKeySuggestions, type FactRow } from '
 import { EditorFooter } from './EditorControls'
 import { FieldEditorModal } from './FieldEditorModal'
 import { useEditorDraft } from './useEditorDraft'
+import { FactsCard } from './FactsCard'
 
 const KEY_SUGGESTIONS_ID = 'facts-key-suggestions'
 
@@ -35,7 +36,6 @@ export function FactsEditor({
   })
 
   const preview = useMemo(() => fromFactsDraft(rows), [rows])
-  const previewEntries = Object.entries(preview)
   const canClear = node.facts !== undefined
 
   // Suggest fact keys used elsewhere in the collection that this draft hasn't used yet, so a new
@@ -58,20 +58,7 @@ export function FactsEditor({
       error={error}
       onClose={onClose}
       previewClassName="p-4"
-      preview={
-        previewEntries.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {previewEntries.map(([key, value]) => (
-              <span key={key} className="inline-flex items-baseline gap-1.5 rounded-md bg-sunken px-2.5 py-1 text-sm">
-                <span className="text-xs uppercase tracking-wide text-subtle">{key}</span>
-                <span className="font-medium">{value}</span>
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted">None recorded yet.</p>
-        )
-      }
+      preview={<FactsCard facts={preview} />}
       footer={<EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />}
     >
       <div className="flex flex-col gap-2">

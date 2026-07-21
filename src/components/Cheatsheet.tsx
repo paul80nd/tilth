@@ -23,6 +23,7 @@ import { EdibilityEditor } from './EdibilityEditor'
 import { FactsEditor } from './FactsEditor'
 import { CareEditor } from './CareEditor'
 import { NeighbourhoodCard } from './NeighbourhoodCard'
+import { FactsCard } from './FactsCard'
 import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
@@ -275,18 +276,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
             action={<EditButton onClick={() => setEditing('facts')} />}
             fill
           >
-            {hasFacts ? (
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(resolved.facts!).map(([key, value]) => (
-                  <span key={key} className="inline-flex items-baseline gap-1.5 rounded-md bg-sunken px-2.5 py-1 text-sm">
-                    <span className="text-xs uppercase tracking-wide text-subtle">{key}</span>
-                    <span className="font-medium">{value}</span>
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <Muted>None recorded yet.</Muted>
-            )}
+            <FactsCard facts={resolved.facts ?? {}} />
           </Tile>
         </div>
 
