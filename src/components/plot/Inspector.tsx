@@ -5,6 +5,7 @@ import { DEFAULT_CATEGORY_COLOR } from '../../lib/plantColor'
 import { plantsInRegion } from '../../lib/spacing'
 import { familyCommon } from '../../lib/taxonNames'
 import { ROTATION_REST_YEARS, type BedRotation } from '../../lib/rotation'
+import type { CompanionLine } from '../../lib/companions'
 import { Field, SizeInput, inputCls } from './fields'
 
 // The inspector: edit the currently-selected bed or placement. A thin shell over the garden seam —
@@ -34,6 +35,8 @@ export interface InspectorProps {
   onSelectBed?: (id: string) => void
   /** The selected bed's crop-rotation picture for the active year (families + any clashes). */
   rotation?: BedRotation
+  /** The selected bed's companion pairings (good + bad) among the plants sharing it. */
+  companions?: CompanionLine[]
   /** Snap increment (m) for typed bed sizes; 0 when snapping is off (a 0.1 spinner step is used). */
   snapStep: number
   /** The plant's default (category) colour — the swatch shown when there's no override. */
@@ -65,9 +68,11 @@ function familyLabel(family: string): string {
   return common ? `${common} family (${family})` : family
 }
 
-export default function Inspector({ bed, placement, node, bedPlantings = [], beds = [], warnBedIds, onSelectBed, rotation, snapStep, placementDefaultColor = DEFAULT_CATEGORY_COLOR, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
+export default function Inspector({ bed, placement, node, bedPlantings = [], beds = [], warnBedIds, onSelectBed, rotation, companions = [], snapStep, placementDefaultColor = DEFAULT_CATEGORY_COLOR, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
   if (bed) {
     const conflicts = rotation?.conflicts ?? []
+    const goodCompanions = companions.filter((c) => c.relation === 'good')
+    const badCompanions = companions.filter((c) => c.relation === 'bad')
     return (
       <div className="flex flex-col gap-3 p-3">
         <h2 className="text-sm font-semibold text-ink">Bed</h2>
@@ -83,6 +88,31 @@ export default function Inspector({ bed, placement, node, bedPlantings = [], bed
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+        {(goodCompanions.length > 0 || badCompanions.length > 0) && (
+          <div className="rounded-md border border-line p-2.5 text-xs">
+            <p className="font-semibold text-ink">Companions</p>
+            {badCompanions.length > 0 && (
+              <ul className="mt-1.5 flex flex-col gap-1.5">
+                {badCompanions.map((c) => (
+                  <li key={`bad-${c.a}-${c.b}`} className="text-warn-ink">
+                    <span className="font-medium">⚠ {c.a} + {c.b}</span>
+                    {c.note && <> — {c.note}</>}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {goodCompanions.length > 0 && (
+              <ul className="mt-1.5 flex flex-col gap-1.5">
+                {goodCompanions.map((c) => (
+                  <li key={`good-${c.a}-${c.b}`} className="text-muted">
+                    <span className="font-medium text-brand-ink">✓ {c.a} + {c.b}</span>
+                    {c.note && <> — {c.note}</>}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
         <Field label="Name">

@@ -13,6 +13,7 @@ import type { Bed, Holding, PlacementShape, Rect } from '../schema/userData'
 import { footprintOf, placementCount } from '../lib/spacing'
 import { reanchorRects, type PlotAnchor } from '../lib/plot'
 import { rotationForYear, type BedRotation } from '../lib/rotation'
+import { companionsForYear, type BedCompanions } from '../lib/companions'
 
 /** Fresh id for a hand-created bed/holding. `crypto.randomUUID` is available in every target
  *  (evergreen browsers, Node ≥22, the test env). */
@@ -258,6 +259,18 @@ export async function listRotation(
   const byId = new Map(nodes.map((n) => [n.id, n]))
   const currentYear = opts.currentYear ?? new Date().getFullYear()
   return rotationForYear(holdings, byId, beds, year, { currentYear, restYears: opts.restYears })
+}
+
+/** Each bed's companion-planting picture for `year` — the good/bad pairings among the plants that
+ *  share it. `currentYear` (the year an un-stamped holding counts as) defaults to the clock. */
+export async function listCompanions(
+  year: number,
+  opts: { currentYear?: number } = {},
+): Promise<BedCompanions[]> {
+  const [holdings, nodes] = await Promise.all([db.holdings.toArray(), db.nodes.toArray()])
+  const byId = new Map(nodes.map((n) => [n.id, n]))
+  const currentYear = opts.currentYear ?? new Date().getFullYear()
+  return companionsForYear(holdings, byId, year, { currentYear })
 }
 
 // --- Shopping list --------------------------------------------------------------------------

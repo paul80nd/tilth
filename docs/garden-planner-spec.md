@@ -183,8 +183,14 @@ zoom is buttons only) and touch-draw ergonomics.
 ### Phase 3 — succession + companion + follow-on year
 
 - **Succession** — from each placement's occupancy window, show when a bed frees up.
-- **Companion** — needs a new generic data layer (firewall: our own vocabulary, no sourced
-  text/URLs); good/bad neighbours flagged on placement.
+- **Companion — BUILT (2026-07-21).** A committed, generic ruleset in our own words
+  (`src/lib/companions.ts`, `COMPANION_RULES`; firewall-safe like the taxonomy vocab), keyed to the
+  taxonomy (`{family}`/`{genus}`/`{category}`) and resolved with the shared `resolveUp` roll-up.
+  Flags **good + bad** pairings among plants **sharing a bed** (MVP proximity). Pure engine
+  `companionsForYear` + `badCompanionBedIds`; seam `listCompanions`. Surfaced in the inspector
+  (green ✓ good / amber ⚠ bad, with the reason) and a distinct "no" badge on a clashing bed
+  (bottom-left, vs the rotation triangle top-right). `features/companion-planting.feature`. Deferred:
+  a cheatsheet companions card, place-time hints, and cross-bed adjacency.
 - **Follow-on year** — clone this year's plan into next year as a starting point. _(A minimal
   version — `rollOverYear` — already shipped in Phase 2 to seed a comparison year for rotation; the
   richer succession/companion-aware follow-on stays here.)_

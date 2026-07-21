@@ -68,3 +68,27 @@ describe('Inspector — empty-state bed list', () => {
     expect(screen.queryByText('Select a bed or a planting to edit it. Nothing selected.')).not.toBeInTheDocument()
   })
 })
+
+describe('Inspector — companions', () => {
+  it('shows good and bad pairings for the selected bed', () => {
+    render(
+      <Inspector
+        snapStep={0}
+        bed={bed('Veg bed')}
+        companions={[
+          { relation: 'good', a: 'Onion', b: 'Carrot', note: 'guard each other' },
+          { relation: 'bad', a: 'Onion', b: 'Bean', note: 'alliums stunt legumes' },
+        ]}
+        {...noops}
+      />,
+    )
+    expect(screen.getByText('Companions')).toBeInTheDocument()
+    expect(screen.getByText(/✓ Onion \+ Carrot/)).toBeInTheDocument()
+    expect(screen.getByText(/⚠ Onion \+ Bean/)).toBeInTheDocument()
+  })
+
+  it('omits the Companions section when there are none', () => {
+    render(<Inspector snapStep={0} bed={bed('Empty bed')} companions={[]} {...noops} />)
+    expect(screen.queryByText('Companions')).not.toBeInTheDocument()
+  })
+})

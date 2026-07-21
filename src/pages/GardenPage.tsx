@@ -28,6 +28,7 @@ import { categoryColor } from '../lib/plantColor'
 import { placementCount } from '../lib/spacing'
 import { clampRect } from '../lib/plot'
 import { rotationForYear, warnBedIds } from '../lib/rotation'
+import { companionsForYear, badCompanionBedIds, type BedCompanions, type CompanionLine } from '../lib/companions'
 import PlotCanvas, { type Selection, type PlotCanvasHandle } from '../components/plot/PlotCanvas'
 import Palette from '../components/plot/Palette'
 import Inspector from '../components/plot/Inspector'
@@ -109,6 +110,15 @@ export default function GardenPage() {
   )
   const warnBeds = useMemo(() => warnBedIds(rotations), [rotations])
   const rotationByBed = useMemo(() => new Map(rotations.map((r) => [r.bedId, r])), [rotations])
+
+  // Companion planting: good/bad pairings among the plants sharing each bed this year. badBeds drives
+  // the plot's clash badge; the per-bed map feeds the inspector when a bed is selected.
+  const companions = useMemo(
+    () => companionsForYear(holdings, nodesById, planYear, { currentYear: CURRENT_YEAR }),
+    [holdings, nodesById, planYear],
+  )
+  const badCompanionBeds = useMemo(() => badCompanionBedIds(companions), [companions])
+  const companionByBed = useMemo(() => new Map(companions.map((c) => [c.bedId, c])), [companions])
 
   // Is the active year empty while an earlier year has placements? Then offer to copy it forward so
   // rotation has a prior year to compare (the minimal follow-on-year clone).
@@ -209,6 +219,14 @@ export default function GardenPage() {
     }
   }
 
+  // Resolve a bed's companion pairings to display lines (node ids → names) for the inspector.
+  const companionLines = (bc: BedCompanions | undefined): CompanionLine[] => {
+    if (!bc) return []
+    const label = (ids: string[]) =>
+      ids.map((id) => (nodesById.has(id) ? displayLabel(nodesById.get(id)!) : id)).join(', ')
+    return bc.pairings.map((p) => ({ relation: p.relation, a: label(p.aNodeIds), b: label(p.bNodeIds), note: p.note }))
+  }
+
   // The two sidebar contents, shared by the desktop columns and the mobile overlays.
   const paletteEl = (
     <Palette plants={plants} heldNodeIds={heldNodeIds} brushNodeId={brushNodeId} brushShape={brushShape} onArm={armBrush} onShapeChange={setBrushShape} />
@@ -223,6 +241,7 @@ export default function GardenPage() {
       warnBedIds={warnBeds}
       onSelectBed={(id) => setSelection({ type: 'bed', id })}
       rotation={selectedBed ? rotationByBed.get(selectedBed.id) : undefined}
+      companions={selectedBed ? companionLines(companionByBed.get(selectedBed.id)) : undefined}
       snapStep={snapStep}
       placementDefaultColor={selectedPlacement ? categoryColor(nodesById.get(selectedPlacement.nodeId)) : undefined}
       onSelectPlanting={(id) => setSelection({ type: 'placement', id })}
@@ -380,6 +399,7 @@ export default function GardenPage() {
               brushNodeId={brushNodeId}
               brushShape={brushShape}
               warnBedIds={warnBeds}
+              companionWarnBedIds={badCompanionBeds}
               onSelect={setSelection}
               onMoveBed={(id, rect: Rect) => void updateBed(id, rect)}
               onMovePlacement={(id, region: Rect) => void movePlacement(id, region)}

@@ -32,6 +32,27 @@ const INHERITABLE: Array<keyof PlantNode> = [
   'image',
 ]
 
+/**
+ * The nearest own-or-inherited value of `field` up a node's ancestor chain (guards a broken parent
+ * cycle), resolving against a full id→node map. The map-based sibling of {@link resolveInherited}
+ * (which walks a pre-fetched ancestor array) — used by the jobs / rotation / companion engines to
+ * roll a holding up to its category / family / genus without materialising the whole chain.
+ */
+export function resolveUp<K extends keyof PlantNode>(
+  startId: string,
+  byId: Map<string, PlantNode>,
+  field: K,
+): PlantNode[K] | undefined {
+  let current = byId.get(startId)
+  const seen = new Set<string>()
+  while (current && !seen.has(current.id)) {
+    if (current[field] !== undefined) return current[field]
+    seen.add(current.id)
+    current = current.parentId ? byId.get(current.parentId) : undefined
+  }
+  return undefined
+}
+
 export interface ResolvedNode {
   /** The node with absent inheritable fields filled from the nearest ancestor that has them. */
   node: PlantNode

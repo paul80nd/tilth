@@ -7,6 +7,28 @@ feature spec; private rationale (the real sources, personal curation rules) stay
 
 Each entry: the decision, *why*, and what it superseded if anything.
 
+## 2026-07-21 — Companion planting: our own taxonomy-keyed ruleset, same-bed, good + bad
+
+Planner Phase 3's companion feature — flag which plants help or hinder each other in a bed.
+
+- **The data is ours, keyed to the taxonomy.** Companion relationships are generic, widely-published
+  horticultural knowledge (like the botanical taxonomy and phase vocabularies), so — per the privacy
+  firewall — they're a **committed ruleset authored in our own words** (`src/lib/companions.ts`,
+  `COMPANION_RULES`), naming no source and copying no proprietary chart. Each rule pairs two
+  `TaxonKey`s (`{family}` / `{genus}` / `{category}`) with a `good`/`bad` relation; matching resolves
+  a held plant's own-or-inherited family/genus/category (the shared `resolveUp` in `taxonomy.ts`,
+  now used by the jobs/rotation/companion engines), so a rule on `genus: 'Allium'` reaches every
+  onion/leek cultivar and de-dupes. Rules are **symmetric** (stored once).
+- **Same-bed proximity (MVP).** Only plants sharing a bed are companions — simple, matches the
+  per-bed rotation model, no geometry. Adjacency between beds is a later option.
+- **Both good and bad.** The positive half ("plant these together") is the more motivating side, so
+  we surface good pairings (green ✓) as well as clashes (amber ⚠) — not warn-only like rotation.
+- **Distinct plot mark.** A bad-companion bed gets a "no" badge (circle + slash, bottom-left),
+  deliberately a different shape/corner/symbol from the rotation triangle (top-right) so the two
+  don't blur; the reasons live in the inspector. Reuses the `warn` colour token.
+
+Deferred: a cheatsheet companions card and place-time (as-you-draw) hints.
+
 ## 2026-07-21 — Crop rotation: a plan-year dimension on the plot, warn by family, veg-only
 
 The garden planner's Phase 2 rotation warning needed a *previous* year to compare against, but the
