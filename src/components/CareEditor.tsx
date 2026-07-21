@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useMemo } from 'react'
 import type { PlantNode, TaskTemplate } from '../schema/plant'
 import { MONTH_INITIALS } from '../lib/calendar'
 import { careDiff, newTaskDraft, toTaskDrafts, type TaskDraft } from '../lib/careEdit'
 import { saveCareTasks } from '../app/tasks'
 import { Toggle } from './EditorControls'
+import { FieldEditorModal } from './FieldEditorModal'
+import { useEditorDraft } from './useEditorDraft'
 
 // A modal for editing the "Care" card — the plant's maintenance jobs (TaskTemplates). Each job is
 // an editable row: action, the months it applies (none = Anytime), a note, and its cadence (a
@@ -30,25 +31,21 @@ export function CareEditor({
   onClose: () => void
 }) {
   const initial = useMemo(() => toTaskDrafts(tasks), [tasks])
-  const [drafts, setDrafts] = useState<TaskDraft[]>(initial)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
-  }, [onClose])
-
-  const { upserts, deletedIds } = useMemo(() => careDiff(tasks, drafts), [tasks, drafts])
-  const dirty = upserts.length > 0 || deletedIds.length > 0
+  // Aliased to drafts/setDrafts so the job-row body reads naturally. Care has no field-inherit
+  // "Clear" (jobs are whole records) and its own careDiff-based dirty, so no `clear` + a custom
+  // isDirty. Save reconciles the drafts into upserts/deletes.
+  const { draft: drafts, setDraft: setDrafts, saving, error, dirty, onSave } = useEditorDraft<TaskDraft[]>({
+    initial,
+    onClose,
+    save: (ds) => {
+      const { upserts, deletedIds } = careDiff(tasks, ds)
+      return saveCareTasks(upserts, deletedIds)
+    },
+    isDirty: (ds) => {
+      const { upserts, deletedIds } = careDiff(tasks, ds)
+      return upserts.length > 0 || deletedIds.length > 0
+    },
+  })
 
   function setRow(i: number, patch: Partial<TaskDraft>) {
     setDrafts((ds) => ds.map((d, j) => (j === i ? { ...d, ...patch } : d)))
@@ -74,44 +71,35 @@ export function CareEditor({
     return `shared · from ${anc?.commonName ?? anc?.botanicalName ?? d.scopeNodeId}`
   }
 
-  async function onSave() {
-    if (!dirty) return onClose()
-    setSaving(true)
-    setError(null)
-    try {
-      await saveCareTasks(upserts, deletedIds)
-      onClose()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save.')
-      setSaving(false)
-    }
-  }
-
-  return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Edit care jobs"
-        onClick={(e) => e.stopPropagation()}
-        className="relative my-4 w-full max-w-2xl rounded-2xl border border-line bg-surface p-5 shadow-xl sm:p-6"
-      >
-        <div className="mb-4 flex items-baseline justify-between gap-3">
-          <div>
-            <h2 className="font-display text-h3 font-semibold">Care</h2>
-            <p className="text-xs text-subtle">Maintenance jobs — months (none = anytime), a note, and whether each is a tickable one-off or ongoing care.</p>
-          </div>
+  return (
+    <FieldEditorModal
+      title="Care"
+      subtitle="Maintenance jobs — months (none = anytime), a note, and whether each is a tickable one-off or ongoing care."
+      ariaLabel="Edit care jobs"
+      maxWidth="max-w-2xl"
+      error={error}
+      onClose={onClose}
+      footer={
+        <div className="mt-6 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            className="rounded-md px-2 py-1 text-lg leading-none text-muted hover:bg-sunken hover:text-ink"
+            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
           >
-            ✕
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving || !dirty}
+            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90 disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
-
-        <div className="flex flex-col gap-3">
+      }
+    >
+      <div className="flex flex-col gap-3">
           {drafts.map((d, i) => {
             const shared = scopeNote(d)
             return (
@@ -188,28 +176,6 @@ export function CareEditor({
             + Add job
           </button>
         </div>
-
-        {error && <p className="mt-3 text-sm text-accent-ink">{error}</p>}
-
-        <div className="mt-6 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving || !dirty}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+    </FieldEditorModal>
   )
 }

@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useMemo } from 'react'
 import type { Conditions, PlantNode } from '../schema/plant'
 import { updateNode, clearNodeField } from '../app/editNode'
-import { deepEqual } from '../lib/equal'
 import {
   MOISTURE_LEVELS,
   PH_LEVELS,
@@ -12,6 +10,8 @@ import {
 import { applyConditions, toConditionsDraft, type ConditionsDraft } from '../lib/conditionsEdit'
 import ConditionsCard from './ConditionsCard'
 import { Row, Toggle, EditorFooter } from './EditorControls'
+import { FieldEditorModal } from './FieldEditorModal'
+import { useEditorDraft } from './useEditorDraft'
 
 // A modal for editing the growing-condition facets (soil · moisture · pH) with a live preview of
 // the exact card the cheatsheet shows. Conditions is its own field (sibling of the Position card's
@@ -30,25 +30,18 @@ export function ConditionsEditor({
   onClose: () => void
 }) {
   const initial = useMemo(() => toConditionsDraft(conditions), [conditions])
-  const [draft, setDraft] = useState<ConditionsDraft>(initial)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
-  }, [onClose])
+  const { draft, setDraft, saving, error, dirty, onSave, onClear } = useEditorDraft<ConditionsDraft>({
+    initial,
+    onClose,
+    // An all-empty draft means "own nothing here" → drop the field so it re-inherits.
+    save: (d) => {
+      const p = applyConditions(d)
+      return Object.keys(p).length === 0 ? clearNodeField(node.id, 'conditions') : updateNode(node, { conditions: p })
+    },
+    clear: () => clearNodeField(node.id, 'conditions'),
+  })
 
   const preview = useMemo(() => applyConditions(draft), [draft])
-  const dirty = !deepEqual(draft, initial)
 
   function toggle<T>(key: keyof ConditionsDraft, value: T, order: readonly T[]) {
     setDraft((d) => {
@@ -63,96 +56,43 @@ export function ConditionsEditor({
   const own = node.conditions
   const canClear = !!(own && (own.soil?.length || own.moisture?.length || own.ph?.length))
 
-  async function onSave() {
-    if (!dirty) return onClose()
-    setSaving(true)
-    setError(null)
-    try {
-      // An all-empty draft means "own nothing here" → drop the field so it re-inherits.
-      if (Object.keys(preview).length === 0) await clearNodeField(node.id, 'conditions')
-      else await updateNode(node, { conditions: preview })
-      onClose()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save.')
-      setSaving(false)
-    }
-  }
+  return (
+    <FieldEditorModal
+      title="Conditions"
+      subtitle="The soil this plant tolerates — texture, how moist, and pH. Tick every type that suits."
+      ariaLabel="Edit conditions"
+      maxWidth="max-w-2xl"
+      preview={<ConditionsCard conditions={preview} />}
+      previewClassName="h-32"
+      error={error}
+      onClose={onClose}
+      footer={<EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />}
+    >
+      <div className="flex flex-col gap-4">
+        <Row label="Soil" hint="texture">
+          {SOIL_TYPES.map((t) => (
+            <Toggle key={t} on={draft.soil.includes(t)} onClick={() => toggle('soil', t, SOIL_TYPES)}>
+              {conditionLabel(t)}
+            </Toggle>
+          ))}
+        </Row>
 
-  async function onClear() {
-    setSaving(true)
-    setError(null)
-    try {
-      await clearNodeField(node.id, 'conditions')
-      onClose()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not clear.')
-      setSaving(false)
-    }
-  }
+        <Row label="Moisture" hint="dry → wet">
+          {MOISTURE_LEVELS.map((m) => (
+            <Toggle key={m} on={draft.moisture.includes(m)} onClick={() => toggle('moisture', m, MOISTURE_LEVELS)}>
+              {conditionLabel(m)}
+            </Toggle>
+          ))}
+        </Row>
 
-  return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Edit conditions"
-        onClick={(e) => e.stopPropagation()}
-        className="relative my-4 w-full max-w-2xl rounded-2xl border border-line bg-surface p-5 shadow-xl sm:p-6"
-      >
-        <div className="mb-4 flex items-baseline justify-between gap-3">
-          <div>
-            <h2 className="font-display text-h3 font-semibold">Conditions</h2>
-            <p className="text-xs text-subtle">The soil this plant tolerates — texture, how moist, and pH. Tick every type that suits.</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="rounded-md px-2 py-1 text-lg leading-none text-muted hover:bg-sunken hover:text-ink"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Live preview — the exact card the cheatsheet will show. */}
-        <div className="mb-5">
-          <div className="mb-1.5 text-[0.6rem] font-medium uppercase tracking-wide text-subtle">Preview</div>
-          <div className="h-32 overflow-hidden rounded-lg border border-line bg-card">
-            <ConditionsCard conditions={preview} />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <Row label="Soil" hint="texture">
-            {SOIL_TYPES.map((t) => (
-              <Toggle key={t} on={draft.soil.includes(t)} onClick={() => toggle('soil', t, SOIL_TYPES)}>
-                {conditionLabel(t)}
-              </Toggle>
-            ))}
-          </Row>
-
-          <Row label="Moisture" hint="dry → wet">
-            {MOISTURE_LEVELS.map((m) => (
-              <Toggle key={m} on={draft.moisture.includes(m)} onClick={() => toggle('moisture', m, MOISTURE_LEVELS)}>
-                {conditionLabel(m)}
-              </Toggle>
-            ))}
-          </Row>
-
-          <Row label="pH">
-            {PH_LEVELS.map((p) => (
-              <Toggle key={p} on={draft.ph.includes(p)} onClick={() => toggle('ph', p, PH_LEVELS)}>
-                {conditionLabel(p)}
-              </Toggle>
-            ))}
-          </Row>
-        </div>
-
-        {error && <p className="mt-3 text-sm text-accent-ink">{error}</p>}
-
-        <EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />
+        <Row label="pH">
+          {PH_LEVELS.map((p) => (
+            <Toggle key={p} on={draft.ph.includes(p)} onClick={() => toggle('ph', p, PH_LEVELS)}>
+              {conditionLabel(p)}
+            </Toggle>
+          ))}
+        </Row>
       </div>
-    </div>,
-    document.body,
+    </FieldEditorModal>
   )
 }

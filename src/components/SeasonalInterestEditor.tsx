@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useMemo } from 'react'
 import type { PlantNode, SeasonalInterest } from '../schema/plant'
 import { updateNode, clearNodeField } from '../app/editNode'
 import { seasonalInterest } from '../lib/calendar'
@@ -16,6 +15,8 @@ import { INTEREST_META } from '../lib/calendar'
 import { SeasonalIcon } from './icons'
 import SeasonStrip from './SeasonStrip'
 import { EditorFooter } from './EditorControls'
+import { FieldEditorModal } from './FieldEditorModal'
+import { useEditorDraft } from './useEditorDraft'
 
 // A modal for editing a plant's seasonal-interest grid — a cell per season × part (foliage ·
 // flower · fruit · stem) with an on-show tick and a comma-separated colour field — alongside a
@@ -35,27 +36,20 @@ export function SeasonalInterestEditor({
   initial: SeasonalInterest | undefined
   onClose: () => void
 }) {
-  const [draft, setDraft] = useState<InterestDraft>(() => toDraft(initial))
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
-  }, [onClose])
+  const initialDraft = useMemo(() => toDraft(initial), [initial])
+  const { draft, setDraft, saving, error, dirty, onSave, onClear } = useEditorDraft<InterestDraft>({
+    initial: initialDraft,
+    onClose,
+    save: (d) => updateNode(node, { seasonalInterest: fromDraft(d) }),
+    clear: () => clearNodeField(node.id, 'seasonalInterest'),
+    // Dirty compares the FOLDED draft against the resolved grid (two drafts can fold equal), so a
+    // no-op edit still writes nothing.
+    isDirty: (d) => !deepEqual(fromDraft(d), initial ?? {}),
+  })
 
   // Rebuilt on every keystroke → the preview is exactly what the cheatsheet will render.
   const next = useMemo(() => fromDraft(draft), [draft])
   const preview = useMemo(() => seasonalInterest(next), [next])
-  const dirty = !deepEqual(next, initial ?? {})
   const canClear = node.seasonalInterest !== undefined
 
   function setCell(season: (typeof EDIT_SEASONS)[number], part: (typeof EDIT_PARTS)[number], patch: Partial<InterestDraft[typeof season][typeof part]>) {
@@ -65,73 +59,26 @@ export function SeasonalInterestEditor({
     }))
   }
 
-  async function onSave() {
-    if (!dirty) return onClose()
-    setSaving(true)
-    setError(null)
-    try {
-      await updateNode(node, { seasonalInterest: next })
-      onClose()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save.')
-      setSaving(false)
-    }
-  }
+  return (
+    <FieldEditorModal
+      title="Seasonal interest"
+      subtitle="Tick a part to mark it on show that season; add colours (comma-separated) to tint it."
+      ariaLabel="Edit seasonal interest"
+      maxWidth="max-w-3xl"
+      preview={<SeasonStrip interest={preview} />}
+      previewClassName="h-36"
+      error={error}
+      onClose={onClose}
+      footer={<EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />}
+    >
+      <datalist id={COLOUR_LIST_ID}>
+        {COLOUR_WORDS.map((w) => (
+          <option key={w} value={w} />
+        ))}
+      </datalist>
 
-  async function onClear() {
-    setSaving(true)
-    setError(null)
-    try {
-      await clearNodeField(node.id, 'seasonalInterest')
-      onClose()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not clear.')
-      setSaving(false)
-    }
-  }
-
-  return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Edit seasonal interest"
-        onClick={(e) => e.stopPropagation()}
-        className="relative my-4 w-full max-w-3xl rounded-2xl border border-line bg-surface p-5 shadow-xl sm:p-6"
-      >
-        <datalist id={COLOUR_LIST_ID}>
-          {COLOUR_WORDS.map((w) => (
-            <option key={w} value={w} />
-          ))}
-        </datalist>
-
-        <div className="mb-4 flex items-baseline justify-between gap-3">
-          <div>
-            <h2 className="font-display text-h3 font-semibold">Seasonal interest</h2>
-            <p className="text-xs text-subtle">
-              Tick a part to mark it on show that season; add colours (comma-separated) to tint it.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="rounded-md px-2 py-1 text-lg leading-none text-muted hover:bg-sunken hover:text-ink"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Live preview — the exact strip the cheatsheet will show. */}
-        <div className="mb-5">
-          <div className="mb-1.5 text-[0.6rem] font-medium uppercase tracking-wide text-subtle">Preview</div>
-          <div className="h-36 overflow-hidden rounded-lg border border-line bg-card">
-            <SeasonStrip interest={preview} />
-          </div>
-        </div>
-
-        {/* The grid of controls: a row per part, a column per season. */}
-        <div className="overflow-x-auto">
+      {/* The grid of controls: a row per part, a column per season. */}
+      <div className="overflow-x-auto">
           <div className="grid min-w-[34rem] grid-cols-[7rem_repeat(4,minmax(0,1fr))] gap-x-3 gap-y-2">
             <div />
             {EDIT_SEASONS.map((s) => (
@@ -174,12 +121,6 @@ export function SeasonalInterestEditor({
             ))}
           </div>
         </div>
-
-        {error && <p className="mt-3 text-sm text-accent-ink">{error}</p>}
-
-        <EditorFooter onClear={onClear} canClear={canClear} onCancel={onClose} onSave={onSave} saving={saving} saveDisabled={!dirty} />
-      </div>
-    </div>,
-    document.body,
+    </FieldEditorModal>
   )
 }
