@@ -19,6 +19,20 @@ function newId(): string {
   return crypto.randomUUID()
 }
 
+/** Read a holding, transform it with `fn`, and write the result back — marking the store
+ *  user-owned. `fn` returns the updated holding, or `undefined` to leave it untouched (a missing
+ *  holding, or a guard the op can't satisfy — no write, no mark). One transaction per call. */
+async function patchHolding(id: string, fn: (h: Holding) => Holding | undefined): Promise<void> {
+  await db.transaction('rw', db.holdings, db.settings, async () => {
+    const h = await db.holdings.get(id)
+    if (!h) return
+    const next = fn(h)
+    if (!next) return
+    await db.holdings.put(next)
+    await markUser()
+  })
+}
+
 // --- Plot extent ----------------------------------------------------------------------------
 
 /** The working extent of the plot (metres). Beds live inside it; it grows/shrinks on demand. */
@@ -167,59 +181,41 @@ export async function placePlant(input: PlacePlantInput): Promise<Holding> {
 
 /** Move/resize a placement to a new region, recomputing the count for its shape. */
 export async function movePlacement(holdingId: string, region: Rect): Promise<void> {
-  await db.transaction('rw', db.holdings, db.settings, async () => {
-    const h = await db.holdings.get(holdingId)
-    if (!h) return
+  await patchHolding(holdingId, (h) => {
     const footprint = h.footprint ?? region.width
-    const quantity = placementCount(h.shape, footprint, region)
-    await db.holdings.put({ ...h, region, quantity })
-    await markUser()
+    return { ...h, region, quantity: placementCount(h.shape, footprint, region) }
   })
 }
 
 /** Switch a placement between area / round / rect, recomputing its count (a single plant for
  *  round/rect, packed for area). The region is unchanged — the shape only reinterprets it. */
 export async function setPlacementShape(holdingId: string, shape: PlacementShape): Promise<void> {
-  await db.transaction('rw', db.holdings, db.settings, async () => {
-    const h = await db.holdings.get(holdingId)
-    if (!h || !h.region) return
+  await patchHolding(holdingId, (h) => {
+    if (!h.region) return undefined
     const footprint = h.footprint ?? h.region.width
-    const quantity = placementCount(shape, footprint, h.region)
-    await db.holdings.put({ ...h, shape, quantity })
-    await markUser()
+    return { ...h, shape, quantity: placementCount(shape, footprint, h.region) }
   })
 }
 
 /** Hand-override the plant count on a placement (the derived count is only a starting point). */
 export async function setQuantity(holdingId: string, quantity: number): Promise<void> {
-  await db.transaction('rw', db.holdings, db.settings, async () => {
-    const h = await db.holdings.get(holdingId)
-    if (!h) return
-    await db.holdings.put({ ...h, quantity: Math.max(0, Math.round(quantity)) })
-    await markUser()
-  })
+  await patchHolding(holdingId, (h) => ({ ...h, quantity: Math.max(0, Math.round(quantity)) }))
 }
 
 /** Set (or clear) the colour a placement is drawn in on the plot. Pass `undefined` to fall back to
  *  the plant's category colour. */
 export async function setPlacementColor(holdingId: string, color: string | undefined): Promise<void> {
-  await db.transaction('rw', db.holdings, db.settings, async () => {
-    const h = await db.holdings.get(holdingId)
-    if (!h) return
+  await patchHolding(holdingId, (h) => {
     const { color: _c, ...rest } = h
-    await db.holdings.put(color ? { ...rest, color } : rest)
-    await markUser()
+    return color ? { ...rest, color } : rest
   })
 }
 
 /** Take a plant off the plot without deleting the holding (it returns to the flat list). */
 export async function unplace(holdingId: string): Promise<void> {
-  await db.transaction('rw', db.holdings, db.settings, async () => {
-    const h = await db.holdings.get(holdingId)
-    if (!h) return
+  await patchHolding(holdingId, (h) => {
     const { bedId: _b, region: _r, ...rest } = h
-    await db.holdings.put(rest)
-    await markUser()
+    return rest
   })
 }
 
