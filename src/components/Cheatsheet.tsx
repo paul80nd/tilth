@@ -27,6 +27,9 @@ import Chip from './Chip'
 
 const CURRENT_MONTH = new Date().getMonth() + 1
 
+/** Which field editor is open (one at a time). Keys drive the editor registry below. */
+type EditKey = 'calendar' | 'seasonal' | 'position' | 'conditions' | 'size' | 'edibility' | 'facts' | 'care'
+
 export interface PlantDetail {
   node?: PlantNode
   ancestors: PlantNode[]
@@ -55,14 +58,8 @@ export function usePlantDetail(id: string): PlantDetail | undefined {
  *  tile-grid of facets, and the sources footer. Chrome (back / edit / delete / close) lives with
  *  the caller (the page or the modal) so this stays purely presentational. */
 export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhood, onNavigate }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[]; tasks: TaskTemplate[]; neighbourhood?: Neighbourhood; onNavigate?: (id: string) => void }) {
-  const [editingCalendar, setEditingCalendar] = useState(false)
-  const [editingSeasonal, setEditingSeasonal] = useState(false)
-  const [editingPosition, setEditingPosition] = useState(false)
-  const [editingConditions, setEditingConditions] = useState(false)
-  const [editingSize, setEditingSize] = useState(false)
-  const [editingEdibility, setEditingEdibility] = useState(false)
-  const [editingFacts, setEditingFacts] = useState(false)
-  const [editingCare, setEditingCare] = useState(false)
+  const [editing, setEditing] = useState<EditKey | null>(null)
+  const closeEditor = () => setEditing(null)
   const { node: resolved, inheritedFrom } = resolveInherited(node, ancestors)
   const { plant, variety } = displayName(node)
   const botanical = botanicalLabel(resolved)
@@ -98,6 +95,19 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
   const sourceUrl = new Map<string, string>()
   for (const n of [node, ...ancestors]) {
     for (const l of n.sourceLinks ?? []) if (!sourceUrl.has(l.source)) sourceUrl.set(l.source, l.url)
+  }
+
+  // One editor open at a time: the active key maps to its modal, each fed the resolved value it
+  // edits. Only the selected element is rendered (the others aren't mounted).
+  const editors: Record<EditKey, React.ReactNode> = {
+    calendar: <CalendarEditor node={node} calendar={resolved.calendar} onClose={closeEditor} />,
+    seasonal: <SeasonalInterestEditor node={node} initial={resolved.seasonalInterest} onClose={closeEditor} />,
+    position: <PositionEditor node={node} position={resolved.position} onClose={closeEditor} />,
+    conditions: <ConditionsEditor node={node} conditions={resolved.conditions} onClose={closeEditor} />,
+    size: <SizeEditor node={node} size={resolved.size} onClose={closeEditor} />,
+    edibility: <EdibilityEditor node={node} edible={resolved.edible} toxicity={resolved.toxicity} onClose={closeEditor} />,
+    facts: <FactsEditor node={node} facts={resolved.facts} onClose={closeEditor} />,
+    care: <CareEditor node={node} ancestors={ancestors} tasks={tasks} onClose={closeEditor} />,
   }
 
   return (
@@ -142,15 +152,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
 
         <div className="lg:col-span-4">
           <Tile
-            action={
-              <button
-                type="button"
-                onClick={() => setEditingCalendar(true)}
-                className="text-xs font-medium text-brand-ink hover:underline"
-              >
-                Edit
-              </button>
-            }
+            action={<EditButton onClick={() => setEditing('calendar')} />}
             bleed={!!resolved.calendar}
           >
             {resolved.calendar ? (
@@ -168,15 +170,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           <Tile
             title="Seasonal interest"
             note={hasInterest ? inheritedNote('seasonalInterest') : undefined}
-            action={
-              <button
-                type="button"
-                onClick={() => setEditingSeasonal(true)}
-                className="text-xs font-medium text-brand-ink hover:underline"
-              >
-                Edit
-              </button>
-            }
+            action={<EditButton onClick={() => setEditing('seasonal')} />}
             fill
             bleed={hasInterest}
           >
@@ -192,15 +186,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           <Tile
             title="Position"
             note={inheritedNote('position')}
-            action={
-              <button
-                type="button"
-                onClick={() => setEditingPosition(true)}
-                className="text-xs font-medium text-brand-ink hover:underline"
-              >
-                Edit
-              </button>
-            }
+            action={<EditButton onClick={() => setEditing('position')} />}
             fill
             bleed
           >
@@ -212,15 +198,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           <Tile
             title="Conditions"
             note={inheritedNote('conditions')}
-            action={
-              <button
-                type="button"
-                onClick={() => setEditingConditions(true)}
-                className="text-xs font-medium text-brand-ink hover:underline"
-              >
-                Edit
-              </button>
-            }
+            action={<EditButton onClick={() => setEditing('conditions')} />}
             fill
             bleed
           >
@@ -232,15 +210,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           <Tile
             title="Size"
             note={inheritedNote('size')}
-            action={
-              <button
-                type="button"
-                onClick={() => setEditingSize(true)}
-                className="text-xs font-medium text-brand-ink hover:underline"
-              >
-                Edit
-              </button>
-            }
+            action={<EditButton onClick={() => setEditing('size')} />}
             fill
             bleed
           >
@@ -252,15 +222,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           <Tile
             title="Edibility"
             note={inheritedNote('edible') ?? inheritedNote('toxicity')}
-            action={
-              <button
-                type="button"
-                onClick={() => setEditingEdibility(true)}
-                className="text-xs font-medium text-brand-ink hover:underline"
-              >
-                Edit
-              </button>
-            }
+            action={<EditButton onClick={() => setEditing('edibility')} />}
             fill
           >
             <EdibilityFacts edible={resolved.edible} toxicity={resolved.toxicity} />
@@ -310,15 +272,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
           <Tile
             title="More facts"
             note={hasFacts ? inheritedNote('facts') : undefined}
-            action={
-              <button
-                type="button"
-                onClick={() => setEditingFacts(true)}
-                className="text-xs font-medium text-brand-ink hover:underline"
-              >
-                Edit
-              </button>
-            }
+            action={<EditButton onClick={() => setEditing('facts')} />}
             fill
           >
             {hasFacts ? (
@@ -347,15 +301,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
         <div className="sm:col-span-2 lg:col-span-3">
           <Tile
             title="Care"
-            action={
-              <button
-                type="button"
-                onClick={() => setEditingCare(true)}
-                className="text-xs font-medium text-brand-ink hover:underline"
-              >
-                Edit
-              </button>
-            }
+            action={<EditButton onClick={() => setEditing('care')} />}
             fill
           >
             {careTasks.length > 0 ? (
@@ -428,58 +374,7 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
         </footer>
       )}
 
-      {editingCalendar && (
-        <CalendarEditor
-          node={node}
-          calendar={resolved.calendar}
-          onClose={() => setEditingCalendar(false)}
-        />
-      )}
-
-      {editingSeasonal && (
-        <SeasonalInterestEditor
-          node={node}
-          initial={resolved.seasonalInterest}
-          onClose={() => setEditingSeasonal(false)}
-        />
-      )}
-
-      {editingPosition && (
-        <PositionEditor
-          node={node}
-          position={resolved.position}
-          onClose={() => setEditingPosition(false)}
-        />
-      )}
-
-      {editingConditions && (
-        <ConditionsEditor
-          node={node}
-          conditions={resolved.conditions}
-          onClose={() => setEditingConditions(false)}
-        />
-      )}
-
-      {editingSize && (
-        <SizeEditor node={node} size={resolved.size} onClose={() => setEditingSize(false)} />
-      )}
-
-      {editingEdibility && (
-        <EdibilityEditor
-          node={node}
-          edible={resolved.edible}
-          toxicity={resolved.toxicity}
-          onClose={() => setEditingEdibility(false)}
-        />
-      )}
-
-      {editingFacts && (
-        <FactsEditor node={node} facts={resolved.facts} onClose={() => setEditingFacts(false)} />
-      )}
-
-      {editingCare && (
-        <CareEditor node={node} ancestors={ancestors} tasks={tasks} onClose={() => setEditingCare(false)} />
-      )}
+      {editing && editors[editing]}
     </>
   )
 }
@@ -520,4 +415,13 @@ function Tile({
 
 function Muted({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted">{children}</p>
+}
+
+/** The small "Edit" link shown in a tile's header (opens that field's editor). */
+function EditButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="text-xs font-medium text-brand-ink hover:underline">
+      Edit
+    </button>
+  )
 }
