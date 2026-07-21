@@ -4,6 +4,8 @@
 // in this", a muted region = "not this / unknown"). Matchers lowercase + keyword-match so messy
 // import strings ("Moist but well-drained", "Loam / Clay", "Chalky") still resolve. Pure — no I/O.
 
+import { capitalize } from './text'
+
 export const SOIL_TYPES = ['chalk', 'clay', 'loam', 'sand'] as const
 export type SoilType = (typeof SOIL_TYPES)[number]
 
@@ -137,6 +139,5 @@ export function hardiness(rating?: string): { label: string; rank: number } | un
 
 /** Human label for a condition token: "well-drained" → "Well drained". */
 export function conditionLabel(token: string): string {
-  const s = token.replace(/-/g, ' ')
-  return s.charAt(0).toUpperCase() + s.slice(1)
+  return capitalize(token.replace(/-/g, ' '))
 }

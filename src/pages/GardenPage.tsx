@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { cx } from '../lib/cx'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Bed, Holding, PlacementShape, Rect } from '../schema/userData'
 import type { PlantNode } from '../schema/plant'
@@ -153,10 +154,10 @@ export default function GardenPage() {
             onClick={() => setBedsLocked((v) => !v)}
             aria-pressed={bedsLocked}
             title={bedsLocked ? 'Beds are locked — click to unlock' : 'Lock beds so they can’t be moved or resized'}
-            className={[
+            className={cx(
               'rounded-md px-3 py-1.5 text-sm font-medium',
               bedsLocked ? 'bg-brand text-onbrand' : 'border border-line text-muted hover:border-line-strong hover:text-ink',
-            ].join(' ')}
+            )}
           >
             {bedsLocked ? '🔒' : '🔓'} Lock beds
           </button>

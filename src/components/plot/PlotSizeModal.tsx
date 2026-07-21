@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { cx } from '../../lib/cx'
 import { createPortal } from 'react-dom'
 import type { PlotAnchor } from '../../lib/plot'
 import { Field, SizeInput } from './fields'
@@ -19,7 +20,7 @@ function AnchorPicker({ value, onChange }: { value: PlotAnchor; onChange: (a: Pl
           onClick={() => onChange(a)}
           aria-label={`Fix ${a} corner`}
           aria-pressed={value === a}
-          className={['h-9 rounded-sm text-xs font-semibold', value === a ? 'bg-brand text-onbrand' : 'bg-sunken text-muted hover:text-ink'].join(' ')}
+          className={cx('h-9 rounded-sm text-xs font-semibold', value === a ? 'bg-brand text-onbrand' : 'bg-sunken text-muted hover:text-ink')}
         >
           {a}
         </button>

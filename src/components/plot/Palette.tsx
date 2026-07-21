@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { cx } from '../../lib/cx'
 import type { PlantNode } from '../../schema/plant'
 import type { PlacementShape } from '../../schema/userData'
 import { displayLabel, matchesQuery } from '../../lib/naming'
@@ -49,7 +50,7 @@ export default function Palette({ plants, heldNodeIds, brushNodeId, brushShape, 
                 onClick={() => onShapeChange(m.shape)}
                 aria-pressed={on}
                 title={m.hint}
-                className={['flex flex-1 items-center justify-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium', on ? 'bg-brand text-onbrand' : 'bg-sunken text-muted hover:text-ink'].join(' ')}
+                className={cx('flex flex-1 items-center justify-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium', on ? 'bg-brand text-onbrand' : 'bg-sunken text-muted hover:text-ink')}
               >
                 <span aria-hidden>{m.glyph}</span>
                 {m.label}
@@ -76,10 +77,10 @@ export default function Palette({ plants, heldNodeIds, brushNodeId, brushShape, 
               <button
                 type="button"
                 onClick={() => onArm(armed ? null : p.id)}
-                className={[
+                className={cx(
                   'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
                   armed ? 'bg-brand text-onbrand' : 'text-ink hover:bg-sunken',
-                ].join(' ')}
+                )}
               >
                 <span className="truncate">{displayLabel(p)}</span>
                 {heldNodeIds.has(p.id) && !armed && (

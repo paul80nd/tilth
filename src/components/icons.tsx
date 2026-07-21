@@ -2,6 +2,7 @@
 // pictograms (currentColor stroke) — nothing copied from any source. Keyed by a name so the
 // facts panel can look one up per field.
 import type { SVGProps } from 'react'
+import type { InterestPart } from '../schema/plant'
 
 export type IconName =
   | 'sun'
@@ -104,12 +105,11 @@ export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGEle
 //   flower  — Tabler Icons (Paweł Kuna), MIT
 //   fruit   — MingCute (MingCute Design), Apache-2.0
 //   stem    — drawn by hand for Tilth (a bundle of coloured canes; no good permissive SVG found)
-type SeasonalPart = 'foliage' | 'flower' | 'fruit' | 'stem'
 
 // `scale` visually balances the three: their source artworks fill their viewBoxes by different
 // amounts, so at one nominal size the flower/fruit read larger than the leaf. These factors bring
 // all three to the same apparent size (leaf is the reference at 1).
-const SEASONAL: Record<SeasonalPart, { viewBox: string; scale: number; body: React.ReactNode }> = {
+const SEASONAL: Record<InterestPart, { viewBox: string; scale: number; body: React.ReactNode }> = {
   foliage: {
     viewBox: '0 0 24 24',
     scale: 1,
@@ -162,7 +162,7 @@ export function SeasonalIcon({
   part,
   size = 36,
   ...props
-}: { part: SeasonalPart; size?: number } & SVGProps<SVGSVGElement>) {
+}: { part: InterestPart; size?: number } & SVGProps<SVGSVGElement>) {
   const g = SEASONAL[part]
   const px = Math.round(size * g.scale)
   return (

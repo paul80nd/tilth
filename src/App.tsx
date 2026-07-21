@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
+import { cx } from './lib/cx'
 import ThemeToggle from './components/ThemeToggle'
 import BrowsePage from './pages/BrowsePage'
 import CheatsheetPage from './pages/CheatsheetPage'
@@ -17,10 +18,10 @@ function Tab({ to, children }: { to: string; children: React.ReactNode }) {
       to={to}
       end
       className={({ isActive }) =>
-        [
+        cx(
           'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
           isActive ? 'bg-brand-tint text-brand-ink' : 'text-muted hover:bg-sunken hover:text-ink',
-        ].join(' ')
+        )
       }
     >
       {children}

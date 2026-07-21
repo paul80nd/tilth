@@ -1,6 +1,7 @@
 import type { Bed, Holding, PlacementShape, Rect } from '../../schema/userData'
 import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
+import { DEFAULT_CATEGORY_COLOR } from '../../lib/plantColor'
 import { plantsInRegion } from '../../lib/spacing'
 import { Field, SizeInput, inputCls } from './fields'
 
@@ -46,7 +47,7 @@ const PLACEMENT_TYPES: { shape: PlacementShape; label: string }[] = [
   { shape: 'rect', label: 'Single' },
 ]
 
-export default function Inspector({ bed, placement, node, bedPlantings = [], snapStep, placementDefaultColor = '#94a3b8', onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
+export default function Inspector({ bed, placement, node, bedPlantings = [], snapStep, placementDefaultColor = DEFAULT_CATEGORY_COLOR, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
   if (bed) {
     return (
       <div className="flex flex-col gap-3 p-3">

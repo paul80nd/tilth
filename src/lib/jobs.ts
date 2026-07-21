@@ -10,6 +10,7 @@
 // Pure: no Dexie, no I/O. The app seam (src/app/jobs.ts) fetches the tables and calls in.
 
 import type { Category, PlantNode, TaskTemplate } from '../schema/plant'
+import { capitalize } from './text'
 import type { Holding } from '../schema/userData'
 import { MONTH_NAMES } from './calendar'
 
@@ -94,7 +95,7 @@ function nodeLabel(node: PlantNode | undefined, fallback: string): string {
 }
 
 function categoryLabel(category: Category): string {
-  return category.charAt(0).toUpperCase() + category.slice(1)
+  return capitalize(category)
 }
 
 /** The id set from a node up through its ancestors (guards a broken parent cycle). */

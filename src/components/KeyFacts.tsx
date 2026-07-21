@@ -1,4 +1,5 @@
 import { Icon, type IconName } from './icons'
+import { capitalize } from '../lib/text'
 
 // The cheatsheet's key facts, grouped into small cards — Position, Size, Conditions (a row beneath
 // the calendar) and Edibility (in the masonry). Each is an icon-led list of the same shape
@@ -9,8 +10,7 @@ import { Icon, type IconName } from './icons'
 
 /** "full-sun" → "Full sun". */
 function pretty(v: string): string {
-  const s = v.replace(/-/g, ' ')
-  return s.charAt(0).toUpperCase() + s.slice(1)
+  return capitalize(v.replace(/-/g, ' '))
 }
 
 function list(values?: string[]): string | undefined {

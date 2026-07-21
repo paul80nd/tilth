@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { cx } from '../lib/cx'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { listDoneKeys, listJobs, toggleJobDone } from '../app/jobs'
 import { groupJobsByPlant, jobDoneKey, type Job, type PlantJobs } from '../lib/jobs'
@@ -207,10 +208,10 @@ function PlantRow({
                     onClick={() => onToggle(plant.subjectId, a.action)}
                     aria-pressed={done}
                     title={a.note}
-                    className={[
+                    className={cx(
                       'cursor-pointer text-left',
                       done ? 'text-subtle line-through' : 'hover:text-ink',
-                    ].join(' ')}
+                    )}
                   >
                     {a.action}
                   </button>

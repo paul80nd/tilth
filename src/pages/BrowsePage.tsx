@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { cx } from '../lib/cx'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { Category, PhaseSpan, PlantNode } from '../schema/plant'
@@ -126,10 +127,10 @@ function CategoryButton({
     <button
       type="button"
       onClick={onClick}
-      className={[
+      className={cx(
         'rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors',
         active ? 'bg-brand text-onbrand' : 'bg-sunken text-muted hover:text-ink',
-      ].join(' ')}
+      )}
     >
       {children}
     </button>
