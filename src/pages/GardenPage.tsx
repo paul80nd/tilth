@@ -182,14 +182,14 @@ export default function GardenPage() {
       {/* canvas + toolbar */}
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex flex-none items-center gap-3 border-b border-line bg-card px-4 py-2.5">
-          <h1 className="font-display text-h2 font-semibold">My garden</h1>
-          <span className="text-xs text-muted">
+          <h1 className="shrink-0 whitespace-nowrap font-display text-h2 font-semibold">My garden</h1>
+          <span className="shrink-0 text-xs text-muted">
             {beds.length} {beds.length === 1 ? 'bed' : 'beds'} · {placements.length} plantings ·{' '}
             {plot.width.toFixed(1)}×{plot.height.toFixed(1)} m
           </span>
 
           {/* plan-year stepper — which year of the plot to show + stamp new plantings with */}
-          <div className="flex items-center overflow-hidden rounded-md border border-line text-sm">
+          <div className="flex shrink-0 items-center overflow-hidden rounded-md border border-line text-sm">
             <button
               type="button"
               onClick={() => setPlanYear((y) => y - 1)}
@@ -216,7 +216,7 @@ export default function GardenPage() {
             <button
               type="button"
               onClick={() => void rollOverYear(rollOverFrom, planYear, CURRENT_YEAR)}
-              className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
+              className="shrink-0 rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
               title={`Copy the ${rollOverFrom} plot into ${planYear} as a starting point`}
             >
               Copy {rollOverFrom} → {planYear}
@@ -225,40 +225,46 @@ export default function GardenPage() {
 
           {warnBeds.size > 0 && (
             <span
-              className="rounded-md bg-warn-soft px-2 py-1 text-xs font-semibold text-warn-ink"
-              title="Beds where a crop family repeats too soon — select a bed to see why"
+              className="shrink-0 rounded-md bg-warn-soft px-2 py-1 text-xs font-semibold text-warn-ink"
+              title={`${warnBeds.size} rotation ${warnBeds.size === 1 ? 'warning' : 'warnings'} — beds where a crop family repeats too soon; select a bed to see why`}
             >
-              ⚠ {warnBeds.size} rotation {warnBeds.size === 1 ? 'warning' : 'warnings'}
+              ⚠ {warnBeds.size}
             </span>
           )}
 
-          <label className="ml-auto flex cursor-pointer select-none items-center gap-1.5 text-xs text-muted">
-            <input type="checkbox" checked={snap} onChange={(e) => setSnap(e.target.checked)} className="accent-brand" />
-            Snap to grid
-          </label>
-          <button
-            type="button"
-            onClick={() => setBedsLocked((v) => !v)}
-            aria-pressed={bedsLocked}
-            title={bedsLocked ? 'Beds are locked — click to unlock' : 'Lock beds so they can’t be moved or resized'}
-            className={cx(
-              'rounded-md px-3 py-1.5 text-sm font-medium',
-              bedsLocked ? 'bg-brand text-onbrand' : 'border border-line text-muted hover:border-line-strong hover:text-ink',
-            )}
-          >
-            {bedsLocked ? '🔒' : '🔓'} Lock beds
-          </button>
+          {/* view toggles — snap + lock, one compact segmented control (a neutral "on" so they
+              don't compete with the green primary action) */}
+          <div className="ml-auto flex shrink-0 items-center overflow-hidden rounded-md border border-line">
+            <button
+              type="button"
+              onClick={() => setSnap((v) => !v)}
+              aria-pressed={snap}
+              title={snap ? 'Snap to grid: on' : 'Snap to grid: off'}
+              className={cx('px-2.5 py-1.5 text-sm', snap ? 'bg-inset text-ink' : 'text-muted hover:bg-sunken hover:text-ink')}
+            >
+              ▦
+            </button>
+            <button
+              type="button"
+              onClick={() => setBedsLocked((v) => !v)}
+              aria-pressed={bedsLocked}
+              title={bedsLocked ? 'Beds are locked — click to unlock' : 'Lock beds so they can’t be moved or resized'}
+              className={cx('border-l border-line px-2.5 py-1.5 text-sm', bedsLocked ? 'bg-inset text-ink' : 'text-muted hover:bg-sunken hover:text-ink')}
+            >
+              {bedsLocked ? '🔒' : '🔓'}
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setPlotModalOpen(true)}
-            className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
+            className="shrink-0 rounded-md px-2 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
           >
             Plot size…
           </button>
           <button
             type="button"
             onClick={handleAddBed}
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90"
+            className="shrink-0 rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90"
           >
             + Add bed
           </button>
