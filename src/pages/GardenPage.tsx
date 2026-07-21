@@ -132,12 +132,16 @@ export default function GardenPage() {
       })
   }, [selectedBed, placements, nodesById])
 
-  // Shopping list — plant totals across the plot (grouped by node).
+  // Shopping list — plant totals across the plot (grouped by node), sorted alphabetically by name.
   const shopping = useMemo(() => {
     const totals = new Map<string, number>()
     for (const h of placements) totals.set(h.nodeId, (totals.get(h.nodeId) ?? 0) + (h.quantity ?? 0))
-    return [...totals].sort((a, b) => b[1] - a[1])
-  }, [placements])
+    const nameOf = (nodeId: string) => {
+      const node = nodesById.get(nodeId)
+      return node ? displayLabel(node) : nodeId
+    }
+    return [...totals].sort((a, b) => nameOf(a[0]).localeCompare(nameOf(b[0])))
+  }, [placements, nodesById])
 
   async function handleAddBed() {
     // Drop a fresh 2×1 m bed centred on the current view (falls back to the plot centre before the
