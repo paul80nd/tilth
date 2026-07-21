@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../db/db'
 import { buildForest, flattenVisible, allIds, resolveAll, linkedAncestor, withUnplacedBucket, isBannerRow, flatPlants } from '../lib/tree'
 import type { TreeNode } from '../lib/tree'
 import { seasonalInterest } from '../lib/calendar'
@@ -14,6 +13,7 @@ import { CheatsheetModal } from '../components/CheatsheetModal'
 import { FilterPopover } from '../components/FilterPopover'
 import { bannerParts, genusGloss, type CommonNameOverrides } from '../lib/taxonNames'
 import { getCommonNameOverrides } from '../app/taxonNames'
+import { listNodes } from '../app/plants'
 import { nodeTags } from '../lib/tags'
 import { usePersistentState } from '../hooks/usePersistentState'
 import type { PlantNode } from '../schema/plant'
@@ -159,7 +159,7 @@ function TagList({ node, inheritedFrom }: { node: PlantNode; inheritedFrom: Part
 }
 
 export default function TaxonomyPage() {
-  const nodes = useLiveQuery(() => db.nodes.toArray(), [])
+  const nodes = useLiveQuery(listNodes, [])
   // The gardener's common-name overrides overlay the committed defaults for the banner labels +
   // the family gloss (edited on the Data page). Empty object until any are saved.
   const nameOverrides = useLiveQuery(getCommonNameOverrides, []) ?? {}

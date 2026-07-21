@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import App from './App'
 import { seedDemoIfEmpty } from './db/seed'
-import { initTheme } from './lib/theme'
+import { initTheme } from './app/theme'
 import './index.css'
 
 // Apply the saved / system colour theme before first paint (avoids a flash).

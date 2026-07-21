@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { currentTheme, toggleTheme } from '../lib/theme'
+import { currentTheme, toggleTheme } from '../app/theme'
 
 /** Small light/dark switch. Purely presentational state — the source of truth is the
  *  `.dark` class on <html>, driven by lib/theme. */
