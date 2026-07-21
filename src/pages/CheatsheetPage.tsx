@@ -2,23 +2,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { childrenOf, deleteNode } from '../app/editNode'
 import { displayLabel } from '../lib/naming'
 import { usePlantDetail, CheatsheetContent } from '../components/Cheatsheet'
+import { Loading, NotFound } from '../components/Placeholders'
 
 export default function CheatsheetPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const data = usePlantDetail(id)
 
-  if (!data) return <p className="text-sm text-muted">Loading…</p>
-  if (!data.node) {
-    return (
-      <div className="rounded-lg border border-dashed border-line-strong bg-card p-8 text-center">
-        <p className="text-sm text-muted">No plant found for "{id}".</p>
-        <Link to="/" className="mt-2 inline-block text-sm font-medium text-brand-ink hover:underline">
-          ← Back to Browse
-        </Link>
-      </div>
-    )
-  }
+  if (!data) return <Loading />
+  if (!data.node) return <NotFound id={id} />
 
   const { node, ancestors, guides, tasks, neighbourhood } = data
 

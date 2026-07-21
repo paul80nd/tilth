@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { Loading } from './Placeholders'
 import { usePlantDetail, CheatsheetContent } from './Cheatsheet'
 
 // A pop-up showing a plant's cheatsheet in the full detail layout (via CheatsheetContent), opened
@@ -55,7 +56,7 @@ export function CheatsheetModal({ id, onClose }: { id: string; onClose: () => vo
           </button>
         </div>
         {!data ? (
-          <p className="text-sm text-muted">Loading…</p>
+          <Loading />
         ) : !data.node ? (
           <p className="text-sm text-muted">No plant found.</p>
         ) : (

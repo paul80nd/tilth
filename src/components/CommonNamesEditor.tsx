@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getCommonNameOverrides, listTaxa, saveCommonName, type TaxonRef } from '../app/taxonNames'
+import { Loading } from './Placeholders'
 import { familyCommon, genusCommon, pluralize, type CommonNameOverrides } from '../lib/taxonNames'
 
 // Editor for the plain-language names of the botanical families/genera in the collection. These
@@ -100,7 +101,7 @@ export default function CommonNamesEditor() {
         for the gloss; blank derives it (melon → melons).
       </p>
       {!taxa ? (
-        <p className="mt-3 text-sm text-muted">Loading…</p>
+        <Loading className="mt-3" />
       ) : !taxa.length ? (
         <p className="mt-3 text-sm text-muted">No families or genera in your collection yet.</p>
       ) : (

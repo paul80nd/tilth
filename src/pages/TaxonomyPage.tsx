@@ -14,6 +14,7 @@ import { FilterPopover } from '../components/FilterPopover'
 import { bannerParts, genusGloss, type CommonNameOverrides } from '../lib/taxonNames'
 import { getCommonNameOverrides } from '../app/taxonNames'
 import { listNodes } from '../app/plants'
+import { Loading } from '../components/Placeholders'
 import { nodeTags } from '../lib/tags'
 import { usePersistentState } from '../hooks/usePersistentState'
 import type { PlantNode } from '../schema/plant'
@@ -204,7 +205,7 @@ export default function TaxonomyPage() {
     })
   }
 
-  if (!nodes) return <div className="p-6 text-sm text-muted">Loading…</div>
+  if (!nodes) return <Loading className="p-6" />
 
   // The frozen columns for this mode, and their cumulative left offsets.
   const frozenCols: Array<keyof typeof COLW> = mode === 'flat' ? ['plant', 'famgen', 'src'] : ['plant', 'src']

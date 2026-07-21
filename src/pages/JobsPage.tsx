@@ -6,6 +6,7 @@ import { groupJobsByPlant, jobDoneKey, type Job, type PlantJobs } from '../lib/j
 import { MONTH_NAMES } from '../lib/calendar'
 import { CATEGORY_COLOR, DEFAULT_CATEGORY_COLOR } from '../lib/plantColor'
 import { CheatsheetModal } from '../components/CheatsheetModal'
+import { Loading } from '../components/Placeholders'
 
 const NOW = new Date()
 const CURRENT_MONTH = NOW.getMonth() + 1
@@ -23,7 +24,7 @@ export default function JobsPage() {
   const doneKeys = useLiveQuery(() => listDoneKeys(PERIOD), [])
   const [openId, setOpenId] = useState<string | null>(null)
 
-  if (!calendar) return <p className="text-sm text-muted">Loading…</p>
+  if (!calendar) return <Loading />
 
   const thisMonth = calendar.months[CURRENT_MONTH - 1]
   const otherMonths = calendar.months.filter((m) => m.month !== CURRENT_MONTH)

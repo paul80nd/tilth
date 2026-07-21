@@ -7,6 +7,7 @@ import { createNode, updateNode } from '../app/editNode'
 import { suggestId, hasIdentity } from '../lib/editNode'
 import { displayLabel } from '../lib/naming'
 import { EMPTY_FORM, fromNode, toPatch, toCreateFragment, type FormState } from '../lib/plantForm'
+import { Loading, NotFound } from '../components/Placeholders'
 
 const RANKS: Rank[] = ['family', 'genus', 'species', 'cultivar', 'group']
 const CATEGORIES: Category[] = ['flower', 'fruit', 'herb', 'tree', 'veg']
@@ -29,18 +30,9 @@ export default function PlantFormPage() {
   const [saving, setSaving] = useState(false)
   const state = form ?? (existing ? fromNode(existing) : null)
 
-  if (nodes === undefined) return <p className="text-sm text-muted">Loading…</p>
-  if (isEdit && !existing) {
-    return (
-      <div className="rounded-lg border border-dashed border-line-strong bg-card p-8 text-center">
-        <p className="text-sm text-muted">No plant found for "{id}".</p>
-        <Link to="/" className="mt-2 inline-block text-sm font-medium text-brand-ink hover:underline">
-          ← Back to Browse
-        </Link>
-      </div>
-    )
-  }
-  if (!state) return <p className="text-sm text-muted">Loading…</p>
+  if (nodes === undefined) return <Loading />
+  if (isEdit && !existing) return <NotFound id={id} />
+  if (!state) return <Loading />
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm({ ...state, [key]: value })
