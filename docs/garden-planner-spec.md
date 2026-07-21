@@ -142,6 +142,20 @@ the reference target; pointer events are the reliable cross-browser path).
 Components under `src/components/plot/`. Placeholder domain palette (literal hexes behind theme
 tokens where they exist), brand pass later — same rule as the cheatsheet.
 
+#### Responsive / mobile (2026-07-21)
+
+The planner is a three-column desktop layout (palette · canvas · inspector/shopping) that doesn't
+fit a phone. Below Tailwind's `md` (< 768 px, via the `useIsNarrow` matchMedia hook) it reflows to a
+**full-bleed canvas with the two sidebars as overlays**: the palette a left slide-in **drawer**
+(`MobileDrawer`, opened from a "🌱 Plants" toolbar button; arming a plant closes it and drops the
+sheet so the canvas is clear to draw), and the inspector + shopping a **bottom sheet**
+(`BottomSheet`) that rises when you select a bed/planting and, with nothing selected, peeks with the
+bed list + shopping (the in-garden "consulting" view). The toolbar condenses — title/stats hide, the
+Add-bed button goes icon-only, Plot size moves into the sheet — and overflows to a horizontal scroll
+if still too wide. Existing single-finger pointer ops (tap/drag to pan, place, move) already work on
+touch. **Deferred fast-follow:** pinch-to-zoom (the canvas pointer state machine tracks one pointer;
+zoom is buttons only) and touch-draw ergonomics.
+
 ### Phase 2 — the plan-driven calendar + rotation
 
 - **Jobs engine** (`src/lib/jobs.ts`) — for every placed holding, walk its taxonomy, collect

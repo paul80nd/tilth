@@ -32,6 +32,9 @@ import PlotCanvas, { type Selection, type PlotCanvasHandle } from '../components
 import Palette from '../components/plot/Palette'
 import Inspector from '../components/plot/Inspector'
 import { PlotSizeModal } from '../components/plot/PlotSizeModal'
+import BottomSheet from '../components/plot/BottomSheet'
+import MobileDrawer from '../components/plot/MobileDrawer'
+import { useIsNarrow } from '../components/useIsNarrow'
 
 // "My garden" — the visual garden planner. A plot of beds you draw plants onto at their spacing;
 // each placement is a holding (see docs/decisions.md), so what you lay out here IS what you grow.
@@ -69,12 +72,22 @@ export default function GardenPage() {
   const [plotModalOpen, setPlotModalOpen] = useState(false)
   const [planYear, setPlanYear] = useState(readPlanYear)
 
+  // Mobile layout: the two sidebars become overlays over a full-bleed canvas — the palette a
+  // slide-in drawer, the inspector/shopping a bottom sheet that rises when something is selected.
+  const narrow = useIsNarrow()
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [sheetExpanded, setSheetExpanded] = useState(false)
+
   useEffect(() => {
     localStorage.setItem(LOCK_KEY, bedsLocked ? '1' : '0')
   }, [bedsLocked])
   useEffect(() => {
     localStorage.setItem(YEAR_KEY, String(planYear))
   }, [planYear])
+  // Selecting a bed/planting on the plot raises the sheet to show its editor.
+  useEffect(() => {
+    if (narrow && selection) setSheetExpanded(true)
+  }, [selection, narrow])
   const canvasRef = useRef<PlotCanvasHandle>(null)
 
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
@@ -176,21 +189,94 @@ export default function GardenPage() {
     }
   }
 
+  const selectedNode = selectedPlacement ? nodesById.get(selectedPlacement.nodeId) : undefined
+  // The mobile sheet's header reflects what it's showing.
+  const sheetTitle = selectedBed
+    ? selectedBed.name
+    : selectedPlacement
+      ? selectedNode
+        ? displayLabel(selectedNode)
+        : 'Planting'
+      : 'Beds & shopping'
+
+  // Arming a plant from the palette: on mobile, close the drawer and drop the sheet so the canvas
+  // is clear to draw on.
+  const armBrush = (id: string | null) => {
+    setBrushNodeId(id)
+    if (narrow && id) {
+      setPaletteOpen(false)
+      setSheetExpanded(false)
+    }
+  }
+
+  // The two sidebar contents, shared by the desktop columns and the mobile overlays.
+  const paletteEl = (
+    <Palette plants={plants} heldNodeIds={heldNodeIds} brushNodeId={brushNodeId} brushShape={brushShape} onArm={armBrush} onShapeChange={setBrushShape} />
+  )
+  const inspectorEl = (
+    <Inspector
+      bed={selectedBed}
+      placement={selectedPlacement}
+      node={selectedNode}
+      bedPlantings={bedPlantings}
+      beds={beds}
+      warnBedIds={warnBeds}
+      onSelectBed={(id) => setSelection({ type: 'bed', id })}
+      rotation={selectedBed ? rotationByBed.get(selectedBed.id) : undefined}
+      snapStep={snapStep}
+      placementDefaultColor={selectedPlacement ? categoryColor(nodesById.get(selectedPlacement.nodeId)) : undefined}
+      onSelectPlanting={(id) => setSelection({ type: 'placement', id })}
+      onBedChange={handleBedChange}
+      onRemoveBed={() => {
+        if (selectedBed) {
+          void removeBed(selectedBed.id)
+          setSelection(null)
+        }
+      }}
+      onQuantityChange={(qty) => selectedPlacement && void setQuantity(selectedPlacement.id, qty)}
+      onPlacementShapeChange={(shape) => selectedPlacement && void setPlacementShape(selectedPlacement.id, shape)}
+      onPlacementColorChange={(color) => selectedPlacement && void setPlacementColor(selectedPlacement.id, color)}
+      onPlacementResize={(region) => {
+        if (!selectedPlacement) return
+        const bed = beds.find((b) => b.id === selectedPlacement.bedId)
+        const clamped = bed ? clampRect(region, bed.width, bed.height) : region
+        void movePlacement(selectedPlacement.id, clamped)
+      }}
+      onUnplace={() => {
+        if (selectedPlacement) {
+          void unplace(selectedPlacement.id)
+          setSelection(null)
+        }
+      }}
+    />
+  )
+  const shoppingEl = <ShoppingList items={shopping} nodesById={nodesById} />
+
   return (
-    <div className="flex h-full min-h-0">
-      {/* palette */}
-      <aside className="w-56 flex-none border-r border-line bg-card">
-        <Palette plants={plants} heldNodeIds={heldNodeIds} brushNodeId={brushNodeId} brushShape={brushShape} onArm={setBrushNodeId} onShapeChange={setBrushShape} />
-      </aside>
+    <div className="relative flex h-full min-h-0">
+      {/* palette — a fixed left column on desktop; a slide-in drawer on mobile (below) */}
+      {!narrow && <aside className="w-56 flex-none border-r border-line bg-card">{paletteEl}</aside>}
 
       {/* canvas + toolbar */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex flex-none items-center gap-3 border-b border-line bg-card px-4 py-2.5">
-          <h1 className="shrink-0 whitespace-nowrap font-display text-h2 font-semibold">My garden</h1>
-          <span className="shrink-0 text-xs text-muted">
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        <div className="flex flex-none items-center gap-2 overflow-x-auto border-b border-line bg-card px-3 py-2.5 md:gap-3 md:px-4">
+          {/* title + stats — desktop only (the app tab already names the page on mobile) */}
+          <h1 className="hidden shrink-0 whitespace-nowrap font-display text-h2 font-semibold md:block">My garden</h1>
+          <span className="hidden shrink-0 text-xs text-muted lg:inline">
             {beds.length} {beds.length === 1 ? 'bed' : 'beds'} · {placements.length} plantings ·{' '}
             {plot.width.toFixed(1)}×{plot.height.toFixed(1)} m
           </span>
+
+          {/* Plants — mobile only: opens the palette drawer */}
+          {narrow && (
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              className="shrink-0 rounded-md border border-line px-2.5 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
+            >
+              🌱 Plants
+            </button>
+          )}
 
           {/* plan-year stepper — which year of the plot to show + stamp new plantings with */}
           <div className="flex shrink-0 items-center overflow-hidden rounded-md border border-line text-sm">
@@ -258,19 +344,22 @@ export default function GardenPage() {
               {bedsLocked ? '🔒' : '🔓'}
             </button>
           </div>
+          {/* Plot size — desktop toolbar; on mobile it lives in the sheet's browse view */}
           <button
             type="button"
             onClick={() => setPlotModalOpen(true)}
-            className="shrink-0 rounded-md px-2 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink"
+            className="hidden shrink-0 rounded-md px-2 py-1.5 text-sm font-medium text-muted hover:bg-sunken hover:text-ink md:block"
           >
             Plot size…
           </button>
           <button
             type="button"
             onClick={handleAddBed}
+            aria-label="Add bed"
             className="shrink-0 rounded-md bg-brand px-3 py-1.5 text-sm font-semibold text-onbrand hover:opacity-90"
           >
-            + Add bed
+            <span className="sm:hidden" aria-hidden>＋</span>
+            <span className="hidden sm:inline" aria-hidden>+ Add bed</span>
           </button>
         </div>
 
@@ -298,64 +387,39 @@ export default function GardenPage() {
             />
           </div>
         )}
+
+        {/* mobile overlays — palette drawer + inspector/shopping bottom sheet, over the canvas */}
+        {narrow && (
+          <>
+            <MobileDrawer open={paletteOpen} onClose={() => setPaletteOpen(false)} label="Plants">
+              {paletteEl}
+            </MobileDrawer>
+            {beds.length > 0 && (
+              <BottomSheet title={sheetTitle} expanded={sheetExpanded} onToggle={() => setSheetExpanded((v) => !v)}>
+                {inspectorEl}
+                {shoppingEl}
+                <div className="border-t border-line p-3">
+                  <button
+                    type="button"
+                    onClick={() => setPlotModalOpen(true)}
+                    className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
+                  >
+                    Plot size…
+                  </button>
+                </div>
+              </BottomSheet>
+            )}
+          </>
+        )}
       </div>
 
-      {/* inspector + shopping list */}
-      <aside className="flex w-64 flex-none flex-col border-l border-line bg-card">
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <Inspector
-            bed={selectedBed}
-            placement={selectedPlacement}
-            node={selectedPlacement ? nodesById.get(selectedPlacement.nodeId) : undefined}
-            bedPlantings={bedPlantings}
-            beds={beds}
-            warnBedIds={warnBeds}
-            onSelectBed={(id) => setSelection({ type: 'bed', id })}
-            rotation={selectedBed ? rotationByBed.get(selectedBed.id) : undefined}
-            snapStep={snapStep}
-            placementDefaultColor={selectedPlacement ? categoryColor(nodesById.get(selectedPlacement.nodeId)) : undefined}
-            onSelectPlanting={(id) => setSelection({ type: 'placement', id })}
-            onBedChange={handleBedChange}
-            onRemoveBed={() => {
-              if (selectedBed) {
-                void removeBed(selectedBed.id)
-                setSelection(null)
-              }
-            }}
-            onQuantityChange={(qty) => selectedPlacement && void setQuantity(selectedPlacement.id, qty)}
-            onPlacementShapeChange={(shape) => selectedPlacement && void setPlacementShape(selectedPlacement.id, shape)}
-            onPlacementColorChange={(color) => selectedPlacement && void setPlacementColor(selectedPlacement.id, color)}
-            onPlacementResize={(region) => {
-              if (!selectedPlacement) return
-              const bed = beds.find((b) => b.id === selectedPlacement.bedId)
-              const clamped = bed ? clampRect(region, bed.width, bed.height) : region
-              void movePlacement(selectedPlacement.id, clamped)
-            }}
-            onUnplace={() => {
-              if (selectedPlacement) {
-                void unplace(selectedPlacement.id)
-                setSelection(null)
-              }
-            }}
-          />
-        </div>
-        {shopping.length > 0 && (
-          <div className="flex max-h-[33%] flex-none flex-col border-t border-line p-3">
-            <h2 className="flex-none text-sm font-semibold text-ink">Shopping list</h2>
-            <ul className="mt-2 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-              {shopping.map(([nodeId, qty]) => {
-                const node = nodesById.get(nodeId)
-                return (
-                  <li key={nodeId} className="flex items-baseline justify-between gap-2 text-sm">
-                    <span className="truncate text-ink">{node ? displayLabel(node) : nodeId}</span>
-                    <span className="shrink-0 tabular-nums font-medium text-muted">{qty}</span>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )}
-      </aside>
+      {/* inspector + shopping list — a fixed right column on desktop; the bottom sheet on mobile */}
+      {!narrow && (
+        <aside className="flex w-64 flex-none flex-col border-l border-line bg-card">
+          <div className="min-h-0 flex-1 overflow-y-auto">{inspectorEl}</div>
+          {shopping.length > 0 && <div className="max-h-[33%] flex-none overflow-y-auto">{shoppingEl}</div>}
+        </aside>
+      )}
 
       {plotModalOpen && (
         <PlotSizeModal
@@ -374,8 +438,8 @@ function EmptyState({ onAddBed }: { onAddBed: () => void }) {
       <div className="max-w-sm rounded-lg border border-dashed border-line-strong bg-card p-8 text-center">
         <h2 className="font-display text-h2 font-semibold">Draw your garden</h2>
         <p className="mt-2 text-sm text-muted">
-          Add a bed, then pick a plant from the left and draw it on at its spacing — you'll see how
-          many fit and a shopping list of what to buy.
+          Add a bed, then pick a plant and draw it on at its spacing — you'll see how many fit and a
+          shopping list of what to buy.
         </p>
         <button
           type="button"
@@ -385,6 +449,28 @@ function EmptyState({ onAddBed }: { onAddBed: () => void }) {
           + Add your first bed
         </button>
       </div>
+    </div>
+  )
+}
+
+/** The shopping-list panel — plant totals across the plot. Rendered in the desktop inspector column
+ *  and the mobile bottom sheet; returns nothing when the plot is empty. */
+function ShoppingList({ items, nodesById }: { items: [string, number][]; nodesById: Map<string, PlantNode> }) {
+  if (items.length === 0) return null
+  return (
+    <div className="border-t border-line p-3">
+      <h2 className="text-sm font-semibold text-ink">Shopping list</h2>
+      <ul className="mt-2 flex flex-col gap-1">
+        {items.map(([nodeId, qty]) => {
+          const node = nodesById.get(nodeId)
+          return (
+            <li key={nodeId} className="flex items-baseline justify-between gap-2 text-sm">
+              <span className="truncate text-ink">{node ? displayLabel(node) : nodeId}</span>
+              <span className="shrink-0 tabular-nums font-medium text-muted">{qty}</span>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }
