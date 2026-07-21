@@ -245,7 +245,7 @@ export default function Inspector({ bed, placement, node, bedPlantings = [], bed
         <div className="border-t border-line pt-3">
           <h3 className="text-xs font-medium text-muted">Beds</h3>
           <ul className="mt-2 flex flex-col gap-0.5">
-            {beds.map((b) => (
+            {[...beds].sort((a, b) => a.name.localeCompare(b.name)).map((b) => (
               <li key={b.id}>
                 <button
                   type="button"

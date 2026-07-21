@@ -30,6 +30,12 @@ describe('Inspector — empty-state bed list', () => {
     expect(screen.getByRole('button', { name: /Border/ })).toBeInTheDocument()
   })
 
+  it('lists beds alphabetically regardless of input order', () => {
+    render(<Inspector snapStep={0} beds={[bed('Courgettes'), bed('Alliums'), bed('Beans')]} {...noops} />)
+    const order = screen.getAllByRole('button').map((el) => el.textContent?.match(/^[A-Za-z ]+/)?.[0].trim())
+    expect(order).toEqual(['Alliums', 'Beans', 'Courgettes'])
+  })
+
   it('selects a bed when its row is clicked', async () => {
     const onSelectBed = vi.fn()
     const user = userEvent.setup()
