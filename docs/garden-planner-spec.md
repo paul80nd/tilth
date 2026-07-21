@@ -185,7 +185,8 @@ zoom is buttons only) and touch-draw ergonomics.
 - **Succession** — from each placement's occupancy window, show when a bed frees up.
 - **Companion — BUILT (2026-07-21).** A committed, generic ruleset in our own words
   (`src/lib/companions.ts`, `COMPANION_RULES`; firewall-safe like the taxonomy vocab), keyed to the
-  taxonomy (`{family}`/`{genus}`/`{category}`) and resolved with the shared `resolveUp` roll-up.
+  taxonomy (`{species}`/`{genus}`/`{family}`/`{category}`) and resolved with the shared `resolveUp`
+  roll-up (species-level keys stop e.g. a potato rule snagging a same-genus tomato).
   Flags **good + bad** pairings among plants **sharing a bed** (MVP proximity). Pure engine
   `companionsForYear` + `badCompanionBedIds`; seam `listCompanions`. Surfaced in the inspector
   (green ✓ good / amber ⚠ bad, with the reason) and a distinct "no" badge on a clashing bed

@@ -16,8 +16,14 @@ import type { Holding } from '../schema/userData'
 import { resolveUp } from './taxonomy'
 
 /** One end of a companion rule — a taxon the rule applies to, matched by a plant's own-or-inherited
- *  family / genus / category. */
-export type TaxonKey = { family: string } | { genus: string } | { category: Category }
+ *  botanical name (species) / genus / family / category. `species` matters where a genus spans crops
+ *  with different behaviour — e.g. potato vs tomato are both *Solanum*, so a potato-only rule must
+ *  key on `{ species: 'Solanum tuberosum' }`, not `{ genus: 'Solanum' }` (which would snag tomatoes). */
+export type TaxonKey =
+  | { species: string }
+  | { genus: string }
+  | { family: string }
+  | { category: Category }
 
 /** A companion relationship between two taxa. Symmetric — stored once, applies both ways. `note`
  *  is our own plain-language gloss (generic knowledge; never sourced text). */
@@ -54,7 +60,9 @@ export const COMPANION_RULES: CompanionRule[] = [
   { relation: 'bad', a: { genus: 'Foeniculum' }, b: { family: 'Fabaceae' }, note: 'Fennel checks the growth of beans and peas — give it its own corner.' },
   { relation: 'bad', a: { genus: 'Foeniculum' }, b: { genus: 'Daucus' }, note: 'Fennel and carrots are close cousins that cross and compete — separate them.' },
   { relation: 'bad', a: { family: 'Brassicaceae' }, b: { genus: 'Fragaria' }, note: 'Brassicas and strawberries make poor bedfellows — best kept apart.' },
-  { relation: 'bad', a: { genus: 'Solanum' }, b: { family: 'Cucurbitaceae' }, note: 'Potatoes near squash and cucumbers raise the risk of shared blight — keep them apart.' },
+  // Potato-specific (species, not genus Solanum) so it never snags tomatoes/aubergines.
+  { relation: 'bad', a: { species: 'Solanum tuberosum' }, b: { species: 'Solanum lycopersicum' }, note: 'Potatoes and tomatoes fall to the same blight — side by side, one readily infects the other. Keep them apart.' },
+  { relation: 'bad', a: { species: 'Solanum tuberosum' }, b: { family: 'Cucurbitaceae' }, note: 'Potatoes and sprawling squash or cucumbers crowd each other and compete for the same ground — give them separate beds.' },
 ]
 
 /** A companion relationship found among the plants sharing a bed — the two sides carry the distinct
@@ -86,16 +94,19 @@ export interface CompanionOptions {
   currentYear: number
 }
 
-/** A plant's resolved taxonomy, for rule matching. */
+/** A plant's resolved taxonomy, for rule matching. `species` is the resolved botanical name
+ *  (binomial), which a cultivar inherits from its species. */
 interface Taxon {
-  family?: string
+  species?: string
   genus?: string
+  family?: string
   category?: Category
 }
 
 function matchesKey(key: TaxonKey, t: Taxon): boolean {
-  if ('family' in key) return t.family === key.family
+  if ('species' in key) return t.species === key.species
   if ('genus' in key) return t.genus === key.genus
+  if ('family' in key) return t.family === key.family
   return t.category === key.category
 }
 
@@ -123,8 +134,9 @@ export function companionsForYear(
   for (const h of holdings) {
     if (!h.bedId || (h.year ?? currentYear) !== year) continue
     const taxon: Taxon = {
-      family: resolveUp(h.nodeId, nodesById, 'family'),
+      species: resolveUp(h.nodeId, nodesById, 'botanicalName'),
       genus: resolveUp(h.nodeId, nodesById, 'genus'),
+      family: resolveUp(h.nodeId, nodesById, 'family'),
       category: resolveUp(h.nodeId, nodesById, 'category'),
     }
     const arr = byBed.get(h.bedId)

@@ -55,6 +55,9 @@ describeFeature(feature, ({ Background, Scenario }) => {
         { id: 'cabbage', rank: 'species', category: 'veg', family: 'Brassicaceae', genus: 'Brassica' },
         { id: 'kale', rank: 'cultivar', parentId: 'cabbage' }, // inherits Brassicaceae / Brassica
         { id: 'nasturtium', rank: 'species', category: 'flower', family: 'Tropaeolaceae', genus: 'Tropaeolum' },
+        // Two Solanum species so a species-keyed rule (potato) doesn't snag a tomato.
+        { id: 'tomato', rank: 'species', category: 'veg', family: 'Solanaceae', genus: 'Solanum', botanicalName: 'Solanum lycopersicum' },
+        { id: 'cucumber', rank: 'species', category: 'veg', family: 'Cucurbitaceae', genus: 'Cucumis', botanicalName: 'Cucumis sativus' },
       ])
     })
     And('a {string} bed {string}', async (_, _mode: string, id: string) => {
@@ -130,6 +133,21 @@ describeFeature(feature, ({ Background, Scenario }) => {
 
   Scenario('A lone plant has no companions', ({ Given, When, Then }) => {
     Given('{string} placed on {string}', async (_, node: string, bed: string) => {
+      await place(node, bed)
+    })
+    When('I check companions for {int}', async (_, year: number) => {
+      companions = await listCompanions(year, { currentYear: CURRENT_YEAR })
+    })
+    Then('{string} has no companion notes', (_, bed: string) => {
+      expect(companions.find((b) => b.bedId === bed)).toBeUndefined()
+    })
+  })
+
+  Scenario('A tomato is not mistaken for a potato', ({ Given, And, When, Then }) => {
+    Given('{string} placed on {string}', async (_, node: string, bed: string) => {
+      await place(node, bed)
+    })
+    And('{string} placed on {string}', async (_, node: string, bed: string) => {
       await place(node, bed)
     })
     When('I check companions for {int}', async (_, year: number) => {

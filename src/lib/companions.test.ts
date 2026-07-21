@@ -13,6 +13,11 @@ const NODES: PlantNode[] = [
   { id: 'kale', rank: 'cultivar', parentId: 'cabbage' }, // inherits Brassicaceae / Brassica
   { id: 'nasturtium', rank: 'species', category: 'flower', family: 'Tropaeolaceae', genus: 'Tropaeolum' },
   { id: 'rose', rank: 'species', category: 'flower', family: 'Rosaceae', genus: 'Rosa' }, // in no rule
+  // Two Solanum species — same genus, different species — to exercise species-level keys.
+  { id: 'tomato', rank: 'species', category: 'veg', family: 'Solanaceae', genus: 'Solanum', botanicalName: 'Solanum lycopersicum' },
+  { id: 'tomato-cv', rank: 'cultivar', parentId: 'tomato' }, // inherits Solanum lycopersicum
+  { id: 'potato', rank: 'species', category: 'veg', family: 'Solanaceae', genus: 'Solanum', botanicalName: 'Solanum tuberosum' },
+  { id: 'cucumber', rank: 'species', category: 'veg', family: 'Cucurbitaceae', genus: 'Cucumis', botanicalName: 'Cucumis sativus' },
 ]
 const byId = new Map(NODES.map((n) => [n.id, n]))
 
@@ -67,6 +72,24 @@ describe('companionsForYear', () => {
 
   it('ignores plants in no rule', () => {
     expect(companionsForYear([placed('h1', 'rose', 'bed1'), placed('h2', 'carrot', 'bed1')], byId, 2026, opts)).toEqual([])
+  })
+
+  it('does NOT treat a tomato as a potato (species keys, not genus Solanum)', () => {
+    // Regression: a genus-Solanum key wrongly flagged tomatoes with cucurbits. Tomato + cucumber
+    // must produce no clash (they share no rule).
+    expect(companionsForYear([placed('h1', 'tomato', 'bed1'), placed('h2', 'cucumber', 'bed1')], byId, 2026, opts)).toEqual([])
+    // …and the same for a tomato *cultivar* (inherits the species name).
+    expect(companionsForYear([placed('h1', 'tomato-cv', 'bed1'), placed('h2', 'cucumber', 'bed1')], byId, 2026, opts)).toEqual([])
+  })
+
+  it('flags a real potato with cucurbits', () => {
+    const list = companionsForYear([placed('h1', 'potato', 'bed1'), placed('h2', 'cucumber', 'bed1')], byId, 2026, opts)
+    expect(pairing(list, 'bed1', 'bad', 'potato', 'cucumber')).toBeDefined()
+  })
+
+  it('flags potato + tomato as a shared-blight clash', () => {
+    const list = companionsForYear([placed('h1', 'potato', 'bed1'), placed('h2', 'tomato', 'bed1')], byId, 2026, opts)
+    expect(pairing(list, 'bed1', 'bad', 'potato', 'tomato')).toBeDefined()
   })
 
   it('only considers the queried year', () => {

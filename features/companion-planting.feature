@@ -38,3 +38,9 @@ Feature: Flag good and bad companions sharing a bed
     Given "onion" placed on "bed1"
     When I check companions for 2026
     Then "bed1" has no companion notes
+
+  Scenario: A tomato is not mistaken for a potato
+    Given "tomato" placed on "bed1"
+    And "cucumber" placed on "bed1"
+    When I check companions for 2026
+    Then "bed1" has no companion notes

@@ -15,7 +15,11 @@ Planner Phase 3's companion feature — flag which plants help or hinder each ot
   horticultural knowledge (like the botanical taxonomy and phase vocabularies), so — per the privacy
   firewall — they're a **committed ruleset authored in our own words** (`src/lib/companions.ts`,
   `COMPANION_RULES`), naming no source and copying no proprietary chart. Each rule pairs two
-  `TaxonKey`s (`{family}` / `{genus}` / `{category}`) with a `good`/`bad` relation; matching resolves
+  `TaxonKey`s (`{species}` / `{genus}` / `{family}` / `{category}`, matched against a plant's resolved
+  botanical name / genus / family / category) with a `good`/`bad` relation. Species-level keys matter
+  where a genus spans crops that behave differently — potato and tomato are both *Solanum*, so a
+  potato-only rule keys `{species: 'Solanum tuberosum'}`, not `{genus: 'Solanum'}` (which snags
+  tomatoes). Matching resolves
   a held plant's own-or-inherited family/genus/category (the shared `resolveUp` in `taxonomy.ts`,
   now used by the jobs/rotation/companion engines), so a rule on `genus: 'Allium'` reaches every
   onion/leek cultivar and de-dupes. Rules are **symmetric** (stored once).
