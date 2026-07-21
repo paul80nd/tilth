@@ -79,6 +79,12 @@
   --tl-accent-ink:  var(--tl-honey-700);
   --tl-accent-tint: var(--tl-honey-100);
 
+  /* Warn (caution state — e.g. a crop-rotation clash). A cautionary amber-orange, kept distinct
+     from the honey accent so "attention" doesn't read as "in season". Placeholder like the rest. */
+  --tl-warn:      oklch(70% 0.150 60);
+  --tl-warn-ink:  oklch(52% 0.120 55);   /* warn text on light surfaces */
+  --tl-warn-tint: oklch(92% 0.055 70);   /* soft warn panel / chip bg   */
+
   /* Focus ring */
   --tl-ring: var(--tl-green-300);
 
@@ -131,6 +137,10 @@
   --tl-accent:      oklch(78.0% 0.128 76);
   --tl-accent-ink:  oklch(85.0% 0.115 78);
   --tl-accent-tint: oklch(40.0% 0.090 72);
+
+  --tl-warn:      oklch(76.0% 0.140 65);
+  --tl-warn-ink:  oklch(84.0% 0.120 68);
+  --tl-warn-tint: oklch(40.0% 0.080 60);
 
   --tl-ring: oklch(52.0% 0.104 150);
 

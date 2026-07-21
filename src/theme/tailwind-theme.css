@@ -27,6 +27,10 @@
   --color-accent-ink:  var(--tl-accent-ink);
   --color-accent-tint: var(--tl-accent-tint);
 
+  --color-warn:      var(--tl-warn);
+  --color-warn-ink:  var(--tl-warn-ink);
+  --color-warn-soft: var(--tl-warn-tint);
+
   --color-surface:     var(--tl-surface-page);
   --color-card:        var(--tl-surface-card);
   --color-sunken:      var(--tl-surface-sunken);

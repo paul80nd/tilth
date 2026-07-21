@@ -12,6 +12,7 @@ import { markUser } from './dataSource'
 import type { Bed, Holding, PlacementShape, Rect } from '../schema/userData'
 import { footprintOf, placementCount } from '../lib/spacing'
 import { reanchorRects, type PlotAnchor } from '../lib/plot'
+import { rotationForYear, type BedRotation } from '../lib/rotation'
 
 /** Fresh id for a hand-created bed/holding. `crypto.randomUUID` is available in every target
  *  (evergreen browsers, Node ≥22, the test env). */
@@ -217,6 +218,46 @@ export async function unplace(holdingId: string): Promise<void> {
     const { bedId: _b, region: _r, ...rest } = h
     return rest
   })
+}
+
+// --- Plan years -----------------------------------------------------------------------------
+
+/** A holding's effective plan year: its `year`, or `currentYear` when absent (the schema's
+ *  "absent = current" — a plot laid out before years were tracked belongs to this year). */
+export const yearOf = (h: Holding, currentYear: number): number => h.year ?? currentYear
+
+/** Copy every placement from `fromYear` into `toYear` as fresh *planned* holdings — the "plan next
+ *  year off this one" starting point that gives crop rotation a prior year to compare against.
+ *  Spatial layout (bed/region/shape/footprint/colour) and the crop carry over; per-instance history
+ *  (plantedOn/notes/photos) does not — next year's planting is its own instance. No-op if `toYear`
+ *  already has any placement (won't double-clone); returns how many holdings were created. */
+export async function rollOverYear(fromYear: number, toYear: number, currentYear: number): Promise<number> {
+  let created = 0
+  await db.transaction('rw', db.holdings, db.settings, async () => {
+    const all = await db.holdings.toArray()
+    if (all.some((h) => h.bedId && yearOf(h, currentYear) === toYear)) return
+    const source = all.filter((h) => h.bedId && h.region && yearOf(h, currentYear) === fromYear)
+    for (const h of source) {
+      const { id: _id, plantedOn: _p, notes: _n, photos: _ph, ...rest } = h
+      await db.holdings.put({ ...rest, id: newId(), status: 'planned', year: toYear })
+      created++
+    }
+    if (created > 0) await markUser()
+  })
+  return created
+}
+
+/** Each bed's crop-rotation picture for `year` — the rotatable families it holds and any repeating
+ *  within the rest window. Reads every year's holdings (the full history) + the reference nodes for
+ *  family roll-up. `currentYear` (the year an un-stamped holding counts as) defaults to the clock. */
+export async function listRotation(
+  year: number,
+  opts: { currentYear?: number; restYears?: number } = {},
+): Promise<BedRotation[]> {
+  const [holdings, nodes, beds] = await Promise.all([db.holdings.toArray(), db.nodes.toArray(), db.beds.toArray()])
+  const byId = new Map(nodes.map((n) => [n.id, n]))
+  const currentYear = opts.currentYear ?? new Date().getFullYear()
+  return rotationForYear(holdings, byId, beds, year, { currentYear, restYears: opts.restYears })
 }
 
 // --- Shopping list --------------------------------------------------------------------------

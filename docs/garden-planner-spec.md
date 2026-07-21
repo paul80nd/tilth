@@ -146,8 +146,24 @@ tokens where they exist), brand pass later — same rule as the cheatsheet.
 
 - **Jobs engine** (`src/lib/jobs.ts`) — for every placed holding, walk its taxonomy, collect
   actionable `PhaseSpan`s + `TaskTemplate`s, de-duplicate, group by month, surface "this month".
-- **Crop-rotation warning** — flag a bed whose `year N` family repeats `year N-1` (uses the
-  family roll-up; history comes from `year`-stamped holdings).
+  _(Shipped as the maintenance jobs engine + Jobs tab — see `docs/jobs-page-spec.md`.)_
+- **Crop-rotation warning — BUILT (2026-07-21).** Flag a bed whose target-year botanical family was
+  also grown there within a **rest window** (`ROTATION_REST_YEARS`, default 3 — not just `N-1`; the
+  classic four-bed rotation rests a group ~3 years). Uses the free `family` roll-up; history comes
+  from `year`-stamped holdings. **Veg-only** (not exclusively-perennial — you don't rotate a tree or
+  a perennial herb; unknown lifecycle counts as annual) **in soil beds only** (`ROTATING_BED_KINDS`
+  = bed/raised-bed/border/greenhouse; containers, patio, coldframe and structure hold pots or
+  nothing, so they never warn). Pure engine `src/lib/rotation.ts`
+  (`rotationForYear` → per-bed families + conflicts, `warnBedIds`); seam `listRotation` +
+  `rollOverYear` in `src/app/garden.ts`; `features/crop-rotation.feature`.
+  - **The plot gained a plan-year dimension** to make this work: the Garden page has an active plan
+    year (a localStorage preference, defaults to the clock year); placements stamp it and the plot
+    shows just that year; a holding's effective year is `holding.year ?? currentYear`, so old
+    un-stamped placements read as this year's. A **roll-over** action (`rollOverYear`, pulled forward
+    from Phase 3's follow-on-year) copies year N's placements into N+1 as `planned` holdings so
+    rotation has a prior year to compare — it won't clobber a year that already has plantings.
+  - Surface: amber outline + ⚠ badge on the bed (new `warn` colour token), a toolbar count, and the
+    families + years in the inspector when a warned bed is selected.
 - Region/frost nudge stays deferred (a `settings` region shifts windows) — noted, not baked in.
 
 ### Phase 3 — succession + companion + follow-on year
@@ -155,7 +171,9 @@ tokens where they exist), brand pass later — same rule as the cheatsheet.
 - **Succession** — from each placement's occupancy window, show when a bed frees up.
 - **Companion** — needs a new generic data layer (firewall: our own vocabulary, no sourced
   text/URLs); good/bad neighbours flagged on placement.
-- **Follow-on year** — clone this year's plan into next year as a starting point.
+- **Follow-on year** — clone this year's plan into next year as a starting point. _(A minimal
+  version — `rollOverYear` — already shipped in Phase 2 to seed a comparison year for rotation; the
+  richer succession/companion-aware follow-on stays here.)_
 - Structures (`greenhouse`/`coldframe`) shift a placement's sow/harvest dates.
 
 ### Phase 4 — journal + reminders

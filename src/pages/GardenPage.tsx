@@ -16,6 +16,8 @@ import {
   setPlacementShape,
   setPlacementColor,
   unplace,
+  rollOverYear,
+  yearOf,
   getPlotSize,
   setPlotSize,
   DEFAULT_PLOT_W,
@@ -25,6 +27,7 @@ import { displayLabel } from '../lib/naming'
 import { categoryColor } from '../lib/plantColor'
 import { placementCount } from '../lib/spacing'
 import { clampRect } from '../lib/plot'
+import { rotationForYear, warnBedIds } from '../lib/rotation'
 import PlotCanvas, { type Selection, type PlotCanvasHandle } from '../components/plot/PlotCanvas'
 import Palette from '../components/plot/Palette'
 import Inspector from '../components/plot/Inspector'
@@ -36,10 +39,21 @@ import { PlotSizeModal } from '../components/plot/PlotSizeModal'
 
 const BROWSABLE = new Set<PlantNode['rank']>(['species', 'cultivar'])
 
+// The clock year is what an un-stamped placement (and the default active year) counts as.
+const CURRENT_YEAR = new Date().getFullYear()
+
 // Locking beds is an editing preference (like zoom), so it lives in localStorage — not the garden
 // data / backup. It survives a reload so a finished layout stays protected.
 const LOCK_KEY = 'tilth-beds-locked'
 const readBedsLocked = () => localStorage.getItem(LOCK_KEY) === '1'
+
+// The plan year you're viewing is an editing preference too (which year of the plot to show +
+// stamp), so it also lives in localStorage. Defaults to the current clock year.
+const YEAR_KEY = 'tilth-plan-year'
+function readPlanYear(): number {
+  const v = parseInt(localStorage.getItem(YEAR_KEY) ?? '', 10)
+  return Number.isFinite(v) ? v : CURRENT_YEAR
+}
 
 export default function GardenPage() {
   const beds = useLiveQuery(listBeds, [], [] as Bed[])
@@ -53,16 +67,44 @@ export default function GardenPage() {
   const [snap, setSnap] = useState(true)
   const [bedsLocked, setBedsLocked] = useState(readBedsLocked)
   const [plotModalOpen, setPlotModalOpen] = useState(false)
+  const [planYear, setPlanYear] = useState(readPlanYear)
 
   useEffect(() => {
     localStorage.setItem(LOCK_KEY, bedsLocked ? '1' : '0')
   }, [bedsLocked])
+  useEffect(() => {
+    localStorage.setItem(YEAR_KEY, String(planYear))
+  }, [planYear])
   const canvasRef = useRef<PlotCanvasHandle>(null)
 
   const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
-  const placements = useMemo(() => holdings.filter((h) => h.bedId && h.region), [holdings])
+  // Only the active plan year's placements are shown/stamped; an un-stamped holding belongs to the
+  // current clock year (schema "absent = current").
+  const placements = useMemo(
+    () => holdings.filter((h) => h.bedId && h.region && yearOf(h, CURRENT_YEAR) === planYear),
+    [holdings, planYear],
+  )
   const heldNodeIds = useMemo(() => new Set(holdings.map((h) => h.nodeId)), [holdings])
   const plants = useMemo(() => nodes.filter((n) => BROWSABLE.has(n.rank)), [nodes])
+
+  // Crop rotation reads ALL holdings (every year's history), not just the shown year, to flag a
+  // family returning to a bed within the rest window. warnBeds drives the plot's amber badge; the
+  // per-bed map feeds the inspector when a warned bed is selected.
+  const rotations = useMemo(
+    () => rotationForYear(holdings, nodesById, beds, planYear, { currentYear: CURRENT_YEAR }),
+    [holdings, nodesById, beds, planYear],
+  )
+  const warnBeds = useMemo(() => warnBedIds(rotations), [rotations])
+  const rotationByBed = useMemo(() => new Map(rotations.map((r) => [r.bedId, r])), [rotations])
+
+  // Is the active year empty while an earlier year has placements? Then offer to copy it forward so
+  // rotation has a prior year to compare (the minimal follow-on-year clone).
+  const rollOverFrom = useMemo(() => {
+    if (placements.length > 0) return undefined
+    const years = holdings.filter((h) => h.bedId && h.region).map((h) => yearOf(h, CURRENT_YEAR))
+    const earlier = years.filter((y) => y < planYear)
+    return earlier.length ? Math.max(...earlier) : undefined
+  }, [holdings, placements, planYear])
 
   const selectedBed = selection?.type === 'bed' ? beds.find((b) => b.id === selection.id) : undefined
   const selectedPlacement =
@@ -145,6 +187,51 @@ export default function GardenPage() {
             {beds.length} {beds.length === 1 ? 'bed' : 'beds'} · {placements.length} plantings ·{' '}
             {plot.width.toFixed(1)}×{plot.height.toFixed(1)} m
           </span>
+
+          {/* plan-year stepper — which year of the plot to show + stamp new plantings with */}
+          <div className="flex items-center overflow-hidden rounded-md border border-line text-sm">
+            <button
+              type="button"
+              onClick={() => setPlanYear((y) => y - 1)}
+              className="px-2 py-1 text-muted hover:bg-sunken hover:text-ink"
+              aria-label="Previous year"
+            >
+              ‹
+            </button>
+            <span className="px-1 tabular-nums font-medium text-ink" title="Plan year">
+              {planYear}
+              {planYear === CURRENT_YEAR && <span className="ml-1 text-xs font-normal text-subtle">now</span>}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPlanYear((y) => y + 1)}
+              className="border-l border-line px-2 py-1 text-muted hover:bg-sunken hover:text-ink"
+              aria-label="Next year"
+            >
+              ›
+            </button>
+          </div>
+
+          {rollOverFrom !== undefined && (
+            <button
+              type="button"
+              onClick={() => void rollOverYear(rollOverFrom, planYear, CURRENT_YEAR)}
+              className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-muted hover:border-line-strong hover:text-ink"
+              title={`Copy the ${rollOverFrom} plot into ${planYear} as a starting point`}
+            >
+              Copy {rollOverFrom} → {planYear}
+            </button>
+          )}
+
+          {warnBeds.size > 0 && (
+            <span
+              className="rounded-md bg-warn-soft px-2 py-1 text-xs font-semibold text-warn-ink"
+              title="Beds where a crop family repeats too soon — select a bed to see why"
+            >
+              ⚠ {warnBeds.size} rotation {warnBeds.size === 1 ? 'warning' : 'warnings'}
+            </span>
+          )}
+
           <label className="ml-auto flex cursor-pointer select-none items-center gap-1.5 text-xs text-muted">
             <input type="checkbox" checked={snap} onChange={(e) => setSnap(e.target.checked)} className="accent-brand" />
             Snap to grid
@@ -193,10 +280,11 @@ export default function GardenPage() {
               selection={selection}
               brushNodeId={brushNodeId}
               brushShape={brushShape}
+              warnBedIds={warnBeds}
               onSelect={setSelection}
               onMoveBed={(id, rect: Rect) => void updateBed(id, rect)}
               onMovePlacement={(id, region: Rect) => void movePlacement(id, region)}
-              onPlace={(bedId, nodeId, region, shape) => void placePlant({ nodeId, bedId, region, shape, status: 'growing' })}
+              onPlace={(bedId, nodeId, region, shape) => void placePlant({ nodeId, bedId, region, shape, status: 'growing', year: planYear })}
             />
           </div>
         )}
@@ -210,6 +298,7 @@ export default function GardenPage() {
             placement={selectedPlacement}
             node={selectedPlacement ? nodesById.get(selectedPlacement.nodeId) : undefined}
             bedPlantings={bedPlantings}
+            rotation={selectedBed ? rotationByBed.get(selectedBed.id) : undefined}
             snapStep={snapStep}
             placementDefaultColor={selectedPlacement ? categoryColor(nodesById.get(selectedPlacement.nodeId)) : undefined}
             onSelectPlanting={(id) => setSelection({ type: 'placement', id })}

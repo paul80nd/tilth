@@ -7,6 +7,40 @@ feature spec; private rationale (the real sources, personal curation rules) stay
 
 Each entry: the decision, *why*, and what it superseded if anything.
 
+## 2026-07-21 — Crop rotation: a plan-year dimension on the plot, warn by family, veg-only
+
+The garden planner's Phase 2 rotation warning needed a *previous* year to compare against, but the
+plot had no year dimension in use (`Holding.year` existed in the schema, unused). Three calls:
+
+- **The plot is now plan-year-scoped.** The Garden page carries an active plan year (a
+  localStorage editing preference, like zoom/lock-beds, defaulting to the clock year); placements
+  are stamped with it, and the canvas / shopping list / rotation show that year. A holding's
+  *effective* year is `holding.year ?? currentYear` — so every pre-existing (un-stamped) placement
+  reads as this year's and nothing changes visually. *Why not a separate per-year Plan entity:*
+  same reason a placement is a holding — one store, `year` carries the planning dimension.
+- **Roll-over pulled forward from Phase 3.** Rotation is inert without a second year, and hand-
+  entering one is tedious, so a minimal "copy year N → N+1" (`rollOverYear`, clones placements as
+  fresh `planned` holdings; won't clobber a year that already has any) ships now. The richer
+  follow-on-year work (succession, companion) stays Phase 3.
+- **Warn by botanical family, veg-in-soil-beds-only, on a rest window.** The engine
+  (`src/lib/rotation.ts`, pure) rolls each holding up to its own-or-inherited `family` (free —
+  `family` is already an inheritable field) and flags a family that returns to a bed within
+  `ROTATION_REST_YEARS` (default **3** — the classic four-bed rotation rests a group ~3 years; the
+  future settings seam). Two gates on what counts:
+  - **The plant** — only **veg that isn't exclusively perennial** (you don't rotate a fruit tree or
+    a perennial herb; unknown lifecycle is treated as annual, since lifecycle data is sparse and
+    excluding it would silently drop most veg).
+  - **The bed** — only **soil beds that carry over year to year** (`ROTATING_BED_KINDS`:
+    `bed`/`raised-bed`/`border`/`greenhouse`). Containers, patio and coldframes hold pots that get
+    fresh compost, and a `structure` isn't planted — nothing accumulates, so they never warn. A
+    greenhouse *is* in: its border soil builds up soil-borne disease like open ground.
+
+  A holding whose family is unknown is skipped, not guessed.
+
+Surfaced as an amber outline + ⚠ badge on the bed (a new `warn` semantic colour token — the app's
+first caution state, placeholder like the rest), a toolbar count, and the offending families +
+years in the inspector when a warned bed is selected.
+
 ## 2026-07-19 — Family/genus common names: committed defaults + editable user overrides
 
 The plain-language names that gloss the Taxonomy banners ("Rose family · Rosaceae") and the new

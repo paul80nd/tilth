@@ -88,6 +88,8 @@ export interface PlotCanvasProps {
   brushNodeId: string | null
   /** The placement shape the brush lays down — packed area, or a single round/rect plant. */
   brushShape: PlacementShape
+  /** Beds with a crop-rotation clash this year — drawn with an amber outline + a ⚠ badge. */
+  warnBedIds?: Set<string>
   onSelect: (sel: Selection) => void
   onMoveBed: (id: string, rect: Rect) => void
   onMovePlacement: (id: string, region: Rect) => void
@@ -125,6 +127,7 @@ function PlotCanvas(
     selection,
     brushNodeId,
     brushShape,
+    warnBedIds,
     onSelect,
     onMoveBed,
     onMovePlacement,
@@ -398,6 +401,7 @@ function PlotCanvas(
           const r = bedRect(b)
           const p = toPx(r.x, r.y)
           const selected = selection?.type === 'bed' && selection.id === b.id
+          const warned = warnBedIds?.has(b.id) ?? false
           const cells: React.ReactNode[] = []
           if (b.spacing === 'grid' && b.cellSize) {
             for (let cx = b.cellSize; cx < r.width - 1e-6; cx += b.cellSize)
@@ -414,15 +418,24 @@ function PlotCanvas(
                 height={len(r.height)}
                 rx={4}
                 fill={`url(#bedhatch-${b.kind})`}
-                className={selected ? 'stroke-brand' : undefined}
-                stroke={selected ? undefined : bedColor(b.kind)}
-                strokeOpacity={selected ? 1 : 0.75}
-                strokeWidth={selected ? 2 : 1.2}
+                className={selected ? 'stroke-brand' : warned ? 'stroke-warn' : undefined}
+                stroke={selected || warned ? undefined : bedColor(b.kind)}
+                strokeOpacity={selected || warned ? 1 : 0.75}
+                strokeWidth={selected || warned ? 2 : 1.2}
+                strokeDasharray={warned && !selected ? '6 3' : undefined}
               />
               {cells}
               <text x={p.x + 6} y={p.y + 16} className="fill-subtle" fontSize={11} fontWeight={600}>
                 {b.name} · {r.width.toFixed(1)}×{r.height.toFixed(1)}m
               </text>
+              {warned && (
+                // Rotation-clash badge, top-right — a filled amber triangle with a "!". Symbol-only
+                // (the why is in the inspector) so the plot stays uncluttered.
+                <g transform={`translate(${p.x + len(r.width) - 20}, ${p.y + 4})`} aria-label="Crop-rotation warning">
+                  <path d="M8 0 L16 15 L0 15 Z" className="fill-warn" />
+                  <text x={8} y={13} textAnchor="middle" fontSize={11} fontWeight={800} className="fill-card">!</text>
+                </g>
+              )}
               {selected && !bedsLocked && <rect x={p.x + len(r.width) - 6} y={p.y + len(r.height) - 6} width={12} height={12} className="fill-brand" />}
             </g>
           )

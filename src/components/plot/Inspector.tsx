@@ -3,6 +3,8 @@ import type { PlantNode } from '../../schema/plant'
 import { displayLabel } from '../../lib/naming'
 import { DEFAULT_CATEGORY_COLOR } from '../../lib/plantColor'
 import { plantsInRegion } from '../../lib/spacing'
+import { familyCommon } from '../../lib/taxonNames'
+import { ROTATION_REST_YEARS, type BedRotation } from '../../lib/rotation'
 import { Field, SizeInput, inputCls } from './fields'
 
 // The inspector: edit the currently-selected bed or placement. A thin shell over the garden seam —
@@ -23,6 +25,8 @@ export interface InspectorProps {
   node?: PlantNode
   /** What's planted in the selected bed (empty unless a bed is selected). */
   bedPlantings?: BedPlanting[]
+  /** The selected bed's crop-rotation picture for the active year (families + any clashes). */
+  rotation?: BedRotation
   /** Snap increment (m) for typed bed sizes; 0 when snapping is off (a 0.1 spinner step is used). */
   snapStep: number
   /** The plant's default (category) colour — the swatch shown when there's no override. */
@@ -47,11 +51,33 @@ const PLACEMENT_TYPES: { shape: PlacementShape; label: string }[] = [
   { shape: 'rect', label: 'Single' },
 ]
 
-export default function Inspector({ bed, placement, node, bedPlantings = [], snapStep, placementDefaultColor = DEFAULT_CATEGORY_COLOR, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
+/** A family's display name for the rotation note — "Cabbage family (Brassicaceae)", or just the
+ *  scientific name when we have no common gloss. */
+function familyLabel(family: string): string {
+  const common = familyCommon(family)
+  return common ? `${common} family (${family})` : family
+}
+
+export default function Inspector({ bed, placement, node, bedPlantings = [], rotation, snapStep, placementDefaultColor = DEFAULT_CATEGORY_COLOR, onSelectPlanting, onBedChange, onRemoveBed, onQuantityChange, onPlacementShapeChange, onPlacementResize, onPlacementColorChange, onUnplace }: InspectorProps) {
   if (bed) {
+    const conflicts = rotation?.conflicts ?? []
     return (
       <div className="flex flex-col gap-3 p-3">
         <h2 className="text-sm font-semibold text-ink">Bed</h2>
+        {conflicts.length > 0 && (
+          <div className="rounded-md bg-warn-soft p-2.5 text-xs text-warn-ink">
+            <p className="font-semibold">⚠ Crop rotation</p>
+            <ul className="mt-1.5 flex flex-col gap-1.5">
+              {conflicts.map((c) => (
+                <li key={c.family}>
+                  <span className="font-medium">{familyLabel(c.family)}</span> grew here in {c.lastYear} (
+                  {c.yearsAgo === 1 ? 'last year' : `${c.yearsAgo} years ago`}). Ideally rest {ROTATION_REST_YEARS} years
+                  before replanting it.
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <Field label="Name">
           <input className={inputCls} value={bed.name} onChange={(e) => onBedChange({ name: e.target.value })} />
         </Field>
