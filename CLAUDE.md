@@ -104,14 +104,19 @@ that schema. The SPA only ever sees our schema, never raw source payloads.
 
 ## Testing
 
-Two tiers, one runner (Vitest 4):
+Three tiers, one runner (Vitest 4, split into two **projects** — `node` and `dom` — in
+`vitest.config.ts`; `npm test` runs both):
 
-- **Unit** — `src/**/*.test.ts` beside the code, for tight pure logic (the merge overlay,
-  taxonomy roll-up, calendar → jobs). Import from `vitest` explicitly (no globals).
-- **Feature (Gherkin)** — living documentation. `.feature` files in `features/`, steps in
-  `features/steps/*.steps.ts` via `@amiceli/vitest-cucumber`. Steps drive the **app layer**
-  against **`fake-indexeddb`** — real Dexie code paths, no browser, no React. `test/setup.ts`
-  installs `fake-indexeddb/auto`; each scenario's `Background` resets the store.
+- **Unit** (`node` project) — `src/**/*.test.ts` beside the code, for tight pure logic (the
+  merge overlay, taxonomy roll-up, calendar → jobs). Import from `vitest` explicitly (no globals).
+- **Feature (Gherkin)** (`node` project) — living documentation. `.feature` files in `features/`,
+  steps in `features/steps/*.steps.ts` via `@amiceli/vitest-cucumber`. Steps drive the **app
+  layer** against **`fake-indexeddb`** — real Dexie code paths, no browser, no React.
+  `test/setup.ts` installs `fake-indexeddb/auto`; each scenario's `Background` resets the store.
+- **Component** (`dom` project) — `src/**/*.test.tsx` under **jsdom** via
+  `@testing-library/react`, for UI glue the app layer sits below (modal shells, editor hooks).
+  Mock the `src/app/` seam and assert wiring/behaviour. `test/setup.dom.ts` adds jest-dom matchers
+  + per-test cleanup; keep this tier thin — behaviour still belongs in the app layer where it can.
 
 ## House rules
 
