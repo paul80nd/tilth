@@ -6,13 +6,10 @@
 // module just reads/writes Dexie and marks the store user-owned.
 
 import { db } from '../db/db'
+import { markUser } from './dataSource'
 import type { CommonNameEntry, CommonNameOverrides } from '../lib/taxonNames'
 
 const KEY = 'taxonNames'
-
-async function markUser(): Promise<void> {
-  await db.settings.put({ key: 'dataSource', value: 'user' })
-}
 
 /** The gardener's common-name overrides (empty object when none saved yet). */
 export async function getCommonNameOverrides(): Promise<CommonNameOverrides> {

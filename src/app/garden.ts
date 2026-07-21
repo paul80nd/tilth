@@ -8,6 +8,7 @@
 // a real garden.
 
 import { db } from '../db/db'
+import { markUser } from './dataSource'
 import type { Bed, Holding, PlacementShape, Rect } from '../schema/userData'
 import { footprintOf, placementCount } from '../lib/spacing'
 import { reanchorRects, type PlotAnchor } from '../lib/plot'
@@ -16,12 +17,6 @@ import { reanchorRects, type PlotAnchor } from '../lib/plot'
  *  (evergreen browsers, Node ≥22, the test env). */
 function newId(): string {
   return crypto.randomUUID()
-}
-
-/** Mark the working store as the user's own — guards a real garden from the first-run demo
- *  re-seed, exactly as the import/backup paths do. */
-async function markUser(): Promise<void> {
-  await db.settings.put({ key: 'dataSource', value: 'user' })
 }
 
 // --- Plot extent ----------------------------------------------------------------------------

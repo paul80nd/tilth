@@ -7,6 +7,7 @@
 
 import { db } from '../db/db'
 import { importFragment } from './dataset'
+import { markUser } from './dataSource'
 import { nodeDiff, isEmptyDiff } from '../lib/editNode'
 import type { NodeFragment } from '../lib/dataset'
 import type { FieldSource, PlantNode } from '../schema/plant'
@@ -69,7 +70,7 @@ export async function clearNodeField(id: string, field: keyof PlantNode, replace
     }
     node.provenance = provenance
     await db.nodes.put(node)
-    await db.settings.put({ key: 'dataSource', value: 'user' })
+    await markUser()
   })
 }
 
@@ -91,7 +92,7 @@ export async function clearNodeFields(id: string, fields: Array<keyof PlantNode>
     }
     node.provenance = provenance
     await db.nodes.put(node)
-    await db.settings.put({ key: 'dataSource', value: 'user' })
+    await markUser()
   })
 }
 
@@ -103,7 +104,7 @@ export async function clearNodeFields(id: string, fields: Array<keyof PlantNode>
 export async function deleteNode(id: string): Promise<void> {
   await db.transaction('rw', db.nodes, db.settings, async () => {
     await db.nodes.delete(id)
-    await db.settings.put({ key: 'dataSource', value: 'user' })
+    await markUser()
   })
 }
 

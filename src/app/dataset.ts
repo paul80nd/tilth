@@ -9,6 +9,7 @@
 // Pure shaping/validation lives in src/lib/dataset.ts.
 
 import { db } from '../db/db'
+import { markUser } from './dataSource'
 import { parsePlantDataset } from '../lib/dataset'
 import { mergeNode, type MergeMeta } from '../lib/merge'
 import type { FieldSource } from '../schema/plant'
@@ -28,13 +29,14 @@ export interface ImportResult {
 
 /**
  * Apply a parsed fragment to the reference stores in one transaction. Shared by the
- * user-facing import (`importFragment`, marks the store user-owned) and the first-run demo
- * seed (marks it demo). `markUser` is what protects a real import from the demo re-seed.
+ * user-facing import (`markOwned` true → marks the store user-owned) and the first-run demo
+ * seed (`markOwned` false → the seed marks it demo itself). Marking user-owned is what protects
+ * a real import from the demo re-seed.
  */
 export async function importFragment(
   input: unknown,
   meta: Partial<MergeMeta> = {},
-  markUser = true,
+  markOwned = true,
 ): Promise<ImportResult> {
   const parsed = parsePlantDataset(input)
 
@@ -60,7 +62,7 @@ export async function importFragment(
     for (const task of parsed.tasks) {
       await db.tasks.put({ ...task, provenance: guideStamp })
     }
-    if (markUser) await db.settings.put({ key: 'dataSource', value: 'user' })
+    if (markOwned) await markUser()
   })
 
   return {

@@ -1,6 +1,7 @@
 import { db } from './db'
 import { resolveAsset } from '../lib/assets'
 import { importFragment } from '../app/dataset'
+import { markDemo, DATA_SOURCE_KEY } from '../app/dataSource'
 
 // Bump when the bundled demo dataset changes so demo users auto-refresh.
 const DEMO_VERSION = 10
@@ -18,7 +19,7 @@ async function importDemo(): Promise<void> {
     await db.tasks.clear()
     // Stamp provenance with the fragment's own `source` keys; mark the store demo-owned.
     await importFragment(dataset, {}, false)
-    await db.settings.put({ key: 'dataSource', value: 'demo' })
+    await markDemo()
     await db.settings.put({ key: 'demoVersion', value: DEMO_VERSION })
   })
 }
@@ -33,7 +34,7 @@ export async function seedDemoIfEmpty(): Promise<void> {
     await importDemo()
     return
   }
-  const source = (await db.settings.get('dataSource'))?.value
+  const source = (await db.settings.get(DATA_SOURCE_KEY))?.value
   if (source === 'user') return
   const version = (await db.settings.get('demoVersion'))?.value
   if (version !== DEMO_VERSION) await importDemo()

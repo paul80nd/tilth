@@ -7,6 +7,7 @@
 // UI and the feature tests both drive.
 
 import { db } from '../db/db'
+import { markUser, DATA_SOURCE_KEY } from './dataSource'
 import { parseBackup, BACKUP_VERSION } from '../lib/backup'
 import type { BackupSnapshot } from '../schema/userData'
 
@@ -74,8 +75,8 @@ export async function importBackup(input: unknown): Promise<RestoreResult> {
       ])
       // A restored snapshot with plants is the user's own data; guard against the demo seed
       // clobbering it if the file happened to lack the marker.
-      if (snapshot.nodes.length && !snapshot.settings.some((s) => s.key === 'dataSource')) {
-        await db.settings.put({ key: 'dataSource', value: 'user' })
+      if (snapshot.nodes.length && !snapshot.settings.some((s) => s.key === DATA_SOURCE_KEY)) {
+        await markUser()
       }
     },
   )

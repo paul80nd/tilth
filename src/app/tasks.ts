@@ -7,6 +7,7 @@
 
 import { db } from '../db/db'
 import { MANUAL_SOURCE } from './editNode'
+import { markUser } from './dataSource'
 import type { TaskTemplate } from '../schema/plant'
 
 /** Persist Care-card edits in one transaction: upsert new/changed tasks (stamped `manual`, whole
@@ -16,6 +17,6 @@ export async function saveCareTasks(upserts: TaskTemplate[], deletedIds: string[
   await db.transaction('rw', db.tasks, db.settings, async () => {
     for (const id of deletedIds) await db.tasks.delete(id)
     for (const t of upserts) await db.tasks.put({ ...t, provenance: { source: MANUAL_SOURCE } })
-    await db.settings.put({ key: 'dataSource', value: 'user' })
+    await markUser()
   })
 }
