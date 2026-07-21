@@ -17,6 +17,7 @@ import type {
   PlantDataset,
 } from '../schema/plant'
 import { splitLegacyConditions } from './positionSplit'
+import { isPlainObject } from './equal'
 
 /** A node fragment: an id plus whichever fields this import supplies. */
 export type NodeFragment = Partial<PlantNode> & { id: string }
@@ -34,10 +35,6 @@ export interface ParsedFragment {
   errors: string[]
   /** Count of records dropped (== errors.length). */
   skipped: number
-}
-
-function isObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
 // Trim imported strings and treat whitespace-only as absent — source data often carries
@@ -83,7 +80,7 @@ const NODE_FIELDS: Array<keyof PlantNode> = [
 
 /** Copy through the present node fields, trimming strings; preserve absence. */
 function normaliseNode(raw: unknown, index: number): NodeFragment | string {
-  if (!isObject(raw)) return `node #${index + 1}: not an object`
+  if (!isPlainObject(raw)) return `node #${index + 1}: not an object`
   const id = asString(raw.id)
   if (!id) return `node #${index + 1}: missing id`
 
@@ -106,7 +103,7 @@ function normaliseNode(raw: unknown, index: number): NodeFragment | string {
 }
 
 function normaliseGuide(raw: unknown, index: number): Guide | string {
-  if (!isObject(raw)) return `guide #${index + 1}: not an object`
+  if (!isPlainObject(raw)) return `guide #${index + 1}: not an object`
   const id = asString(raw.id)
   if (!id) return `guide #${index + 1}: missing id`
   const title = asString(raw.title)
@@ -124,7 +121,7 @@ function normaliseGuide(raw: unknown, index: number): Guide | string {
 }
 
 function normaliseTask(raw: unknown, index: number): TaskTemplate | string {
-  if (!isObject(raw)) return `task #${index + 1}: not an object`
+  if (!isPlainObject(raw)) return `task #${index + 1}: not an object`
   const id = asString(raw.id)
   if (!id) return `task #${index + 1}: missing id`
   const action = asString(raw.action)
@@ -190,7 +187,7 @@ export function parsePlantDataset(input: unknown): ParsedFragment {
 
   if (Array.isArray(data)) {
     rawNodes = data
-  } else if (isObject(data)) {
+  } else if (isPlainObject(data)) {
     source = asString(data.source)
     if (Array.isArray(data.nodes)) rawNodes = data.nodes
     if (Array.isArray(data.guides)) rawGuides = data.guides
@@ -212,5 +209,5 @@ export function parsePlantDataset(input: unknown): ParsedFragment {
 
 /** Narrow a parsed wrapper to a typed dataset, for callers that need the envelope. */
 export function isPlantDataset(v: unknown): v is PlantDataset {
-  return isObject(v) && v.version === 1
+  return isPlainObject(v) && v.version === 1
 }

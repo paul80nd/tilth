@@ -10,6 +10,7 @@
 import type { BackupSnapshot, Setting } from '../schema/userData'
 import type { PlantNode } from '../schema/plant'
 import { splitLegacyConditions } from './positionSplit'
+import { isPlainObject } from './equal'
 
 /** Current backup envelope version (what a fresh Save writes). Bump when the snapshot shape
  *  changes. v2 added `beds`. */
@@ -26,10 +27,6 @@ export interface BackupParseResult {
   warnings: string[]
 }
 
-function isObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-}
-
 /** Keep whole records that are objects carrying all `required` string keys (non-empty);
  *  count the rest as dropped. Preserves every other field (provenance, nested objects). */
 function keepRecords<T>(raw: unknown, required: string[], label: string, warnings: string[]): T[] {
@@ -37,7 +34,7 @@ function keepRecords<T>(raw: unknown, required: string[], label: string, warning
   const out: T[] = []
   let dropped = 0
   for (const r of arr) {
-    if (isObject(r) && required.every((k) => typeof r[k] === 'string' && r[k] !== '')) {
+    if (isPlainObject(r) && required.every((k) => typeof r[k] === 'string' && r[k] !== '')) {
       out.push(r as T)
     } else {
       dropped++
@@ -62,7 +59,7 @@ export function parseBackup(input: unknown): BackupParseResult {
     }
   }
 
-  if (!isObject(data)) throw new Error('backup is not an object')
+  if (!isPlainObject(data)) throw new Error('backup is not an object')
   if (typeof data.version !== 'number' || !SUPPORTED_VERSIONS.includes(data.version)) {
     throw new Error(
       `unsupported backup version ${String(data.version)} (expected ${SUPPORTED_VERSIONS.join(' or ')})`,

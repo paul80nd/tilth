@@ -9,6 +9,7 @@
 // nested objects". Pure + side-effect-free; the Dexie write lives in the app layer.
 
 import type { FieldSource, PlantNode, Rank } from '../schema/plant'
+import { isPlainObject } from './equal'
 
 /** How object-valued fields combine. `deep` (default): overlay a source's partial object onto
  *  the existing one, so absent keys survive — how multi-source imports accrete. `replace`: swap
@@ -23,10 +24,6 @@ export interface MergeMeta {
   importedAt?: string
   /** Object-field strategy (default `deep`). A strategy hint, not provenance. */
   objects?: ObjectMerge
-}
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
 /**
