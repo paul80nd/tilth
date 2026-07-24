@@ -1,6 +1,7 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
 import { cx } from './lib/cx'
 import ThemeToggle from './components/ThemeToggle'
+import { BackupNudge } from './components/BackupNudge'
 import BrowsePage from './pages/BrowsePage'
 import CheatsheetPage from './pages/CheatsheetPage'
 import PlantFormPage from './pages/PlantFormPage'
@@ -52,7 +53,8 @@ export default function App() {
             <Tab to="/garden">My garden</Tab>
             <Tab to="/jobs">Jobs</Tab>
           </nav>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex items-center gap-2">
+            <BackupNudge />
             <Tab to="/data">Data</Tab>
             <ThemeToggle />
           </div>

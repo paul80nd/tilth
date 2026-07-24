@@ -1,4 +1,5 @@
 import BackupRestore from '../components/BackupRestore'
+import StorageUsage from '../components/StorageUsage'
 import ImportPanel from '../components/ImportPanel'
 import CommonNamesEditor from '../components/CommonNamesEditor'
 
@@ -17,6 +18,7 @@ export default function DataPage() {
       </div>
       <div className="flex max-w-2xl flex-col gap-5">
         <BackupRestore />
+        <StorageUsage />
         <ImportPanel />
         <CommonNamesEditor />
       </div>

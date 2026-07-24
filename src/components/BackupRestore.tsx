@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { exportBackup, importBackup, type RestoreResult } from '../app/backup'
+import { markBackupSaved } from '../hooks/useBackupStatus'
 
 // Save / Open: a self-contained snapshot of every table to a JSON file, and a wipe-and-restore
 // back from one. We don't use the File System Access API (not in every evergreen browser), so
@@ -26,6 +27,8 @@ export default function BackupRestore() {
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
+      // Record the save so the header nudge and Storage card clear (device-local timestamp).
+      markBackupSaved(snapshot.exportedAt)
     } catch (err) {
       setError(`Save failed: ${(err as Error).message}`)
     } finally {
