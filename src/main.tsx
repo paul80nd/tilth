@@ -22,6 +22,15 @@ if (navigator.storage?.persist) {
     .catch(() => {})
 }
 
+// Register the service worker (makes the app installable + basic offline). Production only —
+// in dev it would fight Vite HMR. BASE_URL keeps the scope correct under the /tilth/ sub-path
+// on Pages. Best-effort; failure is non-fatal.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {})
+  })
+}
+
 // First run loads the fictional demo collection; a real import (dataSource === 'user') is
 // never touched. Fire-and-forget — the UI reads the store reactively as it fills.
 void seedDemoIfEmpty()

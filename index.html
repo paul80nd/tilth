@@ -9,6 +9,16 @@
       name="description"
       content="A local-first almanac for everything you grow: a scannable one-page cheatsheet per plant, merged from your own sources, plus the month-by-month jobs for the garden you actually have."
     />
+
+    <!-- Installable (PWA): manifest + icons + theme so the app can be added to the dock /
+         home screen, which also nudges the browser to grant persistent storage. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#3a8a58" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Tilth" />
     <script>
       // Apply the saved (or system) theme before first paint to avoid a flash.
       try {

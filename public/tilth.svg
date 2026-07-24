@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Tilth">
+  <rect width="512" height="512" rx="112" fill="#3a8a58"/>
+  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- stem -->
+    <path d="M256 384 V232"/>
+  </g>
+  <!-- leaves: two opposed teardrops meeting at the stem -->
+  <path fill="#ffffff" d="M256 236 C256 176 214 150 150 150 C150 214 190 244 256 244 Z"/>
+  <path fill="#ffffff" d="M256 236 C256 176 298 150 362 150 C362 214 322 244 256 244 Z"/>
+  <!-- soil line -->
+  <path d="M168 392 H344" fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" opacity="0.85"/>
+</svg>

@@ -1,0 +1,16 @@
+{
+  "name": "Tilth",
+  "short_name": "Tilth",
+  "description": "A local-first garden almanac: a scannable one-page cheatsheet per plant, merged from your own sources, plus the month-by-month jobs for the garden you actually have.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f5f1",
+  "theme_color": "#3a8a58",
+  "icons": [
+    { "src": "icons/tilth-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/tilth-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/tilth-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/tilth-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
