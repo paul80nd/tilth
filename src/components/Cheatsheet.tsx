@@ -61,7 +61,7 @@ export function usePlantDetail(id: string): PlantDetail | undefined {
 export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhood, onNavigate }: { node: PlantNode; ancestors: PlantNode[]; guides: Guide[]; tasks: TaskTemplate[]; neighbourhood?: Neighbourhood; onNavigate?: (id: string) => void }) {
   const [editing, setEditing] = useState<EditKey | null>(null)
   const closeEditor = () => setEditing(null)
-  const { node: resolved, inheritedFrom } = resolveInherited(node, ancestors)
+  const { node: resolved, inheritedFrom, factsFrom } = resolveInherited(node, ancestors)
   const { plant, variety } = displayName(node)
   const botanical = botanicalLabel(resolved)
 
@@ -89,6 +89,12 @@ export function CheatsheetContent({ node, ancestors, guides, tasks, neighbourhoo
   for (const fs of Object.values(node.provenance ?? {})) sources.add(fs.source)
   for (const [field, anc] of Object.entries(inheritedFrom)) {
     const fs = anc.provenance?.[field]
+    if (fs) sources.add(fs.source)
+  }
+  // `facts` merges per key, so credit each ancestor that supplied an inherited chip even when
+  // the cultivar also owns one (that case leaves inheritedFrom.facts unset).
+  for (const anc of new Set(Object.values(factsFrom))) {
+    const fs = anc.provenance?.facts
     if (fs) sources.add(fs.source)
   }
   // The enrich-from link for each source (on this node or an ancestor), so a Sources tag can

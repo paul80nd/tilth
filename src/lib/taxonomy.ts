@@ -7,7 +7,8 @@
 import type { PlantNode } from '../schema/plant'
 
 /** Cheatsheet-content fields a descendant may borrow from an ancestor. Identity fields
- *  (id, rank, parentId, commonName, variety) and provenance are never inherited. */
+ *  (id, rank, parentId, commonName, variety) and provenance are never inherited. `facts` is
+ *  handled separately (it merges per key — see {@link resolveInherited}), not whole-field here. */
 const INHERITABLE: Array<keyof PlantNode> = [
   'category',
   'otherNames',
@@ -27,7 +28,6 @@ const INHERITABLE: Array<keyof PlantNode> = [
   'toxicity',
   'wildlife',
   'uses',
-  'facts',
   'summary',
   'image',
 ]
@@ -58,6 +58,9 @@ export interface ResolvedNode {
   node: PlantNode
   /** For each field the node did NOT supply itself, the ancestor it was borrowed from. */
   inheritedFrom: Partial<Record<keyof PlantNode, PlantNode>>
+  /** For each `facts` chip the node did NOT own itself, the ancestor that supplied it (`facts`
+   *  merges per key, so provenance is per chip, not whole-field). Own keys are omitted. */
+  factsFrom: Record<string, PlantNode>
 }
 
 /**
@@ -65,6 +68,10 @@ export interface ResolvedNode {
  * [species, genus, family] for a cultivar). A field the node owns wins; otherwise the
  * nearest ancestor that has it fills in, and we record where from so the UI can label it
  * ("from Tomato — species").
+ *
+ * `facts` is the exception: it **merges per key** (nearest node wins per chip), so a cultivar
+ * that owns a single chip still shows the species' other chips — matching the import deep-merge.
+ * (conditions/position stay whole-field: a coherent block, deliberately override-whole.)
  */
 export function resolveInherited(node: PlantNode, ancestors: PlantNode[]): ResolvedNode {
   const resolved: PlantNode = { ...node }
@@ -79,5 +86,32 @@ export function resolveInherited(node: PlantNode, ancestors: PlantNode[]): Resol
     }
   }
 
-  return { node: resolved, inheritedFrom }
+  // `facts` merges per key: apply ancestors far→near, then the node's own last, so the nearest
+  // node wins each chip. Track where each chip came from; own chips are dropped from factsFrom.
+  const mergedFacts: Record<string, string> = {}
+  const originOf: Record<string, PlantNode> = {}
+  for (const anc of [...ancestors].reverse()) {
+    for (const [key, value] of Object.entries(anc.facts ?? {})) {
+      mergedFacts[key] = value
+      originOf[key] = anc
+    }
+  }
+  for (const [key, value] of Object.entries(node.facts ?? {})) {
+    mergedFacts[key] = value
+    originOf[key] = node
+  }
+  const factsFrom: Record<string, PlantNode> = {}
+  for (const [key, origin] of Object.entries(originOf)) {
+    if (origin !== node) factsFrom[key] = origin
+  }
+  if (Object.keys(mergedFacts).length > 0) {
+    resolved.facts = mergedFacts
+    // Only claim the whole field "from {ancestor}" when the node owns no chips of its own —
+    // otherwise the note would lie about a bag that's part own, part inherited.
+    if (!node.facts || Object.keys(node.facts).length === 0) {
+      inheritedFrom.facts = ancestors.find((a) => a.facts !== undefined)
+    }
+  }
+
+  return { node: resolved, inheritedFrom, factsFrom }
 }

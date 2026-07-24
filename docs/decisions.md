@@ -7,6 +7,29 @@ feature spec; private rationale (the real sources, personal curation rules) stay
 
 Each entry: the decision, *why*, and what it superseded if anything.
 
+## 2026-07-24 — Facts inherit per key at display time (conditions/position stay whole-field)
+
+`resolveInherited` (`src/lib/taxonomy.ts`) now **merges `facts` key-by-key** down the ancestor
+chain — nearest node wins per chip — instead of the whole-field "own bag wins wholesale" it used
+for every inheritable field. *Why:* a cultivar that owns a single chip (a verbena cultivar's
+`{disease resistance}`) was **hiding** every chip its species carried (the seed-packet
+`spacing`/`germination` just added). `facts` is a bag of independent chips accreted from different
+sources — the same reason the **import** deep-merges it (2026-07-18). Display inheritance was still
+whole-field, so the two disagreed: import accretes chips, display then masked all but the nearest
+node's. This aligns them — a chip shows unless a nearer node overrides *that key*.
+
+**Only `facts`.** `conditions` and `position` stay whole-field inherit, matching the 2026-07-19
+split: each is a *coherent block* (light/aspect/hardiness; soil/moisture/pH) meant to be read and
+overridden as a unit — a cultivar that states its conditions is stating all of them, not patching
+one facet. `facts` is the one field that's genuinely a loose key→value bag, so it's the one that
+merges.
+
+Provenance follows: `ResolvedNode` gains `factsFrom` (inherited chip key → origin ancestor; own
+keys omitted), and the whole-field `inheritedFrom.facts` note ("from {ancestor}") is set **only**
+when the node owns zero chips, so it never lies about a part-own/part-inherited bag. The cheatsheet
+footer credits each ancestor that supplied an inherited chip even when the cultivar also owns one.
+Pure and non-mutating (facts are merged into a fresh object).
+
 ## 2026-07-21 — Companion planting: our own taxonomy-keyed ruleset, same-bed, good + bad
 
 Planner Phase 3's companion feature — flag which plants help or hinder each other in a bed.

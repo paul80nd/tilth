@@ -55,11 +55,48 @@ describe('resolveInherited', () => {
     expect(inheritedFrom.position).toBe(species)
   })
 
-  it("keeps the node's own field and does not mark it inherited (whole-field, no merge)", () => {
-    const { node, inheritedFrom } = resolveInherited(cultivar, [species])
-    // Own facts win wholesale — the species' spacing is NOT merged in.
-    expect(node.facts).toEqual({ fruit: 'cherry' })
+  it('merges facts per key — own chips win, the rest are inherited', () => {
+    const { node, inheritedFrom, factsFrom } = resolveInherited(cultivar, [species])
+    // The cultivar owns {fruit}; the species' {spacing} still shows — merged, nearest wins per key.
+    expect(node.facts).toEqual({ spacing: '45cm', fruit: 'cherry' })
+    // Not a whole-field inherit (the node owns a chip), so no "from {ancestor}" note…
     expect(inheritedFrom.facts).toBeUndefined()
+    // …but the inherited chip records its origin, and the node's own chip does not.
+    expect(factsFrom.spacing).toBe(species)
+    expect(factsFrom.fruit).toBeUndefined()
+  })
+
+  it('marks facts whole-field inherited only when the node owns no chips', () => {
+    const noFacts: PlantNode = { id: 't-nf', rank: 'cultivar', parentId: 'tomato' }
+    const { node, inheritedFrom, factsFrom } = resolveInherited(noFacts, [species])
+    expect(node.facts).toEqual({ spacing: '45cm' })
+    expect(inheritedFrom.facts).toBe(species) // whole field borrowed — the note is truthful
+    expect(factsFrom.spacing).toBe(species)
+  })
+
+  it('merges facts across multiple levels — nearest wins per key', () => {
+    const genus: PlantNode = {
+      id: 'solanum',
+      rank: 'genus',
+      facts: { spacing: '60cm', family: 'Solanaceae', water: 'regular' },
+    }
+    const speciesOverride: PlantNode = {
+      id: 'tomato',
+      rank: 'species',
+      parentId: 'solanum',
+      facts: { spacing: '45cm', water: 'daily' },
+    }
+    // cultivar owns {fruit}; ancestors nearest-first are [species, genus].
+    const { node, factsFrom } = resolveInherited(cultivar, [speciesOverride, genus])
+    expect(node.facts).toEqual({
+      fruit: 'cherry', // own
+      spacing: '45cm', // species beats genus
+      water: 'daily', // species beats genus
+      family: 'Solanaceae', // only the genus has it
+    })
+    expect(factsFrom.spacing).toBe(speciesOverride)
+    expect(factsFrom.family).toBe(genus)
+    expect(factsFrom.fruit).toBeUndefined() // own chip
   })
 
   it('does not mutate the input node', () => {

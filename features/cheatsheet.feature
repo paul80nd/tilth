@@ -10,9 +10,9 @@ Feature: Cheatsheet inheritance
     When I open the cheatsheet for "t-sb"
     Then its calendar is inherited from "tomato"
 
-  Scenario: A cultivar keeps its own fields rather than the species'
+  Scenario: A cultivar merges its facts with the species' by key
     When I open the cheatsheet for "t-sb"
-    Then its facts are its own, not inherited
+    Then its facts merge its own with the species' by key
 
   Scenario: Guidance attached to the species shows on the cultivar
     When I open the cheatsheet for "t-sb"

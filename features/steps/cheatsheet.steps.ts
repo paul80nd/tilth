@@ -63,12 +63,13 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
   })
 
-  Scenario("A cultivar keeps its own fields rather than the species'", ({ When, Then }) => {
+  Scenario("A cultivar merges its facts with the species' by key", ({ When, Then }) => {
     When('I open the cheatsheet for {string}', async (_, id: string) => {
       await open(id)
     })
-    Then('its facts are its own, not inherited', () => {
-      expect(node.facts).toEqual({ fruit: 'cherry' })
+    Then("its facts merge its own with the species' by key", () => {
+      // Own {fruit} plus the species' {spacing} — the per-key merge, not a whole-field override.
+      expect(node.facts).toEqual({ spacing: '45cm', fruit: 'cherry' })
       expect(inheritedFrom.facts).toBeUndefined()
     })
   })
