@@ -7,9 +7,9 @@ per plant, merged from several sources — lets you record what you actually gro
 the **month-by-month jobs** for the garden you have. Browser-only, no server, nothing leaves
 your machine.
 
-> **Status:** early scaffolding. The design lives in [`docs/spec.md`](docs/spec.md) (a draft)
-> and the decision trail in [`docs/decisions.md`](docs/decisions.md). Built on the same chassis
-> as its sibling project [Forkast](https://github.com/paul80nd/forkast).
+> **Status:** v1 — feature-complete. The design lives in [`docs/spec.md`](docs/spec.md) and the
+> decision trail in [`docs/decisions.md`](docs/decisions.md). Built on the same chassis as its
+> sibling project [Forkast](https://github.com/paul80nd/forkast).
 
 ## What makes it tick
 

@@ -9,9 +9,9 @@ shaped that way. The decision trail lives in [`decisions.md`](decisions.md); the
 `features/` are the executable behaviour. Keep them honest — if code and a doc disagree, fix
 the doc in the same change.
 
-> **Status: DRAFT.** This is the first-pass design lifted from the discovery conversation and
-> the developer's spreadsheet. Sections marked **⟲ Open** are unresolved and need a decision
-> before the relevant code is written.
+> **Status: v1 — shipped.** The MVP scope below is built and this doc is kept honest against the
+> code. A handful of **⟲ Open** items remain deliberately deferred past v1 — the brand/design
+> system, region/last-frost adjustment, and the image model — flagged inline where they bite.
 
 ## Ethos & non-goals
 
@@ -148,7 +148,7 @@ Reference shapes live in [`src/schema/plant.ts`](../src/schema/plant.ts); user s
   private folder in dev and an in-app content-addressed image cache for the hosted app.
   **⟲ Open:** image model (hero + user photos) — design alongside the cheatsheet.
 
-## MVP scope (proposed)
+## MVP scope (delivered in v1)
 
 1. **Import / merge** a fragment (nodes/guides/tasks) into IndexedDB; ship a fictional demo
    set. Property-level overlay with provenance.
@@ -160,12 +160,19 @@ Reference shapes live in [`src/schema/plant.ts`](../src/schema/plant.ts); user s
 6. **Guides** — linked guidance surfaced on the relevant cheatsheet; promote-to-held later.
 7. **Export / Import** user data (backup / restore).
 
+## Shipped beyond the MVP (v1)
+
+- **Garden planner** — a visual plot: draw beds, place plantings at spacing, auto shopping list.
+- **Crop rotation** and **companion planting** warnings across the plot.
+- **Local-first hardening** — installable PWA, persistent-storage request, storage-usage card,
+  backup-staleness nudge, and an error boundary.
+
 ## Later (noted, not built)
 
 - Region / last-frost adjustment of job windows.
 - Held (offline/annotated) guides.
-- Companion planting, succession sowing, crop rotation for veg beds.
-- Bed/layout mapping (where things physically are).
+- Succession sowing (from a placement's occupancy window).
+- Mobile touch polish (pinch-to-zoom on the plot).
 
 ## Open questions (consolidated)
 
