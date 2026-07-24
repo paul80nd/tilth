@@ -8,6 +8,12 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # Keep @types/node in lock step with the Node major we actually run (24) — let minor/patch
+    # through, but not a major that would put the types ahead of the runtime. Bump this alongside
+    # a deliberate Node upgrade.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-minor-patch:
         dependency-type: development
