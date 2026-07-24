@@ -39,3 +39,11 @@ Feature: Manage plant records by hand
       | Rhubarb    |
     When I delete node "rhubarb"
     Then the store has no node "rhubarb"
+
+  Scenario: Undoing a delete restores the plant exactly as it was
+    Given I import from "plant-db" a node "rhubarb" with:
+      | commonName |
+      | Rhubarb    |
+    When I delete node "rhubarb" then undo it
+    Then node "rhubarb" has commonName "Rhubarb"
+    And node "rhubarb" field "commonName" came from "plant-db"

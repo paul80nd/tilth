@@ -2,7 +2,7 @@ import { describeFeature, loadFeature } from '@amiceli/vitest-cucumber'
 import { expect } from 'vitest'
 import { db } from '../../src/db/db'
 import { importFragment } from '../../src/app/dataset'
-import { createNode, updateNode, deleteNode } from '../../src/app/editNode'
+import { createNode, updateNode, deleteNode, restoreNode } from '../../src/app/editNode'
 import type { NodeFragment } from '../../src/lib/dataset'
 import type { PlantNode } from '../../src/schema/plant'
 
@@ -100,6 +100,26 @@ describeFeature(feature, ({ Background, Scenario }) => {
     })
     Then('the store has no node {string}', async (_, id: string) => {
       expect(await db.nodes.get(id)).toBeUndefined()
+    })
+  })
+
+  Scenario('Undoing a delete restores the plant exactly as it was', ({ Given, When, Then, And }) => {
+    Given('I import from {string} a node {string} with:', async (_, source: string, id: string, rows: Row[]) => {
+      await importNode(source, id, rows[0])
+    })
+    When('I delete node {string} then undo it', async (_, id: string) => {
+      // The page snapshots the node before deleting, then restores that snapshot on Undo.
+      const snapshot = await db.nodes.get(id)
+      if (!snapshot) throw new Error(`no node "${id}" to delete`)
+      await deleteNode(id)
+      expect(await db.nodes.get(id)).toBeUndefined()
+      await restoreNode(snapshot)
+    })
+    Then('node {string} has commonName {string}', async (_, id: string, value: string) => {
+      expect((await db.nodes.get(id))?.commonName).toBe(value)
+    })
+    And('node {string} field {string} came from {string}', async (_, id: string, field: string, source: string) => {
+      expect((await db.nodes.get(id))?.provenance?.[field]?.source).toBe(source)
     })
   })
 })

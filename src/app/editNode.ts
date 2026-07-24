@@ -108,6 +108,18 @@ export async function deleteNode(id: string): Promise<void> {
   })
 }
 
+/**
+ * Put a node back exactly as it was — the undo for {@link deleteNode}. Delete leaves children
+ * untouched (their `parentId` just dangled), so restoring the one row fully reverses it. Marks
+ * the store user-owned, consistent with the delete it undoes.
+ */
+export async function restoreNode(node: PlantNode): Promise<void> {
+  await db.transaction('rw', db.nodes, db.settings, async () => {
+    await db.nodes.put(node)
+    await markUser()
+  })
+}
+
 /** A node's direct children — used to warn before a delete would orphan them. */
 export async function childrenOf(id: string): Promise<PlantNode[]> {
   return db.nodes.where('parentId').equals(id).toArray()

@@ -1,12 +1,14 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { childrenOf, deleteNode } from '../app/editNode'
+import { childrenOf, deleteNode, restoreNode } from '../app/editNode'
 import { displayLabel } from '../lib/naming'
 import { usePlantDetail, CheatsheetContent } from '../components/Cheatsheet'
 import { Loading, NotFound } from '../components/Placeholders'
+import { useToast } from '../hooks/useToast'
 
 export default function CheatsheetPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const toast = useToast()
   const data = usePlantDetail(id)
 
   if (!data) return <Loading />
@@ -15,13 +17,29 @@ export default function CheatsheetPage() {
   const { node, ancestors, guides, tasks, neighbourhood } = data
 
   async function onDelete() {
+    // Deleting a node with children leaves them parentless — a consequential call, so keep the
+    // confirm there. A leaf delete is frictionless: just do it, with an Undo toast as the safety
+    // net (restoring the row fully reverses the delete — children were never touched).
     const kids = await childrenOf(node.id)
-    const msg = kids.length
-      ? `Delete "${displayLabel(node)}"? ${kids.length} plant(s) below it will be left without a parent.`
-      : `Delete "${displayLabel(node)}"?`
-    if (!window.confirm(msg)) return
+    if (
+      kids.length &&
+      !window.confirm(
+        `Delete "${displayLabel(node)}"? ${kids.length} plant(s) below it will be left without a parent.`,
+      )
+    ) {
+      return
+    }
+    const snapshot = node
     await deleteNode(node.id)
     navigate('/')
+    toast({
+      message: `Deleted ${displayLabel(snapshot)}`,
+      action: 'Undo',
+      onAction: async () => {
+        await restoreNode(snapshot)
+        navigate(`/plant/${snapshot.id}`)
+      },
+    })
   }
 
   return (

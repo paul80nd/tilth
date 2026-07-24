@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { ToastProvider } from './hooks/useToast'
 import { seedDemoIfEmpty } from './db/seed'
 import { initTheme } from './app/theme'
 import './index.css'
@@ -38,9 +39,11 @@ void seedDemoIfEmpty()
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <HashRouter>
-        <App />
-      </HashRouter>
+      <ToastProvider>
+        <HashRouter>
+          <App />
+        </HashRouter>
+      </ToastProvider>
     </ErrorBoundary>
   </StrictMode>,
 )
