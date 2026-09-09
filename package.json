@@ -20,22 +20,22 @@
   },
   "devDependencies": {
     "@amiceli/vitest-cucumber": "^7.0.0",
-    "@axe-core/playwright": "^4.12.1",
+    "@axe-core/playwright": "^4.13.0",
     "@tailwindcss/vite": "^4.3.3",
-    "@testing-library/jest-dom": "^7.0.0",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.3",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.0.5",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.1",
     "axe-core": "^4.12.1",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1",
     "playwright": "^1.62.1",
     "tailwindcss": "^4.1.0",
     "typescript": "^7.0.2",
-    "vite": "^8.2.0",
-    "vitest": "^4.1.9"
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
   }
 }
