@@ -53,7 +53,7 @@ Generic-input by design: source knowledge is *config + data*, never code. Enforc
 
 ## Stack & commands
 
-React 19 · Vite · TypeScript · Tailwind v4 · Dexie (IndexedDB) · HashRouter · Vitest 4.
+React 19 · Vite · TypeScript · Tailwind v4 · Dexie (IndexedDB) · HashRouter · Vitest 5.
 
 ```bash
 npm run dev            # http://localhost:5173
@@ -104,7 +104,7 @@ that schema. The SPA only ever sees our schema, never raw source payloads.
 
 ## Testing
 
-Three tiers, one runner (Vitest 4, split into two **projects** — `node` and `dom` — in
+Three tiers, one runner (Vitest 5, split into two **projects** — `node` and `dom` — in
 `vitest.config.ts`; `npm test` runs both):
 
 - **Unit** (`node` project) — `src/**/*.test.ts` beside the code, for tight pure logic (the
